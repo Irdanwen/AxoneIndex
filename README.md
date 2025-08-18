@@ -1,140 +1,210 @@
 # Axone Finance - Landing Page
 
-Une landing page moderne et élégante pour Axone Finance, plateforme DeFi d'investissement par indices crypto.
+Une landing page moderne et futuriste pour Axone Finance, inspirée du design de Sky.money avec une ambiance cosmique et institutionnelle.
 
-## 🚀 Technologies utilisées
+## 🎨 Charte Graphique
 
-- **Next.js 14** - Framework React avec App Router
-- **TypeScript** - Typage statique
-- **Tailwind CSS** - Framework CSS utilitaire
-- **Framer Motion** - Animations fluides
-- **Lucide React** - Icônes modernes
+### Couleurs Principales
+- **Sandy Brown** `#fab062` - Couleur d'accent principal
+- **Flounce** `#4a8c8c` - Couleur secondaire
+- **Stellar Green** `#011f26` - Couleur de fond sombre
 
-## 🎨 Design System
-
-### Palette de couleurs
-- **Couleur principale** : Sandy Brown `#fab062`
-- **Couleur secondaire** : Stellar Green `#011f26`
-- **Textes** : Blanc avec différentes opacités (90%, 75%, 60%)
+### Couleurs Fonctionnelles
+- **Succès** `#3CD88C`
+- **Alerte** `#FFB020`
+- **Erreur** `#FF5C5C`
+- **Info** `#4D9FFF`
 
 ### Typographie
-- **Police principale** : Inter (sans-serif moderne)
-- **Hiérarchie** : H1 (4xl-6xl), H2 (3xl-4xl), H3 (xl-2xl)
+- **Titres (H1/H2/H3)** : Inter Bold, espacé négatif léger (-0.5px)
+- **Texte** : Inter Regular/Medium
+- **Boutons CTA** : uppercase, SemiBold
 
-### Composants réutilisables
-- `Button` - Boutons avec variantes primaire/secondaire
-- `GlassCard` - Cartes avec effet de verre
-- `SectionTitle` - Titres de section avec animations
-- `AnimatedCounter` - Compteurs animés
-- `Stat` - Affichage de statistiques
+### Style UI
+- **Effet glassmorphism** : `rgba(255,255,255,0.05)` + `blur(20px)`
+- **Boutons CTA** : dégradé violet/bleu, arrondi XL, glow au hover
+- **Footer** : fond noir nuit, texte gris clair
+- **Background** : dégradés de sandy brown à Stellar Green + formes géométriques animées
 
-## 📁 Structure du projet
+## 📁 Structure du Projet
 
 ```
-src/
-├── app/
-│   ├── globals.css          # Styles globaux et design system
-│   ├── layout.tsx           # Layout principal
-│   └── page.tsx             # Page d'accueil
-├── components/
-│   ├── ui/                  # Composants réutilisables
-│   │   ├── Button.tsx
-│   │   ├── GlassCard.tsx
-│   │   ├── AnimatedCounter.tsx
-│   │   ├── Stat.tsx
-│   │   └── SectionTitle.tsx
-│   ├── layout/              # Composants de mise en page
-│   │   ├── Header.tsx
-│   │   └── Footer.tsx
-│   └── sections/            # Sections de la landing page
-│       ├── Hero.tsx
-│       ├── About.tsx
-│       ├── HowItWorks.tsx
-│       └── TrustBar.tsx
+axone-finance/
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx          # Layout principal
+│   │   ├── page.tsx            # Page d'accueil
+│   │   └── globals.css         # Styles globaux
+│   ├── components/
+│   │   ├── layout/
+│   │   │   ├── Header.tsx      # Header avec navigation
+│   │   │   └── Footer.tsx      # Footer avec liens
+│   │   ├── sections/
+│   │   │   ├── Hero.tsx        # Section héro principale
+│   │   │   ├── About.tsx       # Section Axone (2 colonnes)
+│   │   │   └── HowItWorks.tsx  # Section Axone Stars
+│   │   └── ui/
+│   │       ├── Button.tsx      # Composant bouton
+│   │       ├── AnimatedCounter.tsx # Compteur animé
+│   │       ├── GlassCard.tsx   # Carte avec effet glassmorphism
+│   │       └── SectionTitle.tsx # Titre de section
+│   └── lib/
+│       └── utils.ts            # Utilitaires shadcn/ui
+├── tailwind.config.ts          # Configuration Tailwind
+└── package.json
 ```
 
-## 🛠️ Installation et développement
+## 🚀 Sections du Site
 
-1. **Cloner le projet**
-   ```bash
-   git clone [url-du-repo]
-   cd axone-finance
-   ```
+### 1. Header (Sticky, Semi-transparent)
+- Logo futuriste Axone à gauche
+- Navigation : Explore, Participate, Build, Docs
+- CTA bouton "Launch App"
 
-2. **Installer les dépendances**
-   ```bash
-   npm install
-   ```
+### 2. Hero Section (Plein écran)
+- Fond dégradé avec formes géométriques animées
+- Titre : "Get rewarded for saving, without giving up control"
+- CTA principal "Launch App"
+- Statistiques : Users (125K+), TVL ($45.2M), Performance (+18.5%)
 
-3. **Lancer le serveur de développement**
-   ```bash
-   npm run dev
-   ```
+### 3. Section Axone (2 colonnes)
+- Texte explicatif à gauche
+- Illustration du token Axone à droite
+- Bouton "Access Axone"
 
-4. **Ouvrir dans le navigateur**
-   ```
-   http://localhost:3000
-   ```
+### 4. Section Axone Stars (Ciel étoilé)
+- Fond sombre avec étoiles animées
+- 8 étoiles représentant les fonctionnalités clés
+- Layout en constellation
 
-## 📱 Fonctionnalités
+### 5. Footer (Fond noir nuit)
+- 2 colonnes : branding + liens organisés
+- Liens : Explore, Ecosystem, Participate, Build
+- Mentions légales en bas
 
-### Sections principales
-- **Hero** - Message principal avec CTA
-- **À propos** - Mission et valeurs d'Axone
-- **Comment ça marche** - Processus en 3 étapes
-- **TrustBar** - Partenaires et crédibilité
-- **Footer** - Liens et informations
+## ✨ Animations
+
+### Effets Principaux
+- **Fade-in progressif** des sections au scroll
+- **Hover sur CTA** : glow cosmique
+- **Hover sur cartes** : `translateY(-5px)` + shadow douce
+- **Formes géométriques** animées lentement
+- **Particules flottantes** en arrière-plan
+
+### Animations CSS
+```css
+/* Exemples d'animations disponibles */
+.animate-fade-in
+.animate-fade-in-up
+.animate-scale-in
+.animate-float
+.animate-pulse-glow
+.animate-gradient-shift
+.animate-shimmer
+```
+
+## 🛠️ Technologies Utilisées
+
+- **Next.js 15** - Framework React
+- **TypeScript** - Typage statique
+- **Tailwind CSS 4** - Framework CSS
+- **Framer Motion** - Animations
+- **Lucide React** - Icônes
+- **shadcn/ui** - Composants UI
+
+## 🎯 Composants Réutilisables
+
+### Button
+```tsx
+<Button variant="primary" size="lg">
+  Launch App
+</Button>
+```
+
+### AnimatedCounter
+```tsx
+<AnimatedCounter value="125K+" duration={2} />
+```
+
+### GlassCard
+```tsx
+<div className="glass-card p-8 rounded-3xl">
+  Contenu avec effet glassmorphism
+</div>
+```
+
+## 🎨 Classes CSS Utilitaires
+
+### Couleurs
+```css
+.text-axone-accent      /* Sandy Brown */
+.text-axone-flounce     /* Flounce */
+.text-axone-dark        /* Stellar Green */
+.bg-gradient-primary    /* Dégradé principal */
+.bg-gradient-secondary  /* Dégradé secondaire */
+```
+
+### Effets
+```css
+.glass-card             /* Effet glassmorphism */
+.glass-card-strong      /* Glassmorphism plus prononcé */
+.shadow-glow            /* Ombre avec glow */
+.shadow-glow-flounce    /* Glow flounce */
+```
 
 ### Animations
-- Animations d'entrée au scroll
-- Micro-interactions sur les boutons
-- Effets de hover sur les cartes
-- Compteurs animés pour les statistiques
+```css
+.animate-float          /* Flottement */
+.animate-pulse-glow     /* Pulse avec glow */
+.animate-gradient-shift /* Dégradé animé */
+.animate-shimmer        /* Effet brillance */
+```
 
-### Responsive
-- Design mobile-first
-- Navigation adaptative
-- Grilles flexibles
-- Typographie responsive
+## 📱 Responsive Design
 
-## 🎯 Optimisations
+- **Mobile First** : Design optimisé pour mobile
+- **Breakpoints** : sm, md, lg, xl, 2xl
+- **Navigation** : Menu hamburger sur mobile
+- **Grilles** : Adaptatives selon la taille d'écran
 
-- **Performance** : Images optimisées, lazy loading
-- **SEO** : Métadonnées complètes, structure sémantique
-- **Accessibilité** : Contrastes vérifiés, focus states
-- **UX** : Navigation fluide, feedback visuel
+## 🚀 Installation et Démarrage
 
-## 🚀 Déploiement
+```bash
+# Installation des dépendances
+npm install
 
-Le projet est prêt pour le déploiement sur :
-- Vercel (recommandé)
-- Netlify
-- AWS Amplify
-- Tout autre plateforme supportant Next.js
+# Démarrage en mode développement
+npm run dev
 
-## 📝 Scripts disponibles
+# Build de production
+npm run build
 
-- `npm run dev` - Serveur de développement
-- `npm run build` - Build de production
-- `npm run start` - Serveur de production
-- `npm run lint` - Vérification ESLint
+# Démarrage en production
+npm start
+```
 
-## 🤝 Contribution
+## 📊 Performance
 
-1. Fork le projet
-2. Créer une branche feature (`git checkout -b feature/AmazingFeature`)
-3. Commit les changements (`git commit -m 'Add some AmazingFeature'`)
-4. Push vers la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrir une Pull Request
+- **Lazy Loading** des composants
+- **Optimisation des images** avec Next.js
+- **Animations CSS** pour les performances
+- **Code splitting** automatique
+
+## 🎨 Personnalisation
+
+### Modifier les couleurs
+Éditez `tailwind.config.ts` pour changer la palette de couleurs.
+
+### Ajouter des animations
+Utilisez les classes d'animation existantes ou créez-en de nouvelles dans la config Tailwind.
+
+### Modifier le contenu
+Les textes et données sont facilement modifiables dans les composants correspondants.
 
 ## 📄 Licence
 
-Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
-
-## 📞 Contact
-
-Axone Finance - [contact@axone.finance](mailto:contact@axone.finance)
+Ce projet est sous licence MIT. Voir le fichier LICENSE pour plus de détails.
 
 ---
 
-**Axone Finance** - The smart way to diversify 🚀
+**Axone Finance** - Le futur de la finance décentralisée 🌟

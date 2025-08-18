@@ -1,136 +1,231 @@
+"use client";
+
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Target, BarChart3, Globe, Zap } from 'lucide-react';
-import SectionTitle from '../ui/SectionTitle';
-import GlassCard from '../ui/GlassCard';
+import { ArrowRight, Coins, Shield, Zap, TrendingUp } from 'lucide-react';
+import Button from '../ui/Button';
 
 const About: React.FC = () => {
-  const missionPoints = [
+  const features = [
     {
-      icon: Target,
-      title: 'Mission claire',
-      description: 'Rendre l\'investissement Web3 simple, intelligent et accessible à tous.'
-    },
-    {
-      icon: BarChart3,
-      title: 'Modèle éprouvé',
-      description: 'Inspiré de l\'investissement par indices traditionnel, adapté au Web3.'
-    },
-    {
-      icon: Globe,
-      title: 'Transparence totale',
-      description: 'Tout se passe on-chain avec transparence, flexibilité et performance.'
+      icon: Shield,
+      title: "Secure Protocol",
+      description: "Multi-layer security with audited smart contracts"
     },
     {
       icon: Zap,
-      title: 'Technologie avancée',
-      description: 'Construit sur Hyperliquid et Unit pour une gestion décentralisée optimale.'
+      title: "Instant Rewards",
+      description: "Earn rewards immediately without lock-up periods"
+    },
+    {
+      icon: TrendingUp,
+      title: "Optimized Performance",
+      description: "AI-driven strategies for maximum yield generation"
     }
   ];
 
   return (
-    <section id="about" className="section-padding relative">
-      <div className="container-custom">
-        <SectionTitle
-          title="Notre mission"
-          subtitle="Axone a été conçu pour changer la donne dans l'investissement Web3"
-          className="mb-16"
-        />
+    <section id="axone" className="py-24 relative overflow-hidden">
+      {/* Background avec formes géométriques */}
+      <div className="absolute inset-0 bg-gradient-to-b from-axone-dark to-axone-dark-light">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-10 w-32 h-32 border border-axone-accent-20 rounded-full"></div>
+          <div className="absolute bottom-20 right-10 w-24 h-24 border border-axone-flounce-20 rounded-full"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 border border-axone-accent-10 rounded-full"></div>
+        </div>
+      </div>
 
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
-          {/* Left Column - Mission Statement */}
+      <div className="container-custom relative z-10">
+        <div className="grid lg:grid-cols-2 gap-20 items-center">
+          {/* Contenu texte à gauche */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
+            transition={{ duration: 0.8 }}
             viewport={{ once: true }}
+            className="space-y-8"
           >
-            <h3 className="text-2xl md:text-3xl font-semibold text-axone-white mb-6">
-              🎯 Notre mission : rendre l'investissement Web3 simple, intelligent et accessible à tous.
-            </h3>
-            
-            <div className="space-y-4 text-axone-white-75 leading-relaxed">
-              <p>
-                Nous nous inspirons d'un modèle qui a fait ses preuves dans la finance traditionnelle : 
-                l'investissement par indices. À l'image du S&P 500, les produits Axone regroupent plusieurs 
-                actifs, optimisent leur répartition, et s'adaptent en continu à la réalité du marché.
-              </p>
-              
-              <p>
-                Mais ici, tout se passe on-chain, avec transparence, flexibilité et performance. 
-                En construisant sur les fondations technologiques d'Hyperliquid et d'Unit, nous ouvrons 
-                une nouvelle ère pour la gestion de portefeuille décentralisée : plus agile, plus liquide, 
-                plus pertinente.
-              </p>
-              
-              <p className="text-axone-accent font-semibold">
-                Axone, c'est la voie intelligente pour diversifier dans le Web3 — sans compromis entre simplicité et puissance.
-              </p>
-            </div>
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center space-x-3 glass-card px-6 py-3 rounded-full border border-axone-accent-20"
+            >
+              <Coins className="w-5 h-5 text-axone-accent" />
+              <span className="text-sm font-semibold text-white-pure">Axone Protocol</span>
+            </motion.div>
+
+            {/* Titre */}
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              viewport={{ once: true }}
+              className="text-5xl lg:text-6xl font-black text-white-pure leading-tight"
+            >
+              The Future of{' '}
+              <span className="text-gradient">DeFi</span>
+              <br />
+              is Here
+            </motion.h2>
+
+            {/* Description */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              viewport={{ once: true }}
+              className="text-xl text-white-85 leading-relaxed"
+            >
+              Axone Finance represents the next evolution in decentralized finance. 
+              Our protocol combines cutting-edge technology with proven DeFi principles 
+              to deliver unprecedented opportunities for users to earn while maintaining 
+              complete control over their assets.
+            </motion.p>
+
+            {/* Features */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              viewport={{ once: true }}
+              className="space-y-6"
+            >
+              {features.map((feature, index) => (
+                <motion.div
+                  key={feature.title}
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.6 + index * 0.1 }}
+                  viewport={{ once: true }}
+                  className="flex items-start space-x-4 group"
+                >
+                  <div className="flex-shrink-0 w-12 h-12 glass-card rounded-xl flex items-center justify-center border border-axone-accent-20">
+                    <feature.icon className="w-6 h-6 text-axone-accent" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white-pure mb-2">{feature.title}</h3>
+                    <p className="text-white-75">{feature.description}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            {/* CTA Button */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+              viewport={{ once: true }}
+            >
+              <Button 
+                variant="secondary" 
+                size="lg" 
+                className="btn-with-icon hover:shadow-glow-flounce transition-all duration-300"
+              >
+                Access Axone
+                <ArrowRight className="w-5 h-5 btn-icon" />
+              </Button>
+            </motion.div>
           </motion.div>
 
-          {/* Right Column - Visual */}
+          {/* Illustration à droite */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
+            transition={{ duration: 0.8 }}
             viewport={{ once: true }}
             className="relative"
           >
-            <div className="glass-card p-8">
-              <div className="text-center">
-                <div className="w-20 h-20 bg-gradient-to-br from-axone-accent to-axone-dark rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Target size={40} className="text-axone-white" />
-                </div>
-                <h4 className="text-xl font-semibold text-axone-white mb-4">
-                  L'avenir de l'investissement
-                </h4>
-                <p className="text-axone-white-75 mb-6">
-                  Une approche révolutionnaire qui combine la simplicité des indices traditionnels 
-                  avec la puissance de la blockchain.
+            {/* Carte principale */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
+              viewport={{ once: true }}
+              className="glass-card-strong p-12 rounded-3xl relative overflow-hidden border border-axone-accent-20 hover:border-axone-accent transition-colors"
+            >
+              {/* Effet de brillance */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white-10 to-transparent transform -skew-x-12 -translate-x-full animate-shimmer"></div>
+              
+              <div className="relative z-10 text-center">
+                {/* Logo Axone stylisé */}
+                <motion.div 
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  transition={{ duration: 0.3 }}
+                  className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-8 shadow-glow"
+                >
+                  <svg className="w-10 h-10 text-white" viewBox="0 0 64 64" fill="none">
+                    <path d="M32 8L56 32L32 56L8 32L32 8Z" stroke="currentColor" strokeWidth="3" fill="none"/>
+                    <circle cx="32" cy="32" r="12" stroke="currentColor" strokeWidth="3" fill="none"/>
+                    <circle cx="32" cy="32" r="4" fill="currentColor"/>
+                  </svg>
+                </motion.div>
+                
+                <h3 className="text-3xl font-bold text-white-pure mb-6">
+                  Axone Token
+                </h3>
+                <p className="text-white-85 mb-8 leading-relaxed text-lg">
+                  The native token powering the Axone ecosystem with{' '}
+                  <span className="text-axone-accent font-semibold">governance rights</span> and{' '}
+                  <span className="text-axone-flounce font-semibold">reward distribution</span>
                 </p>
                 
-                {/* Key Metrics */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-4 bg-axone-black-20 rounded-lg">
-                    <div className="text-2xl font-bold text-axone-accent">100%</div>
-                    <div className="text-sm text-axone-white-60">On-chain</div>
+                {/* Stats */}
+                <div className="grid grid-cols-2 gap-8">
+                  <div className="text-center">
+                    <div className="text-3xl font-black text-axone-accent">1M</div>
+                    <div className="text-sm text-white-60 font-medium">Total Supply</div>
                   </div>
-                  <div className="text-center p-4 bg-axone-black-20 rounded-lg">
-                    <div className="text-2xl font-bold text-axone-accent">24/7</div>
-                    <div className="text-sm text-axone-white-60">Optimisation</div>
+                  <div className="text-center">
+                    <div className="text-3xl font-black text-axone-flounce">$2.45</div>
+                    <div className="text-sm text-white-60 font-medium">Current Price</div>
                   </div>
                 </div>
               </div>
-            </div>
-          </motion.div>
-        </div>
+            </motion.div>
 
-        {/* Mission Points Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {missionPoints.map((point, index) => (
+            {/* Cartes flottantes */}
             <motion.div
-              key={index}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1, ease: 'easeOut' }}
+              transition={{ delay: 0.6 }}
               viewport={{ once: true }}
+              whileHover={{ y: -5, scale: 1.05 }}
+              className="absolute -top-8 -right-8 glass-card p-6 rounded-2xl border border-axone-accent-20 hover:border-axone-accent transition-all duration-300"
             >
-              <GlassCard className="h-full">
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-axone-accent rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <point.icon size={24} className="text-axone-dark" />
-                  </div>
-                  <h4 className="text-lg font-semibold text-axone-white mb-2">
-                    {point.title}
-                  </h4>
-                  <p className="text-axone-white-75 text-sm leading-relaxed">
-                    {point.description}
-                  </p>
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-white" />
                 </div>
-              </GlassCard>
+                <div>
+                  <div className="text-xl font-bold text-white-pure">+24.7%</div>
+                  <div className="text-xs text-white-60 font-medium">30d</div>
+                </div>
+              </div>
             </motion.div>
-          ))}
+
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -5, scale: 1.05 }}
+              className="absolute -bottom-8 -left-8 glass-card p-6 rounded-2xl border border-axone-flounce-20 hover:border-axone-flounce transition-all duration-300"
+            >
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-gradient-secondary rounded-xl flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <div className="text-xl font-bold text-white-pure">Audited</div>
+                  <div className="text-xs text-white-60 font-medium">Security</div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
         </div>
       </div>
     </section>

@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import { motion } from 'framer-motion';
 
@@ -18,11 +20,11 @@ const Button: React.FC<ButtonProps> = ({
   className = '',
   disabled = false,
 }) => {
-  const baseClasses = 'font-semibold rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-opacity-50';
+  const baseClasses = 'font-semibold rounded-xl transition-all duration-300 relative overflow-hidden border-2';
   
   const variantClasses = {
-    primary: 'bg-axone-accent text-axone-dark hover:scale-105 hover:shadow-glow focus:ring-axone-accent',
-    secondary: 'border border-axone-white-75 text-axone-white hover:scale-105 hover:bg-axone-white-75 hover:text-axone-dark focus:ring-axone-white',
+    primary: 'bg-gradient-primary text-white-pure border-axone-accent hover:border-axone-accent-light shadow-medium hover:shadow-glow',
+    secondary: 'bg-transparent text-white-pure border-axone-flounce hover:border-axone-flounce-light hover:bg-axone-flounce-10 shadow-medium hover:shadow-glow-flounce',
   };
   
   const sizeClasses = {
@@ -31,17 +33,23 @@ const Button: React.FC<ButtonProps> = ({
     lg: 'px-8 py-4 text-lg',
   };
   
-  const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed hover:scale-100' : '';
+  const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed hover:scale-100 hover:shadow-none' : '';
   
   return (
     <motion.button
-      whileHover={!disabled ? { scale: 1.02 } : {}}
-      whileTap={!disabled ? { scale: 0.98 } : {}}
+      whileHover={!disabled ? { scale: 1.02, y: -2 } : {}}
+      whileTap={!disabled ? { scale: 0.98, y: 0 } : {}}
       onClick={onClick}
       disabled={disabled}
       className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${disabledClasses} ${className}`}
     >
-      {children}
+      {/* Effet de brillance */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white-20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+      
+      {/* Contenu */}
+      <span className="relative z-10 flex items-center justify-center gap-2">
+        {children}
+      </span>
     </motion.button>
   );
 };

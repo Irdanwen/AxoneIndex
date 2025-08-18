@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import { motion } from 'framer-motion';
 
@@ -22,11 +24,11 @@ const SectionTitle: React.FC<SectionTitleProps> = ({
       viewport={{ once: true }}
       className={`${centered ? 'text-center' : ''} ${className}`}
     >
-      <h2 className="text-3xl md:text-4xl font-semibold text-axone-white mb-4">
+      <h2 className="text-3xl md:text-4xl font-bold text-white-pure mb-4 font-poppins">
         {title}
       </h2>
       {subtitle && (
-        <p className="text-lg text-axone-white-75 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-lg text-white-85 max-w-2xl mx-auto leading-relaxed font-poppins">
           {subtitle}
         </p>
       )}
