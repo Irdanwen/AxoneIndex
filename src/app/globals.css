@@ -1,0 +1,58 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', sans-serif;
+  }
+  
+  body {
+    @apply bg-axone-dark text-axone-white font-inter;
+  }
+}
+
+@layer components {
+  /* Composants réutilisables */
+  .btn-primary {
+    @apply bg-axone-accent text-axone-dark px-6 py-3 rounded-xl font-semibold 
+           transition-all duration-300 hover:scale-105 hover:shadow-glow
+           focus:outline-none focus:ring-2 focus:ring-axone-accent focus:ring-opacity-50;
+  }
+  
+  .btn-secondary {
+    @apply border border-axone-white-75 text-axone-white px-6 py-3 rounded-xl font-semibold
+           transition-all duration-300 hover:scale-105 hover:bg-axone-white-75 hover:text-axone-dark
+           focus:outline-none focus:ring-2 focus:ring-axone-white focus:ring-opacity-50;
+  }
+  
+  .glass-card {
+    @apply bg-axone-black-35 backdrop-blur-md border border-axone-white-60 rounded-2xl shadow-soft;
+  }
+  
+  .section-padding {
+    @apply py-20 md:py-28;
+  }
+  
+  .container-custom {
+    @apply max-w-6xl mx-auto px-4;
+  }
+  
+  .text-gradient {
+    @apply bg-gradient-to-r from-axone-accent to-axone-white bg-clip-text text-transparent;
+  }
+  
+  .nav-link {
+    @apply text-axone-white-75 hover:text-axone-white transition-colors duration-300
+           relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 
+           after:bg-axone-accent after:transition-all after:duration-300
+           hover:after:w-full;
+  }
+}
+
+@layer utilities {
+  .drop-shadow-soft {
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+  }
+}
