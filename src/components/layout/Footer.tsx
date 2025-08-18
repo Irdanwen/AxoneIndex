@@ -106,7 +106,7 @@ const Footer: React.FC = () => {
               {/* Message principal */}
               <div className="space-y-6">
                 <h3 className="text-3xl font-bold text-white-pure">
-                  Control what's yours with Axone
+                  Control what&apos;s yours with Axone
                 </h3>
                 <p className="text-white-75 text-lg leading-relaxed">
                   Join the future of decentralized finance. Maintain full control over your assets 

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ArrowRight, ChevronDown } from 'lucide-react';
+import Image from 'next/image';
 import Button from '../ui/Button';
 
 const Header: React.FC = () => {
@@ -19,11 +20,11 @@ const Header: React.FC = () => {
   }, []);
 
   const navItems = [
-    { label: 'Explore', href: '#explore', hasDropdown: true },
-    { label: 'Participate', href: '#participate', hasDropdown: true },
-    { label: 'Build', href: '#build', hasDropdown: true },
-    { label: 'MKR to SKY Upgrade Hub', href: '#upgrade', hasDropdown: false },
-    { label: 'FAQs', href: '#faqs', hasDropdown: false },
+    { label: 'Explore', href: '#explore' },
+    { label: 'Participate', href: '#participate' },
+    { label: 'Build', href: '#build' },
+    { label: 'Upgrade Hub', href: '#upgrade' },
+    { label: 'FAQs', href: '#faqs' },
   ];
 
   return (
@@ -38,74 +39,50 @@ const Header: React.FC = () => {
       }`}
     >
       <div className="container-custom relative">
-        <div className="flex items-center justify-between h-20">
-          {/* Logo Axone */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            className="flex items-center space-x-3 group cursor-pointer"
-          >
-            {/* Logo Axone */}
-            <motion.div 
-              whileHover={{ rotate: 360 }}
-              transition={{ duration: 0.6 }}
-              className="w-20 h-20 rounded-full flex items-center justify-center relative overflow-hidden bg-white/10"
-            >
-              <img 
-                src="/core_logo.png" 
-                alt="Axone Logo" 
-                className="w-16 h-16 object-contain max-w-full max-h-full"
-                style={{ width: '64px', height: '64px' }}
-              />
-            </motion.div>
-            <span className="text-xl font-bold text-white tracking-tight">Axone</span>
-          </motion.div>
-
-          {/* Desktop Navigation - En ligne */}
-          <nav className="hidden lg:flex items-center space-x-8">
-            {navItems.map((item, index) => (
-              <motion.div
-                key={item.label}
-                className="relative group"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <a
-                  href={item.href}
-                  className="flex items-center space-x-1 text-white hover:text-blue-300 transition-colors duration-200 font-medium text-sm"
-                >
-                  <span>{item.label}</span>
-                  {item.hasDropdown && (
-                    <ChevronDown className="w-3 h-3 opacity-70 group-hover:opacity-100 transition-opacity" />
-                  )}
-                </a>
-                {/* Ligne de soulignement au hover */}
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-white group-hover:w-full transition-all duration-300 ease-out"></div>
-              </motion.div>
-            ))}
-          </nav>
-
-          {/* Bouton "Launch App" */}
-          <div className="hidden lg:block">
+        <div className="flex items-center justify-between h-20 max-w-7xl mx-auto px-md">
+          <div className="flex items-center space-x-xl">
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 }}
               whileHover={{ scale: 1.02 }}
+              className="flex items-center space-x-3 group cursor-pointer"
             >
-              <Button 
-                variant="primary" 
-                size="md" 
-                className="bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-white/40 transition-all duration-200"
+              {/* Logo Axone */}
+              <motion.div 
+                whileHover={{ rotate: 360 }}
+                transition={{ duration: 0.6 }}
+                className="w-20 h-20 rounded-full flex items-center justify-center relative overflow-hidden bg-white/10"
               >
-                <span className="flex items-center space-x-2">
-                  <span>Launch App</span>
-                  <div className="w-4 h-4 bg-white rounded-sm flex items-center justify-center">
-                    <ArrowRight className="w-3 h-3 text-black" />
-                  </div>
-                </span>
-              </Button>
+                <Image 
+                  src="/core_logo.png" 
+                  alt="Axone Logo" 
+                  width={64}
+                  height={64}
+                  className="object-contain"
+                />
+              </motion.div>
+              <span className="text-xl font-bold text-white tracking-tight">Axone</span>
             </motion.div>
+
+            {/* Navigation horizontale simplifiée */}
+            <nav className="hidden lg:flex items-center space-x-lg">
+              {navItems.map((item, index) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  className="text-white-75 hover:text-axone-accent transition-colors duration-300 
+                             font-medium text-sm tracking-wider relative group"
+                >
+                  {item.label}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-axone-accent 
+                                 group-hover:w-full transition-all duration-300" />
+                </a>
+              ))}
+            </nav>
+          </div>
+
+          <div className="hidden lg:block">
+            <Button variant="primary" size="md" className="px-lg py-md">
+              <span className="font-medium">Launch App</span>
+            </Button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -142,51 +119,18 @@ const Header: React.FC = () => {
           </motion.button>
         </div>
 
-        {/* Mobile Menu */}
-        <AnimatePresence>
-          {isMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="lg:hidden bg-black/20 backdrop-blur-sm border-t border-white/10 mt-2 rounded-lg overflow-hidden"
-            >
-              <div className="py-4 space-y-2">
-                {navItems.map((item, index) => (
-                  <motion.a
-                    key={item.label}
-                    href={item.href}
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center justify-between px-4 py-3 text-white hover:bg-white/10 transition-colors duration-200 rounded-lg mx-2"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <span className="font-medium">{item.label}</span>
-                    {item.hasDropdown && (
-                      <ChevronDown className="w-4 h-4 opacity-70" />
-                    )}
-                  </motion.a>
-                ))}
-                <div className="px-4 pt-4 border-t border-white/10 mt-4">
-                  <Button 
-                    variant="primary" 
-                    size="md" 
-                    className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20"
-                  >
-                    <span className="flex items-center justify-center space-x-2">
-                      <span>Launch App</span>
-                      <div className="w-4 h-4 bg-white rounded-sm flex items-center justify-center">
-                        <ArrowRight className="w-3 h-3 text-black" />
-                      </div>
-                    </span>
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Mobile menu simplifié */}
+        {isMenuOpen && (
+          <div className="lg:hidden absolute top-full left-0 right-0 bg-axone-dark-lighter 
+                         border-t border-white-10 py-sm px-md space-y-xs">
+            {navItems.map(item => (
+              <a key={item.label} href={item.href} 
+                 className="block text-white-75 hover:text-axone-accent transition-colors">
+                {item.label}
+              </a>
+            ))}
+          </div>
+        )}
       </div>
     </motion.header>
   );

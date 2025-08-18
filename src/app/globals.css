@@ -49,7 +49,7 @@
   /* Gradients améliorés et plus subtils */
   --gradient-primary: linear-gradient(135deg, var(--color-axone-accent) 0%, var(--color-axone-flounce) 100%);
   --gradient-secondary: linear-gradient(135deg, var(--color-axone-flounce) 0%, var(--color-axone-dark) 100%);
-  --gradient-hero: linear-gradient(135deg, var(--color-axone-accent) 0%, var(--color-axone-flounce) 50%, var(--color-axone-dark) 100%);
+  --gradient-hero: linear-gradient(135deg, #d48a3a 0%, var(--color-axone-flounce) 50%, var(--color-axone-dark) 100%);
   --gradient-glass: linear-gradient(135deg, rgba(250, 176, 98, 0.08) 0%, rgba(74, 140, 140, 0.08) 100%);
   --gradient-text: linear-gradient(135deg, var(--color-axone-accent) 0%, var(--color-axone-flounce) 100%);
   --gradient-subtle: linear-gradient(135deg, rgba(250, 176, 98, 0.15) 0%, rgba(74, 140, 140, 0.15) 100%);

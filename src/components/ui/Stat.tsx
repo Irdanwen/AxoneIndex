@@ -32,9 +32,7 @@ const Stat: React.FC<StatProps> = ({
       </div>
       <div className="text-3xl md:text-4xl font-bold text-axone-white">
         <AnimatedCounter 
-          value={value} 
-          suffix={suffix} 
-          prefix={prefix}
+          value={`${prefix}${value}${suffix}`} 
         />
       </div>
     </motion.div>
