@@ -1,18 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Users, ChevronRight, DollarSign, BarChart3 } from 'lucide-react';
+import { ArrowRight, Users, DollarSign, BarChart3 } from 'lucide-react';
 import Button from '../ui/Button';
 import AnimatedCounter from '../ui/AnimatedCounter';
 import GlassCard from '../ui/GlassCard';
 
 const Hero: React.FC = () => {
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
 
   const stats = [
     { icon: Users, value: '125K+', label: 'Users' },
@@ -124,7 +119,7 @@ const Hero: React.FC = () => {
           {/* Titre principal */}
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 30 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
             className="hero-title font-black max-w-4xl mx-auto mb-16"
           >
@@ -136,7 +131,7 @@ const Hero: React.FC = () => {
           {/* Sous-titre */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
             className="space-y-4 max-w-4xl mx-auto mb-16"
           >
@@ -148,13 +143,14 @@ const Hero: React.FC = () => {
           {/* Boutons CTA */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="flex justify-center mb-16"
+            className="flex justify-center"
           >
             <Button 
               variant="primary" 
               size="lg" 
+              href="/referral"
               className="btn-with-icon group hover:shadow-glow transition-all duration-300"
             >
               Launch App
@@ -162,10 +158,13 @@ const Hero: React.FC = () => {
             </Button>
           </motion.div>
 
+          {/* Espacement explicite */}
+          <div className="h-20 md:h-24 lg:h-32"></div>
+
           {/* Statistiques */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 30 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
             className="flex flex-row justify-center items-center"
           >
@@ -173,7 +172,7 @@ const Hero: React.FC = () => {
               <motion.div
                 key={stat.label}
                 initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: isVisible ? 1 : 0, scale: isVisible ? 1 : 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.7 + index * 0.1 }}
                 whileHover={{ y: -8, scale: 1.05 }}
                 className="text-center group px-lg md:px-xl lg:px-2xl"

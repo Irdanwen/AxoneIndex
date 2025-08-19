@@ -124,6 +124,7 @@ const Footer: React.FC = () => {
                 <Button 
                   variant="primary" 
                   size="lg" 
+                  href="/referral"
                   className="btn-with-icon hover:shadow-glow transition-all duration-300"
                 >
                   Launch App

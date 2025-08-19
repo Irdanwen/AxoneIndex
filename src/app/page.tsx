@@ -1,18 +1,20 @@
 import React from 'react';
 import Header from '@/components/layout/Header';
-import Hero from '@/components/sections/Hero';
-import About from '@/components/sections/About';
-import HowItWorks from '@/components/sections/HowItWorks';
-import Footer from '@/components/layout/Footer';
 
 export default function Home() {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-axone-dark">
       <Header />
-      <Hero />
-      <About />
-      <HowItWorks />
-      <Footer />
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-white-pure mb-4">
+            Test - Header fonctionnel
+          </h1>
+          <p className="text-white-75">
+            Si vous voyez ce message, le Header fonctionne
+          </p>
+        </div>
+      </div>
     </main>
   );
 }

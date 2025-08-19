@@ -44,8 +44,8 @@ const TrustBar: React.FC = () => {
             Construit sur
           </h3>
           <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12">
-            {partners.map((partner, index) => (
-              <div key={index} className="flex flex-col items-center">
+            {partners.map((partner) => (
+              <div key={partner.name} className="flex flex-col items-center">
                 <div className="w-12 h-12 bg-axone-accent rounded-lg flex items-center justify-center mb-2">
                   <span className="text-axone-dark font-bold text-sm">
                     {partner.name.charAt(0)}
@@ -66,8 +66,8 @@ const TrustBar: React.FC = () => {
           viewport={{ once: true }}
           className="grid md:grid-cols-3 gap-6"
         >
-          {trustPoints.map((point, index) => (
-            <div key={index} className="text-center">
+          {trustPoints.map((point) => (
+            <div key={point.title} className="text-center">
               <div className="w-12 h-12 bg-axone-accent rounded-lg flex items-center justify-center mx-auto mb-3">
                 <point.icon size={24} className="text-axone-dark" />
               </div>

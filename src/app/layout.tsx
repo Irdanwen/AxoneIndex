@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { WagmiProvider } from '@/components/providers/WagmiProvider'
 
 export const metadata: Metadata = {
   title: 'Axone Finance - L\'avenir de la finance décentralisée',
@@ -76,7 +77,9 @@ export default function RootLayout({
         <meta name="msapplication-config" content="/browserconfig.xml" />
       </head>
       <body className="antialiased">
-        {children}
+        <WagmiProvider>
+          {children}
+        </WagmiProvider>
       </body>
     </html>
   )
