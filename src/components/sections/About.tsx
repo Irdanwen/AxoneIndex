@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Coins, Shield, Zap, TrendingUp } from 'lucide-react';
+import { ArrowRight, Shield, Zap, TrendingUp } from 'lucide-react';
+import Image from 'next/image';
 import Button from '../ui/Button';
 
 const About: React.FC = () => {
@@ -45,17 +46,7 @@ const About: React.FC = () => {
             viewport={{ once: true }}
             className="space-y-8"
           >
-            {/* Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              viewport={{ once: true }}
-              className="inline-flex items-center space-x-3 glass-card px-6 py-3 rounded-full border border-axone-accent-20"
-            >
-              <Coins className="w-5 h-5 text-axone-accent" />
-              <span className="text-sm font-semibold text-white-pure">Axone Protocol</span>
-            </motion.div>
+
 
             {/* Titre */}
             <motion.h2
@@ -137,7 +128,7 @@ const About: React.FC = () => {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="relative"
+            className="relative min-h-[400px] md:min-h-[500px] lg:min-h-[600px] flex items-center justify-center"
           >
             {/* Carte principale */}
             <motion.div
@@ -145,43 +136,45 @@ const About: React.FC = () => {
               whileInView={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3 }}
               viewport={{ once: true }}
-              className="glass-card-strong p-12 rounded-3xl relative overflow-hidden border border-axone-accent-20 hover:border-axone-accent transition-colors"
+              className="glass-card-strong p-3 md:p-4 lg:p-5 rounded-2xl relative overflow-hidden border border-axone-accent-20 hover:border-axone-accent transition-colors w-30"
             >
               {/* Effet de brillance */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white-10 to-transparent transform -skew-x-12 -translate-x-full animate-shimmer"></div>
               
               <div className="relative z-10 text-center">
-                {/* Logo Axone stylisé */}
+                {/* Logo Axone du projet */}
                 <motion.div 
                   whileHover={{ scale: 1.1, rotate: 5 }}
                   transition={{ duration: 0.3 }}
-                  className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-8 shadow-glow"
+                  className="w-25 h-25 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4 shadow-glow overflow-hidden"
                 >
-                  <svg className="w-10 h-10 text-white" viewBox="0 0 64 64" fill="none">
-                    <path d="M32 8L56 32L32 56L8 32L32 8Z" stroke="currentColor" strokeWidth="3" fill="none"/>
-                    <circle cx="32" cy="32" r="12" stroke="currentColor" strokeWidth="3" fill="none"/>
-                    <circle cx="32" cy="32" r="4" fill="currentColor"/>
-                  </svg>
+                  <Image 
+                    src="/core_logo.png" 
+                    alt="Axone Logo" 
+                    width={100}
+                    height={100}
+                    className="w-full h-full object-contain p-2"
+                  />
                 </motion.div>
                 
-                <h3 className="text-3xl font-bold text-white-pure mb-6">
+                <h3 className="text-lg md:text-xl font-bold text-white-pure mb-2 md:mb-3">
                   Axone Token
                 </h3>
-                <p className="text-white-85 mb-8 leading-relaxed text-lg">
+                <p className="text-white-85 mb-3 md:mb-4 leading-relaxed text-xs md:text-sm">
                   The native token powering the Axone ecosystem with{' '}
                   <span className="text-axone-accent font-semibold">governance rights</span> and{' '}
                   <span className="text-axone-flounce font-semibold">reward distribution</span>
                 </p>
                 
                 {/* Stats */}
-                <div className="grid grid-cols-2 gap-8">
+                <div className="grid grid-cols-2 gap-2 md:gap-3 lg:gap-4">
                   <div className="text-center">
-                    <div className="text-3xl font-black text-axone-accent">1M</div>
-                    <div className="text-sm text-white-60 font-medium">Total Supply</div>
+                    <div className="text-lg md:text-xl font-black text-axone-accent">1M</div>
+                    <div className="text-xs text-white-60 font-medium">Total Supply</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-3xl font-black text-axone-flounce">$2.45</div>
-                    <div className="text-sm text-white-60 font-medium">Current Price</div>
+                    <div className="text-lg md:text-xl font-black text-axone-flounce">$2.45</div>
+                    <div className="text-xs text-white-60 font-medium">Current Price</div>
                   </div>
                 </div>
               </div>
@@ -194,14 +187,14 @@ const About: React.FC = () => {
               transition={{ delay: 0.6 }}
               viewport={{ once: true }}
               whileHover={{ y: -5, scale: 1.05 }}
-              className="absolute -top-8 -right-8 glass-card p-6 rounded-2xl border border-axone-accent-20 hover:border-axone-accent transition-all duration-300"
+              className="absolute -top-2 -right-2 md:-top-3 md:-right-3 lg:-top-4 lg:-right-4 glass-card p-2 md:p-3 lg:p-4 rounded-xl border border-axone-accent-20 hover:border-axone-accent transition-all duration-300"
             >
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-white" />
+              <div className="flex items-center space-x-2 md:space-x-3">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-white" />
                 </div>
                 <div>
-                  <div className="text-xl font-bold text-white-pure">+24.7%</div>
+                  <div className="text-sm md:text-base font-bold text-white-pure">+24.7%</div>
                   <div className="text-xs text-white-60 font-medium">30d</div>
                 </div>
               </div>
@@ -213,14 +206,14 @@ const About: React.FC = () => {
               transition={{ delay: 0.7 }}
               viewport={{ once: true }}
               whileHover={{ y: -5, scale: 1.05 }}
-              className="absolute -bottom-8 -left-8 glass-card p-6 rounded-2xl border border-axone-flounce-20 hover:border-axone-flounce transition-all duration-300"
+              className="absolute -bottom-2 -left-2 md:-bottom-3 md:-left-3 lg:-bottom-4 lg:-left-4 glass-card p-2 md:p-3 lg:p-4 rounded-xl border border-axone-flounce-20 hover:border-axone-flounce transition-all duration-300"
             >
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-gradient-secondary rounded-xl flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-white" />
+              <div className="flex items-center space-x-2 md:space-x-3">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-secondary rounded-lg flex items-center justify-center">
+                  <Shield className="w-3 h-3 md:w-4 md:h-4 text-white" />
                 </div>
                 <div>
-                  <div className="text-xl font-bold text-white-pure">Audited</div>
+                  <div className="text-sm md:text-base font-bold text-white-pure">Audited</div>
                   <div className="text-xs text-white-60 font-medium">Security</div>
                 </div>
               </div>

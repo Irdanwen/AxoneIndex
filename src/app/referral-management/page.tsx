@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useAccount, useContractRead, useContractWrite, useChainId, useWaitForTransactionReceipt } from 'wagmi'
+import { useState } from 'react'
+import { useAccount, useContractRead, useContractWrite, useChainId } from 'wagmi'
 import { REFERRAL_REGISTRY_ADDRESS, SEPOLIA_CHAIN_ID } from '@/lib/referralUtils'
 import ReferralRegistryABI from '@/lib/abi/ReferralRegistry.json'
 import GlassCard from '@/components/ui/GlassCard'
@@ -25,8 +25,7 @@ export default function ReferralManagement() {
     address: REFERRAL_REGISTRY_ADDRESS as `0x${string}`,
     abi: ReferralRegistryABI.abi,
     functionName: 'referrerOf',
-    args: address ? [address] : undefined,
-    enabled: !!address && isConnected
+    args: address ? [address] : undefined
   })
 
   // Vérification du statut whitelisté
@@ -34,8 +33,7 @@ export default function ReferralManagement() {
     address: REFERRAL_REGISTRY_ADDRESS as `0x${string}`,
     abi: ReferralRegistryABI.abi,
     functionName: 'isWhitelisted',
-    args: address ? [address] : undefined,
-    enabled: !!address && isConnected
+    args: address ? [address] : undefined
   })
 
   const hasReferrer = referrer && referrer !== '0x0000000000000000000000000000000000000000'
@@ -46,54 +44,18 @@ export default function ReferralManagement() {
     address: REFERRAL_REGISTRY_ADDRESS as `0x${string}`,
     abi: ReferralRegistryABI.abi,
     functionName: 'codesCreated',
-    args: address ? [address] : undefined,
-    enabled: !!address && isConnected && isWhitelisted && hasReferrer
+    args: address ? [address] : undefined
   })
 
   const { data: unusedCodes, refetch: refetchUnusedCodes } = useContractRead({
     address: REFERRAL_REGISTRY_ADDRESS as `0x${string}`,
     abi: ReferralRegistryABI.abi,
     functionName: 'getUnusedCodes',
-    args: address ? [address] : undefined,
-    enabled: !!address && isConnected && isWhitelisted && hasReferrer
-  })
-
-  const { data: codesCreated } = useContractRead({
-    address: REFERRAL_REGISTRY_ADDRESS as `0x${string}`,
-    abi: ReferralRegistryABI.abi,
-    functionName: 'codesCreated',
-    args: address ? [address] : undefined,
-    enabled: !!address && isConnected && isWhitelisted && hasReferrer
+    args: address ? [address] : undefined
   })
 
   // Fonctionnalités d'interaction
   const { writeContract, isPending: isCreatingCodePending } = useContractWrite()
-
-  const { write: revokeCode, data: revokeCodeHash } = useContractWrite({
-    address: REFERRAL_REGISTRY_ADDRESS as `0x${string}`,
-    abi: ReferralRegistryABI.abi,
-    functionName: 'revokeCode',
-    onSuccess: () => {
-      setSuccess('Code supprimé avec succès !')
-      setError('')
-      setIsLoading(true)
-    },
-    onError: (error) => {
-      setError(`Erreur lors de la suppression: ${error.message}`)
-      setSuccess('')
-    }
-  })
-
-
-
-  const { isLoading: isRevokingCode } = useWaitForTransactionReceipt({
-    hash: revokeCodeHash,
-    onSuccess: () => {
-      setIsLoading(false)
-      refetchUnusedCodes()
-      refetchReferralCount()
-    }
-  })
 
   // Gestionnaires d'actions
   const handleCreateCode = () => {
@@ -162,25 +124,11 @@ export default function ReferralManagement() {
       })
     } catch (error) {
       console.error('Erreur lors de l\'appel writeContract:', error)
-      setError(`Erreur lors de l'appel: ${error.message}`)
+      setError(`Erreur lors de l'appel: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     }
   }
 
-  const handleRevokeCode = (code: string) => {
-    if (!isConnected) {
-      setError('Veuillez vous connecter à votre wallet')
-      return
-    }
 
-    if (chainId !== SEPOLIA_CHAIN_ID) {
-      setError('Veuillez vous connecter au réseau Sepolia')
-      return
-    }
-
-    // Note: revokeCode nécessite les droits d'owner et un codeHash (bytes32)
-    // Cette fonction ne sera probablement pas accessible aux utilisateurs normaux
-    setError('Cette fonction nécessite les droits administrateur')
-  }
 
   // Si l'utilisateur n'est pas connecté
   if (!isConnected) {
@@ -224,7 +172,7 @@ export default function ReferralManagement() {
   if (isLoadingAccess) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center">
-        <div className="text-white text-xl">Vérification de l'accès...</div>
+        <div className="text-white text-xl">Vérification de l&apos;accès...</div>
       </div>
     )
   }
@@ -292,7 +240,7 @@ export default function ReferralManagement() {
               />
               <Stat 
                 label="Codes disponibles" 
-                value={unusedCodes?.length || 0}
+                value={Array.isArray(unusedCodes) ? unusedCodes.length : 0}
                 className="text-center"
               />
               <Stat 
@@ -333,7 +281,7 @@ export default function ReferralManagement() {
               <GlassCard className="p-6 mb-8 text-center" style={{ maxWidth: '50rem', margin: '0 auto' }}>
                 <h2 className="text-2xl font-bold text-white mb-4">Informations parrain</h2>
                 <div className="text-gray-300">
-                  <p><strong>Votre parrain:</strong> {referrer?.slice(0, 6)}...{referrer?.slice(-4)}</p>
+                  <p><strong>Votre parrain:</strong> {typeof referrer === 'string' ? `${referrer.slice(0, 6)}...${referrer.slice(-4)}` : 'Non défini'}</p>
                 </div>
               </GlassCard>
             </motion.div>
@@ -359,13 +307,13 @@ export default function ReferralManagement() {
                 </div>
               )}
 
-              {unusedCodes?.length === 0 ? (
+              {Array.isArray(unusedCodes) && unusedCodes.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-gray-400">Aucun code disponible - Créez-en un nouveau !</p>
                 </div>
-              ) : (
+              ) : Array.isArray(unusedCodes) && unusedCodes.length > 0 ? (
                 <div className="grid gap-4">
-                  {unusedCodes?.map((code, i) => (
+                  {unusedCodes.map((code, i) => (
                                     <GlassCard key={i} className="flex flex-col items-center p-4 text-center" style={{ maxWidth: '50rem', margin: '0 auto' }}>
                   <span className="font-mono bg-gray-800 px-3 py-1 rounded break-all text-white mb-4">
                     {code}
@@ -382,17 +330,19 @@ export default function ReferralManagement() {
                       {copiedCode === code ? 'Copié !' : 'Copier'}
                     </button>
                     <button 
-                      onClick={() => handleRevokeCode(code)}
-                      disabled={isRevokingCode || isLoading}
+                      onClick={() => {
+                        setError('Cette fonction nécessite les droits administrateur')
+                      }}
+                      disabled={isLoading}
                       className="text-sm bg-red-900/50 hover:bg-red-900 px-3 py-1 rounded transition text-red-300"
                     >
-                      {isRevokingCode ? 'Suppression...' : 'Supprimer'}
+                      Supprimer
                     </button>
                   </div>
                 </GlassCard>
                   ))}
                 </div>
-              )}
+              ) : null}
             </motion.div>
 
             {/* Informations utilisateur */}
@@ -414,3 +364,4 @@ export default function ReferralManagement() {
     </>
   )
 }
+

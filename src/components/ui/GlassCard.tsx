@@ -8,6 +8,7 @@ interface GlassCardProps {
   className?: string;
   padding?: 'sm' | 'md' | 'lg';
   onClick?: () => void;
+  style?: React.CSSProperties;
 }
 
 const GlassCard: React.FC<GlassCardProps> = ({
@@ -15,6 +16,7 @@ const GlassCard: React.FC<GlassCardProps> = ({
   className = '',
   padding = 'md',
   onClick,
+  style,
 }) => {
   const paddingClasses = {
     sm: 'p-4',
@@ -27,6 +29,7 @@ const GlassCard: React.FC<GlassCardProps> = ({
       whileHover={{ scale: 1.02, y: -4 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
       onClick={onClick}
+      style={style}
       className={`glass-card backdrop-blur-sm border border-white-20 hover:border-axone-accent-20 transition-all duration-300 ${paddingClasses[padding]} ${className} ${onClick ? 'cursor-pointer' : ''}`}
     >
       {/* Effet de brillance subtil */}

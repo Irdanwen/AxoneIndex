@@ -11,6 +11,7 @@ interface ButtonProps {
   href?: string;
   className?: string;
   disabled?: boolean;
+  style?: React.CSSProperties;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -21,6 +22,7 @@ const Button: React.FC<ButtonProps> = ({
   href,
   className = '',
   disabled = false,
+  style,
 }) => {
   const baseClasses = 'font-semibold rounded-xl transition-all duration-300 relative overflow-hidden border-2';
   
@@ -55,6 +57,7 @@ const Button: React.FC<ButtonProps> = ({
         href={href}
         whileHover={!disabled ? { scale: 1.02, y: -2 } : {}}
         whileTap={!disabled ? { scale: 0.98, y: 0 } : {}}
+        style={style}
         className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${disabledClasses} ${className} inline-block`}
       >
         {buttonContent}
@@ -68,6 +71,7 @@ const Button: React.FC<ButtonProps> = ({
       whileTap={!disabled ? { scale: 0.98, y: 0 } : {}}
       onClick={onClick}
       disabled={disabled}
+      style={style}
       className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${disabledClasses} ${className}`}
     >
       {/* Effet de brillance */}
