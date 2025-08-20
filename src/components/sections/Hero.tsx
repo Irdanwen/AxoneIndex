@@ -145,7 +145,7 @@ const Hero: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="flex justify-center"
+            className="flex flex-wrap justify-center gap-4"
           >
             <Button 
               variant="primary" 
@@ -155,6 +155,14 @@ const Hero: React.FC = () => {
             >
               Launch App
               <ArrowRight className="w-5 h-5 btn-icon" />
+            </Button>
+            <Button 
+              variant="secondary" 
+              size="lg" 
+              href="/documentation"
+              className="hover:shadow-glow-flounce transition-all duration-300"
+            >
+              Documentation
             </Button>
           </motion.div>
 

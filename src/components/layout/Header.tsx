@@ -63,6 +63,14 @@ const Header: React.FC = () => {
             <Button 
               variant="secondary" 
               size="md"
+              href="/documentation"
+              className="text-white hover:text-axone-accent"
+            >
+              <span>Documentation</span>
+            </Button>
+            <Button 
+              variant="secondary" 
+              size="md"
               href="/referral-management"
               className="text-white hover:text-axone-accent"
             >

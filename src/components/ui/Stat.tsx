@@ -6,10 +6,12 @@ import AnimatedCounter from './AnimatedCounter';
 
 interface StatProps {
   label: string;
-  value: number;
+  value: string | number;
   suffix?: string;
   prefix?: string;
   className?: string;
+  icon?: string;
+  gradient?: string;
 }
 
 const Stat: React.FC<StatProps> = ({
@@ -18,7 +20,13 @@ const Stat: React.FC<StatProps> = ({
   suffix = '',
   prefix = '',
   className = '',
+  icon,
+  gradient = "from-axone-accent to-axone-flounce"
 }) => {
+  const displayValue = typeof value === 'number' 
+    ? `${prefix}${value}${suffix}` 
+    : value;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -30,10 +38,13 @@ const Stat: React.FC<StatProps> = ({
       <div className="text-sm text-axone-white-70 uppercase tracking-wide mb-2">
         {label}
       </div>
-      <div className="text-3xl md:text-4xl font-bold text-axone-white">
-        <AnimatedCounter 
-          value={`${prefix}${value}${suffix}`} 
-        />
+      <div className={`text-3xl md:text-4xl font-bold ${gradient ? `bg-clip-text text-transparent bg-gradient-to-r ${gradient}` : 'text-axone-white'}`}>
+        {icon && <span className="mr-2">{icon}</span>}
+        {typeof value === 'number' ? (
+          <AnimatedCounter value={displayValue} />
+        ) : (
+          displayValue
+        )}
       </div>
     </motion.div>
   );
