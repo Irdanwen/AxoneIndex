@@ -5,3 +5,4 @@ export const config = createConfig({
   chains: [sepolia],
   transports: { [sepolia.id]: http() }
 })
+

@@ -1,66 +1,67 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useAccount, useConnect, useContractRead, useContractWrite, useNetwork } from 'wagmi'
-import { sepolia } from 'wagmi/chains'
-import { GlassCard } from '@/components/ui/GlassCard'
-import { Button } from '@/components/ui/Button'
+import { useState } from 'react'
+import { useAccount, useConnect, useContractRead, useContractWrite, useChainId } from 'wagmi'
+import GlassCard from '@/components/ui/GlassCard'
+import Button from '@/components/ui/Button'
 import { getCodeHash, REFERRAL_REGISTRY_ADDRESS, SEPOLIA_CHAIN_ID } from '@/lib/referralUtils'
 import ReferralRegistryABI from '@/lib/abi/ReferralRegistry.json'
 
 export default function ReferralPage() {
   const [referralCode, setReferralCode] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
   const { address, isConnected } = useAccount()
-  const { chain } = useNetwork()
+  const chainId = useChainId()
   const { connect, connectors } = useConnect()
 
   // Vérifier si l'utilisateur est whitelisté
-  const { data: isWhitelisted, isLoading: isCheckingWhitelist } = useContractRead({
+  const { data: isWhitelisted } = useContractRead({
     address: REFERRAL_REGISTRY_ADDRESS as `0x${string}`,
     abi: ReferralRegistryABI.abi,
     functionName: 'isWhitelisted',
-    args: [address],
-    enabled: !!address && chain?.id === SEPOLIA_CHAIN_ID,
+    args: address ? [address] : undefined,
   })
 
   // Fonction pour utiliser un code de parrainage
-  const { write: useCode, isPending: isUsingCode } = useContractWrite({
-    address: REFERRAL_REGISTRY_ADDRESS as `0x${string}`,
-    abi: ReferralRegistryABI.abi,
-    functionName: 'useCode',
-    onSuccess: () => {
-      setSuccess('Code de parrainage utilisé avec succès ! Vous êtes maintenant whitelisté.')
-      setError('')
-      setReferralCode('')
-    },
-    onError: (err) => {
-      setError(`Erreur: ${err.message}`)
-      setSuccess('')
-    }
-  })
-
+  const { writeContract, isPending: isUsingCode } = useContractWrite()
+  
   const handleUseCode = () => {
     if (!referralCode.trim()) {
       setError('Veuillez entrer un code de parrainage')
       return
     }
 
-    if (chain?.id !== SEPOLIA_CHAIN_ID) {
+    if (chainId !== SEPOLIA_CHAIN_ID) {
       setError('Veuillez vous connecter au réseau Sepolia')
       return
     }
 
     try {
       const codeHash = getCodeHash(referralCode.trim())
-      useCode({ args: [codeHash] })
-    } catch (err) {
+      writeContract({
+        address: REFERRAL_REGISTRY_ADDRESS as `0x${string}`,
+        abi: ReferralRegistryABI.abi,
+        functionName: 'useCode',
+        args: [codeHash],
+      }, {
+        onSuccess: () => {
+          setSuccess('Code de parrainage utilisé avec succès ! Vous êtes maintenant whitelisté.')
+          setError('')
+          setReferralCode('')
+        },
+        onError: (error) => {
+          setError(`Erreur: ${error.message}`)
+          setSuccess('')
+        }
+      })
+    } catch {
       setError('Erreur lors du hashage du code')
     }
   }
+
+
 
   const handleConnect = () => {
     if (connectors[0]) {
@@ -69,14 +70,15 @@ export default function ReferralPage() {
   }
 
   const handleGoToApp = () => {
-    window.open('https://google.com', '_blank')
+    window.location.href = '/referral-management'
   }
 
   // Si l'utilisateur n'est pas connecté
   if (!isConnected) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-blue-50 flex items-center justify-center p-4">
-        <GlassCard className="max-w-md w-full p-8 text-center">
+        <div className="container-custom">
+          <GlassCard className="w-full p-8 text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">Connexion Requise</h1>
           <p className="text-gray-600 mb-8">
             Connectez votre wallet pour accéder au système de parrainage
@@ -85,23 +87,26 @@ export default function ReferralPage() {
             Connecter Wallet
           </Button>
         </GlassCard>
+        </div>
       </div>
     )
   }
 
   // Si l'utilisateur n'est pas sur le bon réseau
-  if (chain?.id !== SEPOLIA_CHAIN_ID) {
+  if (chainId !== SEPOLIA_CHAIN_ID) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-blue-50 flex items-center justify-center p-4">
-        <GlassCard className="max-w-md w-full p-8 text-center">
+        <div className="container-custom">
+          <GlassCard className="w-full p-8 text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">Réseau Incorrect</h1>
           <p className="text-gray-600 mb-8">
             Veuillez vous connecter au réseau Sepolia pour continuer
           </p>
           <p className="text-sm text-gray-500 mb-4">
-            Réseau actuel: {chain?.name || 'Inconnu'}
+            Réseau actuel: {chainId === 1 ? 'Ethereum Mainnet' : chainId === 11155111 ? 'Sepolia' : `Chain ID: ${chainId}`}
           </p>
         </GlassCard>
+        </div>
       </div>
     )
   }
@@ -110,15 +115,17 @@ export default function ReferralPage() {
   if (isWhitelisted) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-blue-50 flex items-center justify-center p-4">
-        <GlassCard className="max-w-md w-full p-8 text-center">
+        <div className="container-custom">
+          <GlassCard className="w-full p-8 text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">Accès Autorisé</h1>
           <p className="text-gray-600 mb-8">
-            Vous êtes déjà whitelisté ! Vous pouvez accéder à l'application.
+            Vous êtes déjà whitelisté ! Vous pouvez maintenant gérer vos parrainages.
           </p>
           <Button onClick={handleGoToApp} className="w-full">
-            Go App
+            Gérer mes parrainages
           </Button>
         </GlassCard>
+        </div>
       </div>
     )
   }
@@ -126,7 +133,8 @@ export default function ReferralPage() {
   // Formulaire de saisie du code de parrainage
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-blue-50 flex items-center justify-center p-4">
-      <GlassCard className="max-w-md w-full p-8">
+      <div className="container-custom">
+        <GlassCard className="w-full p-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">
           Code de Parrainage
         </h1>
@@ -174,6 +182,7 @@ export default function ReferralPage() {
           </div>
         </div>
       </GlassCard>
+      </div>
     </div>
   )
 }

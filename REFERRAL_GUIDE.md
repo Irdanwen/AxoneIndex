@@ -82,3 +82,4 @@ Tous les boutons "Launch App" pointent maintenant vers `/referral` :
 - Cartes en verre avec backdrop-blur-sm
 - Animations de validation
 - Responsive design
+

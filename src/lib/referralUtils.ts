@@ -8,3 +8,4 @@ export const REFERRAL_REGISTRY_ADDRESS = '0xE77b9AB620c90eeFC761Afd5C8e60F9913A3
 
 // Chain ID pour Sepolia
 export const SEPOLIA_CHAIN_ID = 11155111
+

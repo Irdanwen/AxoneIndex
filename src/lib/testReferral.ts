@@ -22,3 +22,4 @@ export function testMultipleCodes() {
     console.log(`${code} -> ${hash}`)
   })
 }
+

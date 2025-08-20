@@ -8,6 +8,7 @@ interface ButtonProps {
   variant?: 'primary' | 'secondary';
   size?: 'sm' | 'md' | 'lg';
   onClick?: () => void;
+  href?: string;
   className?: string;
   disabled?: boolean;
 }
@@ -17,6 +18,7 @@ const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
   size = 'md',
   onClick,
+  href,
   className = '',
   disabled = false,
 }) => {
@@ -35,6 +37,31 @@ const Button: React.FC<ButtonProps> = ({
   
   const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed hover:scale-100 hover:shadow-none' : '';
   
+  const buttonContent = (
+    <>
+      {/* Effet de brillance */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white-20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+      
+      {/* Contenu */}
+      <span className="relative z-10 flex items-center justify-center gap-2">
+        {children}
+      </span>
+    </>
+  );
+
+  if (href) {
+    return (
+      <motion.a
+        href={href}
+        whileHover={!disabled ? { scale: 1.02, y: -2 } : {}}
+        whileTap={!disabled ? { scale: 0.98, y: 0 } : {}}
+        className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${disabledClasses} ${className} inline-block`}
+      >
+        {buttonContent}
+      </motion.a>
+    );
+  }
+
   return (
     <motion.button
       whileHover={!disabled ? { scale: 1.02, y: -2 } : {}}

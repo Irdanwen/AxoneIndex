@@ -53,13 +53,21 @@ const Header: React.FC = () => {
             <span className="text-xl font-bold text-white tracking-tight">Axone</span>
           </motion.div>
 
-          {/* Bouton Launch App à droite */}
+          {/* Navigation à droite */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3 }}
-            whileHover={{ scale: 1.02 }}
+            className="flex items-center space-x-4"
           >
+            <Button 
+              variant="secondary" 
+              size="md"
+              href="/referral-management"
+              className="text-white hover:text-axone-accent"
+            >
+              <span>Gestion</span>
+            </Button>
             <Button 
               variant="primary" 
               size="md"
