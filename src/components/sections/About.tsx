@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Shield, Zap, TrendingUp } from 'lucide-react';
 import Image from 'next/image';
-import Button from '../ui/Button';
+import { Button } from '../ui/button';
 
 const About: React.FC = () => {
   const features = [

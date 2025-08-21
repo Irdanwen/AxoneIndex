@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Users, DollarSign, BarChart3 } from 'lucide-react';
-import Button from '../ui/Button';
+import { Button } from '../ui/button';
 import AnimatedCounter from '../ui/AnimatedCounter';
 import GlassCard from '../ui/GlassCard';
 

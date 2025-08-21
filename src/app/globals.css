@@ -1,8 +1,42 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
-@custom-variant dark (&:is(.dark *));
-
-@theme {
+:root {
+  /* Synchronisation avec Shadcn */
+  --background: var(--color-axone-light);
+  --foreground: var(--color-axone-dark);
+  --card: var(--color-axone-light);
+  --card-foreground: var(--color-axone-dark);
+  
+  /* Variables Shadcn pour le mode clair - synchronisées avec Axone */
+  --radius: 0.625rem;
+  --popover: var(--color-axone-light);
+  --popover-foreground: var(--color-axone-dark);
+  --primary: var(--color-axone-accent);
+  --primary-foreground: var(--color-axone-dark);
+  --secondary: var(--color-axone-light-secondary);
+  --secondary-foreground: var(--color-axone-dark);
+  --muted: var(--color-axone-light-secondary);
+  --muted-foreground: var(--color-white-60);
+  --accent: var(--color-axone-light-secondary);
+  --accent-foreground: var(--color-axone-dark);
+  --destructive: var(--color-error);
+  --border: var(--color-white-20);
+  --input: var(--color-white-20);
+  --ring: var(--color-axone-accent);
+  --chart-1: var(--color-axone-accent);
+  --chart-2: var(--color-axone-flounce);
+  --chart-3: var(--color-axone-dark);
+  --chart-4: var(--color-axone-accent-light);
+  --chart-5: var(--color-axone-flounce-light);
+  --sidebar: var(--color-axone-light);
+  --sidebar-foreground: var(--color-axone-dark);
+  --sidebar-primary: var(--color-axone-accent);
+  --sidebar-primary-foreground: var(--color-axone-dark);
+  --sidebar-accent: var(--color-axone-light-secondary);
+  --sidebar-accent-foreground: var(--color-axone-dark);
+  --sidebar-border: var(--color-white-20);
+  --sidebar-ring: var(--color-axone-accent);
+  
   /* Palette Axone Finance améliorée - Mode clair par défaut */
   --color-axone-accent: #fab062; /* Sandy Brown */
   --color-axone-flounce: #4a8c8c; /* Flounce */
@@ -51,7 +85,7 @@
   --gradient-primary: linear-gradient(135deg, var(--color-axone-accent) 0%, var(--color-axone-flounce) 100%);
   --gradient-secondary: linear-gradient(135deg, var(--color-axone-flounce) 0%, var(--color-axone-dark) 100%);
   --gradient-hero: linear-gradient(135deg, #d48a3a 0%, var(--color-axone-flounce) 50%, var(--color-axone-dark) 100%);
-  --gradient-glass: linear-gradient(135deg, rgba(250, 176, 98, 0.08) 0%, rgba(74, 140, 140, 0.08) 100%);
+  --gradient-glass: linear-gradient(135deg, rgba(250, 176, 98, 0.25) 0%, rgba(74, 140, 140, 0.25) 100%);
   --gradient-text: linear-gradient(135deg, var(--color-axone-accent) 0%, var(--color-axone-flounce) 100%);
   --gradient-subtle: linear-gradient(135deg, rgba(250, 176, 98, 0.15) 0%, rgba(74, 140, 140, 0.15) 100%);
 
@@ -128,6 +162,10 @@
   --spacing-2xl: 4rem;
   --spacing-3xl: 6rem;
 }
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Animations améliorées */
 @keyframes fadeIn {
@@ -252,10 +290,6 @@
     width: 100%;
   }
 }
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 @layer base {
   * {
@@ -419,8 +453,8 @@
   /* Cartes avec effets améliorés */
   .glass-card {
     background: var(--gradient-glass);
-    backdrop-filter: blur(var(--backdrop-blur-lg));
-    border: 1px solid var(--color-white-20);
+    backdrop-filter: blur(16px); /* Augmenter le flou pour plus de contraste */
+    border: 1px solid rgba(255, 255, 255, 0.15); /* Bordure plus visible */
     border-radius: var(--border-radius-xl);
     box-shadow: var(--shadow-medium);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -906,49 +940,16 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-:root {
-  --radius: 0.625rem;
-  
-  /* Mode clair par défaut */
-  --background: oklch(0.98 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
+
 
 .dark {
+  /* Synchronisation avec Shadcn pour le mode sombre */
+  --background: var(--color-axone-dark);
+  --foreground: var(--color-axone-light);
+  --card: var(--color-axone-dark-light);
+  --card-foreground: var(--color-axone-light);
+  
   /* Mode sombre - Override des variables */
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.922 0 0);
@@ -987,41 +988,33 @@
     @apply border-border outline-ring/50;
   }
   
-  html {
-    background: var(--color-axone-light) !important;
-  }
-  
   body {
-    background: var(--color-axone-light) !important;
-    color: var(--color-axone-dark) !important;
-    font-family: var(--font-family-poppins);
-    font-weight: var(--font-weight-normal);
+    font-family: 'Poppins', sans-serif;
+    font-weight: 400;
     line-height: 1.7;
     overflow-x: hidden;
-  }
-  
-  /* Mode sombre */
-  .dark html {
-    background: var(--color-axone-dark) !important;
-  }
-  
-  .dark body {
-    background: var(--color-axone-dark) !important;
-    color: var(--color-white-pure) !important;
   }
 }
 
 @layer utilities {
   .prose code {
-    @apply bg-black/20 px-2 py-1 rounded-md font-mono;
+    background: rgba(17, 24, 39, 0.2);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
   }
 
   .prose h3 {
-    @apply text-2xl font-bold text-axone-accent mt-8 mb-4;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-axone-accent);
+    margin-top: 2rem;
+    margin-bottom: 1rem;
   }
 
   .prose p {
-    @apply text-white-85 mb-4;
+    color: var(--color-white-85);
+    margin-bottom: 1rem;
   }
 }
 

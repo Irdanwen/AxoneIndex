@@ -6,7 +6,7 @@ import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { useAccount, useConnect, useSwitchChain } from 'wagmi';
 import { injected } from 'wagmi/connectors';
-import Button from '../ui/Button';
+import { Button } from '../ui/button';
 import ThemeToggle from '../ui/ThemeToggle';
 
 const Header: React.FC = () => {

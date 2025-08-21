@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Github, Twitter, MessageCircle, Mail } from 'lucide-react';
-import Button from '../ui/Button';
+import { Button } from '../ui/button';
 
 const Footer: React.FC = () => {
   const footerLinks = {

@@ -10,28 +10,100 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Couleurs de base Tailwind
+        'black': '#000000',
+        'white': '#ffffff',
+        'gray': {
+          '50': '#f9fafb',
+          '100': '#f3f4f6',
+          '200': '#e5e7eb',
+          '300': '#d1d5db',
+          '400': '#9ca3af',
+          '500': '#6b7280',
+          '600': '#4b5563',
+          '700': '#374151',
+          '800': '#1f2937',
+          '900': '#111827',
+        },
+        'red': {
+          '50': '#fef2f2',
+          '100': '#fee2e2',
+          '200': '#fecaca',
+          '300': '#fca5a5',
+          '400': '#f87171',
+          '500': '#ef4444',
+          '600': '#dc2626',
+          '700': '#b91c1c',
+          '800': '#991b1b',
+          '900': '#7f1d1d',
+        },
+        'green': {
+          '50': '#f0fdf4',
+          '100': '#dcfce7',
+          '200': '#bbf7d0',
+          '300': '#86efac',
+          '400': '#4ade80',
+          '500': '#22c55e',
+          '600': '#16a34a',
+          '700': '#15803d',
+          '800': '#166534',
+          '900': '#14532d',
+        },
+        'blue': {
+          '50': '#eff6ff',
+          '100': '#dbeafe',
+          '200': '#bfdbfe',
+          '300': '#93c5fd',
+          '400': '#60a5fa',
+          '500': '#3b82f6',
+          '600': '#2563eb',
+          '700': '#1d4ed8',
+          '800': '#1e40af',
+          '900': '#1e3a8a',
+        },
+        'yellow': {
+          '50': '#fffbeb',
+          '100': '#fef3c7',
+          '200': '#fde68a',
+          '300': '#fcd34d',
+          '400': '#fbbf24',
+          '500': '#f59e0b',
+          '600': '#d97706',
+          '700': '#b45309',
+          '800': '#92400e',
+          '900': '#78350f',
+        },
+        
         // Palette Axone Finance complète
-        'axone-accent': 'var(--color-axone-accent)',
-        'axone-flounce': 'var(--color-axone-flounce)',
-        'axone-dark': 'var(--color-axone-dark)',
+        'axone-accent': '#fab062',
+        'axone-flounce': '#4a8c8c',
+        'axone-dark': '#011f26',
+        
+        // Couleurs spécifiques pour les vaults
+        'axone': {
+          "sandy-brown": "#fab062",
+          "stellar-green": "#011f26",
+          "flounce": "#4a8c8c",
+          risk: {
+            low: "#4ade80",
+            medium: "#f59e0b",
+            high: "#ef4444"
+          }
+        },
         
         // Variations de couleurs
-        'axone-accent-light': 'var(--color-axone-accent-light)',
-        'axone-accent-dark': 'var(--color-axone-accent-dark)',
-        'axone-flounce-light': 'var(--color-axone-flounce-light)',
-        'axone-flounce-dark': 'var(--color-axone-flounce-dark)',
-        'axone-dark-light': 'var(--color-axone-dark-light)',
-        'axone-dark-lighter': 'var(--color-axone-dark-lighter)',
+        'axone-accent-light': '#fbbf7a',
+        'axone-accent-dark': '#e89a4a',
+        'axone-flounce-light': '#5ba3a3',
+        'axone-flounce-dark': '#3a7171',
+        'axone-dark-light': '#02323a',
+        'axone-dark-lighter': '#034a56',
         
         // Couleurs neutres améliorées
-        'white-pure': 'var(--color-white-pure)',
-        'axone-light': 'var(--color-axone-light)',
-        'axone-light-secondary': 'var(--color-axone-light-secondary)',
-        // Supprimer cette section - gérée par CSS variables
-        // Supprimer cette section - gérée par CSS variables
-        'black': {
-          '20': 'rgba(0,0,0,0.2)',
-        },
+        'white-pure': '#f8f8f8',
+        'axone-light': '#f8f9fa',
+        'axone-light-secondary': '#e9ecef',
+        
         'axone-black': {
           '20': 'rgba(0,0,0,0.2)',
         }

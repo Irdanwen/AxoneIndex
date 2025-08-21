@@ -77,12 +77,14 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#011f26" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
       </head>
-      <body className="antialiased">
-        <WagmiProvider>
-          <ThemeProvider>
-            {children}
-          </ThemeProvider>
-        </WagmiProvider>
+      <body className="antialiased bg-background">
+        <div className="hero-gradient min-h-screen w-full">
+          <WagmiProvider>
+            <ThemeProvider>
+              {children}
+            </ThemeProvider>
+          </WagmiProvider>
+        </div>
       </body>
     </html>
   )
