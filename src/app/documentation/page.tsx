@@ -54,7 +54,7 @@ export default function DocumentationPage() {
               <section id="overview" className="scroll-mt-20">
                 <SectionTitle 
                   title="Vue d'ensemble" 
-                  description="Comprendre le système AxoneIndex" 
+                  subtitle="Comprendre le système AxoneIndex" 
                 />
                 
                 <GlassCard className="p-8 mb-8">
@@ -92,7 +92,7 @@ export default function DocumentationPage() {
               <section id="referral" className="scroll-mt-20">
                 <SectionTitle 
                   title="Système de parrainage" 
-                  description="Fonctionnement technique" 
+                  subtitle="Fonctionnement technique" 
                 />
                 
                 <GlassCard className="p-6 mb-6">
@@ -106,8 +106,8 @@ export default function DocumentationPage() {
                         1
                       </div>
                       <p className="text-white-85">
-                        Lorsqu'un utilisateur crée un lien de parrainage, un hash cryptographique 
-                        est généré via <code className="bg-black-20 px-2 py-1 rounded">testHash.ts</code>
+                        Lorsqu&apos;un utilisateur crée un lien de parrainage, un hash cryptographique 
+                        est généré via <code className="bg-axone-black-20 px-2 py-1 rounded">testHash.ts</code>
                       </p>
                     </div>
                     
@@ -116,7 +116,7 @@ export default function DocumentationPage() {
                         2
                       </div>
                       <p className="text-white-85">
-                        Le contrat <code className="bg-black-20 px-2 py-1 rounded">ReferralRegistry.sol</code> 
+                        Le contrat <code className="bg-axone-black-20 px-2 py-1 rounded">ReferralRegistry.sol</code> 
                         stocke la relation entre les adresses Ethereum
                       </p>
                     </div>
@@ -128,26 +128,18 @@ export default function DocumentationPage() {
                     Exemple de code
                   </h3>
                   
-                  <div className="bg-black-20 rounded-xl p-4 font-mono text-sm overflow-x-auto">
-                    <span className="text-axone-accent">import</span> {'{ '}registerReferral{', '}getReferralCount{' '}{'}'} {'from '}{'"'}@/lib/referralUtils{'"'};<br />
-                    <br />
-                    <span className="text-axone-flounce">const</span> handleReferral = <span className="text-axone-accent">async</span> (referrer: string, referee: string) => {'{'}
-                    <br />
-                    &nbsp;&nbsp;<span className="text-axone-accent">try</span> {'{'}
-                    <br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;<span className="text-axone-flounce">const</span> tx = <span className="text-axone-accent">await</span> registerReferral(referrer, referee);
-                    <br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;<span className="text-axone-accent">await</span> tx.wait();
-                    <br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;<span className="text-axone-flounce">console</span>.log(<span className="text-white-60">"Parrainage enregistré !"</span>);
-                    <br />
-                    &nbsp;&nbsp;{'}'} <span className="text-axone-accent">catch</span> (error) {'{'}
-                    <br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;<span className="text-axone-flounce">console</span>.error(error);
-                    <br />
-                    &nbsp;&nbsp;{'}'}
-                    <br />
-                    {'}'}
+                  <div className="bg-axone-black-20 rounded-xl p-4 font-mono text-sm overflow-x-auto">
+                    <div><span className="text-axone-accent">import</span> {'{'} registerReferral, getReferralCount {'}'} from &quot;@/lib/referralUtils&quot;;</div>
+                    <div></div>
+                    <div><span className="text-axone-flounce">const</span> handleReferral = <span className="text-axone-accent">async</span> (referrer: string, referee: string) =&gt; {'{'}</div>
+                    <div>&nbsp;&nbsp;<span className="text-axone-accent">try</span> {'{'}</div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-axone-flounce">const</span> tx = <span className="text-axone-accent">await</span> registerReferral(referrer, referee);</div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-axone-accent">await</span> tx.wait();</div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-axone-flounce">console</span>.log(<span className="text-white-60">&quot;Parrainage enregistré !&quot;</span>);</div>
+                    <div>&nbsp;&nbsp;{'}'} <span className="text-axone-accent">catch</span> (error) {'{'}</div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-axone-flounce">console</span>.error(error);</div>
+                    <div>&nbsp;&nbsp;{'}'}</div>
+                    <div>{'}'}</div>
                   </div>
                 </GlassCard>
               </section>
@@ -156,7 +148,7 @@ export default function DocumentationPage() {
               <section id="contracts" className="scroll-mt-20">
                 <SectionTitle 
                   title="Smart Contracts" 
-                  description="Architecture blockchain" 
+                  subtitle="Architecture blockchain" 
                 />
                 
                 <GlassCard className="p-6 mb-6">
@@ -165,28 +157,20 @@ export default function DocumentationPage() {
                   </h3>
                   
                   <p className="text-white-85 mb-4">
-                    Le contrat principal qui gère l'enregistrement et le suivi des parrainages.
+                    Le contrat principal qui gère l&apos;enregistrement et le suivi des parrainages.
                   </p>
                   
-                  <div className="bg-black-20 rounded-xl p-4 font-mono text-sm overflow-x-auto">
-                    <span className="text-axone-accent">contract</span> ReferralRegistry {'{'}
-                    <br />
-                    &nbsp;&nbsp;mapping(address => address) <span className="text-axone-flounce">public</span> referrals;
-                    <br />
-                    &nbsp;&nbsp;mapping(address => uint256) <span className="text-axone-flounce">public</span> referralCounts;
-                    <br />
-                    <br />
-                    &nbsp;&nbsp;<span className="text-axone-accent">function</span> registerReferral(address referrer, address referee) <span className="text-axone-flounce">external</span> {'{'}
-                    <br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;require(referrer != referee, <span className="text-white-60">"Cannot refer yourself"</span>);
-                    <br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;referrals[referee] = referrer;
-                    <br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;referralCounts[referrer]++;
-                    <br />
-                    &nbsp;&nbsp;{'}'}
-                    <br />
-                    {'}'}
+                  <div className="bg-axone-black-20 rounded-xl p-4 font-mono text-sm overflow-x-auto">
+                    <div><span className="text-axone-accent">contract</span> ReferralRegistry {'{'}</div>
+                    <div>&nbsp;&nbsp;mapping(address =&gt; address) <span className="text-axone-flounce">public</span> referrals;</div>
+                    <div>&nbsp;&nbsp;mapping(address =&gt; uint256) <span className="text-axone-flounce">public</span> referralCounts;</div>
+                    <div></div>
+                    <div>&nbsp;&nbsp;<span className="text-axone-accent">function</span> registerReferral(address referrer, address referee) <span className="text-axone-flounce">external</span> {'{'}</div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;require(referrer != referee, <span className="text-white-60">&quot;Cannot refer yourself&quot;</span>);</div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;referrals[referee] = referrer;</div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;referralCounts[referrer]++;</div>
+                    <div>&nbsp;&nbsp;{'}'}</div>
+                    <div>{'}'}</div>
                   </div>
                 </GlassCard>
               </section>
@@ -195,7 +179,7 @@ export default function DocumentationPage() {
               <section id="api" className="scroll-mt-20">
                 <SectionTitle 
                   title="API Reference" 
-                  description="Fonctions et utilitaires" 
+                  subtitle="Fonctions et utilitaires" 
                 />
                 
                 <GlassCard className="p-6 mb-6">
@@ -211,9 +195,9 @@ export default function DocumentationPage() {
                       <p className="text-white-85 mb-2">
                         Enregistre un nouveau parrainage entre deux adresses Ethereum.
                       </p>
-                      <div className="bg-black-20 rounded-lg p-3 text-sm">
-                        <span className="text-axone-accent">Parameters:</span> referrer (address), referee (address)<br />
-                        <span className="text-axone-accent">Returns:</span> Transaction receipt
+                      <div className="bg-axone-black-20 rounded-lg p-3 text-sm">
+                        <div><span className="text-axone-accent">Parameters:</span> referrer (address), referee (address)</div>
+                        <div><span className="text-axone-accent">Returns:</span> Transaction receipt</div>
                       </div>
                     </div>
                     
@@ -224,9 +208,9 @@ export default function DocumentationPage() {
                       <p className="text-white-85 mb-2">
                         Récupère le nombre de parrainages effectués par une adresse.
                       </p>
-                      <div className="bg-black-20 rounded-lg p-3 text-sm">
-                        <span className="text-axone-accent">Parameters:</span> address (string)<br />
-                        <span className="text-axone-accent">Returns:</span> number
+                      <div className="bg-axone-black-20 rounded-lg p-3 text-sm">
+                        <div><span className="text-axone-accent">Parameters:</span> address (string)</div>
+                        <div><span className="text-axone-accent">Returns:</span> number</div>
                       </div>
                     </div>
                   </div>
@@ -237,7 +221,7 @@ export default function DocumentationPage() {
               <section id="faq" className="scroll-mt-20">
                 <SectionTitle 
                   title="FAQ" 
-                  description="Questions fréquentes" 
+                  subtitle="Questions fréquentes" 
                 />
                 
                 <GlassCard className="p-6">
@@ -248,7 +232,7 @@ export default function DocumentationPage() {
                       </h3>
                       <p className="text-white-85">
                         Connectez votre wallet Ethereum et utilisez la fonction de génération de lien 
-                        dans l'interface utilisateur. Un hash unique sera créé automatiquement.
+                        dans l&apos;interface utilisateur. Un hash unique sera créé automatiquement.
                       </p>
                     </div>
                     
@@ -258,7 +242,7 @@ export default function DocumentationPage() {
                       </h3>
                       <p className="text-white-85">
                         Non, une fois enregistré sur la blockchain, un parrainage ne peut pas être 
-                        modifié ou supprimé pour garantir l'intégrité du système.
+                        modifié ou supprimé pour garantir l&apos;intégrité du système.
                       </p>
                     </div>
                     
@@ -268,7 +252,7 @@ export default function DocumentationPage() {
                       </h3>
                       <p className="text-white-85">
                         Actuellement, le système fonctionne sur Ethereum mainnet et les réseaux de test 
-                        (Sepolia, Goerli). D'autres réseaux EVM-compatibles seront ajoutés prochainement.
+                        (Sepolia, Goerli). D&apos;autres réseaux EVM-compatibles seront ajoutés prochainement.
                       </p>
                     </div>
                   </div>
@@ -283,3 +267,4 @@ export default function DocumentationPage() {
     </div>
   );
 }
+
