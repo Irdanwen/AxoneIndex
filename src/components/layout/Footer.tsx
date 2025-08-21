@@ -91,7 +91,7 @@ const Footer: React.FC = () => {
                   className="w-12 h-12 rounded-2xl flex items-center justify-center relative overflow-hidden"
                   style={{background: 'var(--gradient-primary)'}}
                 >
-                  <svg className="w-8 h-8 text-white" viewBox="0 0 32 32" fill="none">
+                  <svg className="w-8 h-8 text-white-pure" viewBox="0 0 32 32" fill="none">
                     <path d="M16 4L28 16L16 28L4 16L16 4Z" stroke="currentColor" strokeWidth="2" fill="none"/>
                     <circle cx="16" cy="16" r="6" stroke="currentColor" strokeWidth="2" fill="none"/>
                     <circle cx="16" cy="16" r="2" fill="currentColor"/>

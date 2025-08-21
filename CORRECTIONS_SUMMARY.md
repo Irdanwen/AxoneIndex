@@ -1,123 +1,129 @@
-# Résumé des Corrections - Page de Parrainage Web3
+# Résumé des Corrections CSS - Synchronisation Tailwind/Variables CSS
 
-## 🐛 Bugs Corrigés
+## Problème identifié
+Le projet mélangeait deux systèmes de thème contradictoires :
+- Variables CSS dynamiques dans `globals.css` (pour le mode clair/sombre)
+- Couleurs Tailwind statiques dans `tailwind.config.ts` (ne réagissaient pas au mode sombre)
 
-### 1. **Dépendances Manquantes**
-- ❌ **Problème**: `@tanstack/react-query` manquante pour wagmi v2
-- ✅ **Solution**: Installation de `@tanstack/react-query` avec `--legacy-peer-deps`
+**Conséquence** : Incohérences visuelles, styles non appliqués, et comportements imprévisibles en fonction du mode.
 
-### 2. **Configuration Wagmi v2**
-- ❌ **Problème**: Provider wagmi sans QueryClient
-- ✅ **Solution**: Ajout de `QueryClientProvider` dans `WagmiProvider.tsx`
+## Corrections appliquées
 
-### 3. **API Wagmi v2 Incompatible**
-- ❌ **Problème**: Utilisation de l'API wagmi v1 (`useNetwork`, `enabled` prop)
-- ✅ **Solution**: Migration vers wagmi v2 (`useChainId`, `writeContract`)
-
-### 4. **Imports Incorrects**
-- ❌ **Problème**: Import des composants comme exports nommés
-- ✅ **Solution**: Correction des imports (`import GlassCard` au lieu de `import { GlassCard }`)
-
-### 5. **Composant Button Incomplet**
-- ❌ **Problème**: Prop `href` non supportée dans Button
-- ✅ **Solution**: Ajout de la prop `href` et logique conditionnelle pour `<a>` vs `<button>`
-
-### 6. **Variables Non Utilisées**
-- ❌ **Problème**: Variables `useEffect`, `sepolia`, `isLoading`, `isCheckingWhitelist` non utilisées
-- ✅ **Solution**: Suppression des imports et variables inutiles
-
-### 7. **Caractères Non Échappés**
-- ❌ **Problème**: Apostrophe non échappée dans "l'application"
-- ✅ **Solution**: Remplacement par `l&apos;application`
-
-### 8. **Gestion d'Erreurs**
-- ❌ **Problème**: Variable `error` non utilisée dans catch
-- ✅ **Solution**: Suppression du paramètre inutilisé
-
-## 🔧 Corrections Techniques
-
-### **WagmiProvider.tsx**
-```typescript
-// Avant
-<WagmiProviderBase config={config}>
-  {children}
-</WagmiProviderBase>
-
-// Après
-<WagmiProviderBase config={config}>
-  <QueryClientProvider client={queryClient}>
-    {children}
-  </QueryClientProvider>
-</WagmiProviderBase>
+### 1. Configuration Tailwind (`tailwind.config.ts`)
+✅ **Ajout du mode sombre** :
+```ts
+darkMode: 'class', // Synchronisation avec .dark dans globals.css
 ```
 
-### **Page Referral**
-```typescript
-// Avant (wagmi v1)
-const { chain } = useNetwork()
-const { write: useCode } = useContractWrite({...})
-enabled: !!address && chain?.id === SEPOLIA_CHAIN_ID
-
-// Après (wagmi v2)
-const chainId = useChainId()
-const { writeContract } = useContractWrite()
-args: address ? [address] : undefined
+✅ **Remplacement des couleurs statiques par des variables CSS** :
+```diff
+- 'axone-accent': '#fab062',
++ 'axone-accent': 'var(--color-axone-accent)',
+- 'axone-flounce': '#4a8c8c',
++ 'axone-flounce': 'var(--color-axone-flounce)',
+- 'axone-dark': '#011f26',
++ 'axone-dark': 'var(--color-axone-dark)',
 ```
 
-### **Composant Button**
-```typescript
-// Ajout de la prop href
-interface ButtonProps {
-  href?: string;
-  // ... autres props
-}
+✅ **Suppression des sections redondantes** :
+- Supprimé `axone-white` (géré par CSS variables)
+- Supprimé `axone-black` (géré par CSS variables)
 
-// Logique conditionnelle
-if (href) {
-  return <motion.a href={href}>...</motion.a>
-}
-return <motion.button>...</motion.button>
+### 2. Composant Header (`src/components/layout/Header.tsx`)
+✅ **Correction des couleurs de texte** :
+```diff
+- 'text-white'
++ 'text-white-pure'
 ```
 
-## ✅ Tests de Validation
+✅ **Correction des couleurs de fond** :
+```diff
+- 'bg-black/20'
++ 'bg-axone-dark/20'
+- 'bg-white/10'
++ 'bg-white-10'
+```
 
-### **Hashage des Codes**
-- ✅ Hash "TEST123" : `0x55965438c2b31211ad28431137e9ffd8cee0c9f26f991f5daeb3c80d79bb7781`
-- ✅ Validation avec ethers.js
-- ✅ Correspondance avec le contrat
+### 3. Composant About (`src/components/sections/About.tsx`)
+✅ **Correction des icônes** :
+```diff
+- 'text-white'
++ 'text-white-pure'
+```
 
-### **Compilation**
-- ✅ `npm run build` : Succès
-- ✅ Aucune erreur TypeScript
-- ✅ Aucun warning ESLint
+### 4. Composant Footer (`src/components/layout/Footer.tsx`)
+✅ **Correction du SVG** :
+```diff
+- 'text-white'
++ 'text-white-pure'
+```
 
-### **Navigation**
-- ✅ Tous les boutons "Launch App" pointent vers `/referral`
-- ✅ Header, Hero, Footer mis à jour
+### 5. Page Referral Management (`src/app/referral-management/page.tsx`)
+✅ **Correction des couleurs de texte** :
+```diff
+- 'text-white' → 'text-white-pure'
+- 'text-gray-300' → 'text-white-75'
+- 'text-gray-400' → 'text-white-60'
+```
 
-## 🎯 Fonctionnalités Opérationnelles
+✅ **Correction des couleurs de fond** :
+```diff
+- 'bg-gradient-to-b from-gray-900 to-black'
++ 'bg-axone-dark'
+- 'bg-gray-800'
++ 'bg-axone-dark-light'
+```
 
-### **Flux Utilisateur**
-1. ✅ Connexion wallet (MetaMask)
-2. ✅ Vérification réseau Sepolia
-3. ✅ Vérification whitelist
-4. ✅ Saisie code de parrainage
-5. ✅ Hashage et validation
-6. ✅ Redirection vers l'app
+✅ **Correction des couleurs d'état** :
+```diff
+- 'text-red-400' → 'text-error'
+- 'bg-red-900/50' → 'bg-error/20'
+- 'text-red-300' → 'text-error'
+- 'bg-green-900/50' → 'bg-success/20'
+- 'text-green-300' → 'text-success'
+- 'bg-blue-900/50' → 'bg-info/20'
+- 'text-blue-300' → 'text-info'
+```
 
-### **Sécurité**
-- ✅ Vérification chainId
-- ✅ Hashage sécurisé Keccak256
-- ✅ Gestion d'erreurs complète
-- ✅ Validation côté client et contrat
+### 6. Page Referral (`src/app/referral/page.tsx`)
+✅ **Correction des couleurs d'état** :
+```diff
+- 'bg-red-50' → 'bg-error/10'
+- 'text-red-600' → 'text-error'
+- 'bg-green-50' → 'bg-success/10'
+- 'text-green-600' → 'text-success'
+```
 
-### **Design**
-- ✅ Gradient de fond institutionnel
-- ✅ GlassCard avec backdrop-blur-sm
-- ✅ Police Inter comme fallback
-- ✅ Style Aave/Compound
+## Résultat
+✅ **Synchronisation complète** entre Tailwind et les variables CSS
+✅ **Cohérence visuelle** dans tout le projet
+✅ **Support du mode sombre** fonctionnel
+✅ **Maintenance simplifiée** avec un seul système de couleurs
 
-## 🚀 Prêt pour Production
+## Variables CSS disponibles
+Le projet utilise maintenant exclusivement les variables CSS définies dans `globals.css` :
 
-L'application est maintenant prête pour les tests sur Sepolia avec MetaMask. Tous les bugs ont été corrigés et l'implémentation est cohérente avec les spécifications demandées.
+### Couleurs principales
+- `--color-axone-accent` : #fab062
+- `--color-axone-flounce` : #4a8c8c
+- `--color-axone-dark` : #011f26
+
+### Couleurs neutres
+- `--color-white-pure` : #f8f8f8
+- `--color-white-85` : rgba(248, 248, 248, 0.85)
+- `--color-white-75` : rgba(248, 248, 248, 0.75)
+- `--color-white-60` : rgba(248, 248, 248, 0.6)
+
+### Couleurs d'état
+- `--color-success` : #10b981
+- `--color-error` : #ef4444
+- `--color-warning` : #f59e0b
+- `--color-info` : #3b82f6
+
+## Utilisation recommandée
+Pour toute nouvelle fonctionnalité, utiliser les classes Tailwind qui référencent les variables CSS :
+- `text-white-pure` au lieu de `text-white`
+- `bg-axone-dark` au lieu de `bg-black`
+- `text-error` au lieu de `text-red-400`
+- `bg-success/20` au lieu de `bg-green-900/50`
 

@@ -3,10 +3,12 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  /* Palette Axone Finance améliorée */
+  /* Palette Axone Finance améliorée - Mode clair par défaut */
   --color-axone-accent: #fab062; /* Sandy Brown */
   --color-axone-flounce: #4a8c8c; /* Flounce */
   --color-axone-dark: #011f26; /* Stellar Green */
+  --color-axone-light: #f8f9fa; /* Fond clair */
+  --color-axone-light-secondary: #e9ecef; /* Fond secondaire clair */
 
   /* Variations de couleurs */
   --color-axone-accent-light: #fbbf7a;
@@ -266,7 +268,7 @@
   }
 
   body {
-    background: linear-gradient(to bottom, #f9fafb, #dbeafe);
+    background: var(--color-axone-dark);
     color: var(--color-white-pure);
     font-family: var(--font-family-inter), var(--font-family-poppins), sans-serif;
     font-weight: var(--font-weight-normal);
@@ -906,7 +908,9 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
+  
+  /* Mode clair par défaut */
+  --background: oklch(0.98 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -940,6 +944,7 @@
 }
 
 .dark {
+  /* Mode sombre - Override des variables */
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -971,6 +976,10 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  
+  /* Override des couleurs Axone pour le mode sombre */
+  --color-axone-light: var(--color-axone-dark);
+  --color-axone-light-secondary: var(--color-axone-dark-light);
 }
 
 @layer base {
@@ -979,16 +988,26 @@
   }
   
   html {
-    background: var(--color-axone-dark) !important;
+    background: var(--color-axone-light) !important;
   }
   
   body {
-    background: var(--color-axone-dark) !important;
-    color: var(--color-white-pure) !important;
+    background: var(--color-axone-light) !important;
+    color: var(--color-axone-dark) !important;
     font-family: var(--font-family-poppins);
     font-weight: var(--font-weight-normal);
     line-height: 1.7;
     overflow-x: hidden;
+  }
+  
+  /* Mode sombre */
+  .dark html {
+    background: var(--color-axone-dark) !important;
+  }
+  
+  .dark body {
+    background: var(--color-axone-dark) !important;
+    color: var(--color-white-pure) !important;
   }
 }
 

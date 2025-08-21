@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { WagmiProvider } from '@/components/providers/WagmiProvider'
+import ThemeProvider from '@/components/providers/ThemeProvider'
 
 export const metadata: Metadata = {
   title: 'Axone Finance - L\'avenir de la finance décentralisée',
@@ -78,7 +79,9 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <WagmiProvider>
-          {children}
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
         </WagmiProvider>
       </body>
     </html>

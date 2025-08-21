@@ -6,42 +6,31 @@ const config: Config = {
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  darkMode: 'class', // Synchronisation avec .dark dans globals.css
   theme: {
     extend: {
       colors: {
         // Palette Axone Finance complète
-        'axone-accent': '#fab062', // Sandy Brown
-        'axone-flounce': '#4a8c8c', // Flounce
-        'axone-dark': '#011f26',   // Stellar Green
+        'axone-accent': 'var(--color-axone-accent)',
+        'axone-flounce': 'var(--color-axone-flounce)',
+        'axone-dark': 'var(--color-axone-dark)',
         
         // Variations de couleurs
-        'axone-accent-light': '#fbbf7a',
-        'axone-accent-dark': '#e89a4a',
-        'axone-flounce-light': '#5ba3a3',
-        'axone-flounce-dark': '#3a7171',
-        'axone-dark-light': '#02323a',
-        'axone-dark-lighter': '#034a56',
+        'axone-accent-light': 'var(--color-axone-accent-light)',
+        'axone-accent-dark': 'var(--color-axone-accent-dark)',
+        'axone-flounce-light': 'var(--color-axone-flounce-light)',
+        'axone-flounce-dark': 'var(--color-axone-flounce-dark)',
+        'axone-dark-light': 'var(--color-axone-dark-light)',
+        'axone-dark-lighter': 'var(--color-axone-dark-lighter)',
         
         // Couleurs neutres améliorées
-        'white-pure': '#f8f8f8', // Blanc cassé pour éviter l'effet tranché
-        'axone-white': {
-          DEFAULT: 'rgba(248,248,248,0.95)',
-          '95': 'rgba(248,248,248,0.95)',
-          '90': 'rgba(248,248,248,0.9)',
-          '85': 'rgba(248,248,248,0.85)',
-          '75': 'rgba(248,248,248,0.75)',
-          '60': 'rgba(248,248,248,0.6)',
-          '40': 'rgba(248,248,248,0.4)',
-          '20': 'rgba(248,248,248,0.2)',
-          '10': 'rgba(248,248,248,0.1)',
-        },
-        'axone-black': {
-          '80': 'rgba(0,0,0,0.8)',
-          '60': 'rgba(0,0,0,0.6)',
-          '40': 'rgba(0,0,0,0.4)',
-          '35': 'rgba(0,0,0,0.35)',
+        'white-pure': 'var(--color-white-pure)',
+        'axone-light': 'var(--color-axone-light)',
+        'axone-light-secondary': 'var(--color-axone-light-secondary)',
+        // Supprimer cette section - gérée par CSS variables
+        // Supprimer cette section - gérée par CSS variables
+        'black': {
           '20': 'rgba(0,0,0,0.2)',
-          '10': 'rgba(0,0,0,0.1)',
         }
       },
       fontFamily: {

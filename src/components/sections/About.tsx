@@ -191,7 +191,7 @@ const About: React.FC = () => {
             >
               <div className="flex items-center space-x-2 md:space-x-3">
                 <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-white" />
+                  <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-white-pure" />
                 </div>
                 <div>
                   <div className="text-sm md:text-base font-bold text-white-pure">+24.7%</div>
@@ -210,7 +210,7 @@ const About: React.FC = () => {
             >
               <div className="flex items-center space-x-2 md:space-x-3">
                 <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-secondary rounded-lg flex items-center justify-center">
-                  <Shield className="w-3 h-3 md:w-4 md:h-4 text-white" />
+                  <Shield className="w-3 h-3 md:w-4 md:h-4 text-white-pure" />
                 </div>
                 <div>
                   <div className="text-sm md:text-base font-bold text-white-pure">Audited</div>

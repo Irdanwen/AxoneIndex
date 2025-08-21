@@ -156,14 +156,14 @@ export default function ReferralPage() {
           </div>
 
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600 text-sm">{error}</p>
+            <div className="p-4 bg-error/10 border border-error/30 rounded-lg">
+              <p className="text-error text-sm">{error}</p>
             </div>
           )}
 
           {success && (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-green-600 text-sm">{success}</p>
+            <div className="p-4 bg-success/10 border border-success/30 rounded-lg">
+              <p className="text-success text-sm">{success}</p>
             </div>
           )}
 
