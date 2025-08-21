@@ -6,7 +6,7 @@ import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { useAccount, useConnect, useSwitchChain } from 'wagmi';
 import { injected } from 'wagmi/connectors';
-import { Button } from '../ui/button';
+import { Button } from '../ui';
 import ThemeToggle from '../ui/ThemeToggle';
 
 const Header: React.FC = () => {
@@ -85,18 +85,31 @@ const Header: React.FC = () => {
             <Button 
               variant="secondary" 
               size="md"
-              href="/documentation"
+              asChild
               className="text-axone-dark dark:text-white-pure hover:text-axone-accent"
             >
-              <span>Documentation</span>
+              <a href="/documentation">
+                <span>Documentation</span>
+              </a>
             </Button>
             <Button 
               variant="secondary" 
               size="md"
-              href="/referral-management"
+              asChild
               className="text-axone-dark dark:text-white-pure hover:text-axone-accent"
             >
-              <span>Gestion</span>
+              <a href="/referral-management">
+                <span>Gestion</span>
+              </a>
+            </Button>
+            <Button 
+              variant="premium" 
+              size="sm"
+              asChild
+            >
+              <a href="/demo-buttons">
+                <span>✨ Boutons</span>
+              </a>
             </Button>
             {isConnected ? (
               <div className="flex items-center space-x-2">
@@ -114,7 +127,7 @@ const Header: React.FC = () => {
               </div>
             ) : (
               <Button 
-                variant="primary" 
+                variant="default" 
                 size="md"
                 onClick={() => connect({ connector: injected() })}
                 className="flex items-center space-x-2"

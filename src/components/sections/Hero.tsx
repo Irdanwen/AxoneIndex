@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Users, DollarSign, BarChart3 } from 'lucide-react';
-import { Button } from '../ui/button';
+import { Button } from '../ui';
 import AnimatedCounter from '../ui/AnimatedCounter';
 import GlassCard from '../ui/GlassCard';
 
@@ -148,21 +148,25 @@ const Hero: React.FC = () => {
             className="flex flex-wrap justify-center gap-4"
           >
             <Button 
-              variant="primary" 
+              variant="default" 
               size="lg" 
-              href="/referral"
+              asChild
               className="btn-with-icon group hover:shadow-glow transition-all duration-300"
             >
-              Launch App
-              <ArrowRight className="w-5 h-5 btn-icon" />
+              <a href="/referral">
+                Launch App
+                <ArrowRight className="w-5 h-5 btn-icon" />
+              </a>
             </Button>
             <Button 
               variant="secondary" 
               size="lg" 
-              href="/documentation"
+              asChild
               className="hover:shadow-glow-flounce transition-all duration-300"
             >
-              Documentation
+              <a href="/documentation">
+                Documentation
+              </a>
             </Button>
           </motion.div>
 

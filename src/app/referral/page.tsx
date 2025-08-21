@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useAccount, useConnect, useContractRead, useContractWrite, useChainId } from 'wagmi'
 import { injected } from 'wagmi/connectors'
 import GlassCard from '@/components/ui/GlassCard'
-import Button from '@/components/ui/Button'
+import { Button } from '@/components/ui'
 import { getCodeHash, REFERRAL_REGISTRY_ADDRESS, SEPOLIA_CHAIN_ID } from '@/lib/referralUtils'
 import ReferralRegistryABI from '@/lib/abi/ReferralRegistry.json'
 

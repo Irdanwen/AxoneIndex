@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
@@ -51,7 +51,7 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
       <div>
         <Label>Tri TVL</Label>
-        <Select value={sort} onValueChange={(v: any) => setSort(v)}>
+        <Select value={sort} onValueChange={(v: 'asc' | 'desc') => setSort(v)}>
           <SelectTrigger>
             <SelectValue placeholder="Ordre" />
           </SelectTrigger>
@@ -73,7 +73,7 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
 
       <div>
         <Label>Statut</Label>
-        <Select value={status} onValueChange={(v: any) => setStatus(v)}>
+        <Select value={status} onValueChange={(v: 'all' | 'open' | 'closed' | 'paused') => setStatus(v)}>
           <SelectTrigger>
             <SelectValue placeholder="Tous" />
           </SelectTrigger>

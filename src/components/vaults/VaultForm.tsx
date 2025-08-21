@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -82,7 +82,7 @@ export function VaultForm({ initialData, onSave, onDelete, onCancel }: VaultForm
             <Label>Statut</Label>
             <Select 
               value={formData.status} 
-              onValueChange={(v: any) => setFormData({ ...formData, status: v })}
+              onValueChange={(v: 'open' | 'closed' | 'paused') => setFormData({ ...formData, status: v })}
             >
               <SelectTrigger className="dark:bg-gray-700">
                 <SelectValue placeholder="Sélectionner" />
@@ -101,7 +101,7 @@ export function VaultForm({ initialData, onSave, onDelete, onCancel }: VaultForm
             <Label>Niveau de risque</Label>
             <Select 
               value={formData.risk} 
-              onValueChange={(v: any) => setFormData({ ...formData, risk: v })}
+              onValueChange={(v: 'low' | 'medium' | 'high') => setFormData({ ...formData, risk: v })}
             >
               <SelectTrigger className="dark:bg-gray-700">
                 <SelectValue placeholder="Sélectionner" />

@@ -1,10 +1,6 @@
-// Export de l'ancien composant Button (avec majuscule) pour la compatibilité
-export { default as Button } from './Button'
-
-// Export du nouveau composant button (avec minuscule) pour les nouveaux composants
-export { Button as ModernButton } from './button'
-export { ButtonProps } from './button'
-export { buttonVariants } from './button'
+// Export du composant Button principal
+export { Button, buttonVariants } from './Button'
+export type { ButtonProps } from './Button'
 
 // Autres exports
 export { Input } from './input'

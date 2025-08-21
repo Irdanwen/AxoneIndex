@@ -5,7 +5,7 @@ import { useAccount, useContractRead, useContractWrite, useChainId } from 'wagmi
 import { REFERRAL_REGISTRY_ADDRESS, SEPOLIA_CHAIN_ID } from '@/lib/referralUtils'
 import ReferralRegistryABI from '@/lib/abi/ReferralRegistry.json'
 import GlassCard from '@/components/ui/GlassCard'
-import Button from '@/components/ui/Button'
+import { Button } from '@/components/ui'
 import Stat from '@/components/ui/Stat'
 import { motion } from 'framer-motion'
 import Header from '@/components/layout/Header'
@@ -189,8 +189,10 @@ export default function ReferralManagement() {
                 : "Vous devez avoir un parrain pour accéder à cette page"
               }
             </p>
-            <Button href="/referral" className="w-full">
-              Utiliser un code de parrainage
+            <Button asChild className="w-full">
+              <a href="/referral">
+                Utiliser un code de parrainage
+              </a>
             </Button>
           </GlassCard>
         </div>

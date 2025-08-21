@@ -2,7 +2,7 @@
 
 import { Vault } from '@/lib/vaultTypes'
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line } from 'recharts'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui'
 import { RiskBadge } from '@/components/ui/RiskBadge'
 import { StatusIndicator } from '@/components/ui/StatusIndicator'
 import { TokenIcon } from '@/components/ui/TokenIcon'

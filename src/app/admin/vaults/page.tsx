@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { VaultForm } from '@/components/vaults/VaultForm'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui'
 import { MOCK_VAULTS } from '@/lib/vaultMock'
 import { Vault } from '@/lib/vaultTypes'
 
