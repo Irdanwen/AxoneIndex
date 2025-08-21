@@ -29,7 +29,7 @@ const Header: React.FC = () => {
   // Gestionnaire d'erreur pour les changements de chaîne
   useEffect(() => {
     const handleChainError = (event: Event) => {
-      const error = event as any;
+      const error = event as { code?: number };
       if (error.code === 4902) {
         alert("Chain non supportée, veuillez choisir la bonne chaîne");
       }
