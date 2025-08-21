@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { useAccount, useConnect, useSwitchChain } from 'wagmi';
-import { InjectedConnector } from 'wagmi/connectors/injected';
+import { injected } from 'wagmi/connectors';
 import Button from '../ui/Button';
 import ThemeToggle from '../ui/ThemeToggle';
 
@@ -115,7 +115,7 @@ const Header: React.FC = () => {
               <Button 
                 variant="primary" 
                 size="md"
-                onClick={() => connect({ connector: new InjectedConnector() })}
+                onClick={() => connect({ connector: injected })}
                 className="flex items-center space-x-2"
               >
                 <span>Connecter Wallet</span>
