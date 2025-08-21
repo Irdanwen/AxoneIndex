@@ -806,9 +806,7 @@
     background-color: rgba(74, 140, 140, 0.1);
   }
 
-  .bg-axone-black-20 {
-    background-color: rgba(0, 0, 0, 0.2);
-  }
+
 
   .bg-axone-black-35 {
     background-color: rgba(0, 0, 0, 0.35);
@@ -1015,7 +1013,7 @@
 
 @layer utilities {
   .prose code {
-    @apply bg-axone-black-20 px-2 py-1 rounded-md font-mono;
+    @apply bg-black/20 px-2 py-1 rounded-md font-mono;
   }
 
   .prose h3 {
