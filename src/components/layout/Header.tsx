@@ -115,7 +115,7 @@ const Header: React.FC = () => {
               <Button 
                 variant="primary" 
                 size="md"
-                onClick={() => connect({ connector: injected })}
+                onClick={() => connect({ connector: injected() })}
                 className="flex items-center space-x-2"
               >
                 <span>Connecter Wallet</span>

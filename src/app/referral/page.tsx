@@ -65,7 +65,7 @@ export default function ReferralPage() {
 
 
   const handleConnect = () => {
-    connect({ connector: injected })
+    connect({ connector: injected() })
   }
 
   const handleGoToApp = () => {

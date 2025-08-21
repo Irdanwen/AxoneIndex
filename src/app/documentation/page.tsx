@@ -107,7 +107,7 @@ export default function DocumentationPage() {
                       </div>
                       <p className="text-white-85">
                         Lorsqu&apos;un utilisateur crée un lien de parrainage, un hash cryptographique 
-                        est généré via <code className="bg-axone-black-20 px-2 py-1 rounded">testHash.ts</code>
+                        est généré via <code className="bg-black/20 px-2 py-1 rounded">testHash.ts</code>
                       </p>
                     </div>
                     
@@ -116,7 +116,7 @@ export default function DocumentationPage() {
                         2
                       </div>
                       <p className="text-white-85">
-                        Le contrat <code className="bg-axone-black-20 px-2 py-1 rounded">ReferralRegistry.sol</code> 
+                        Le contrat <code className="bg-black/20 px-2 py-1 rounded">ReferralRegistry.sol</code> 
                         stocke la relation entre les adresses Ethereum
                       </p>
                     </div>
@@ -128,7 +128,7 @@ export default function DocumentationPage() {
                     Exemple de code
                   </h3>
                   
-                  <div className="bg-axone-black-20 rounded-xl p-4 font-mono text-sm overflow-x-auto">
+                  <div className="bg-black/20 rounded-xl p-4 font-mono text-sm overflow-x-auto">
                     <div><span className="text-axone-accent">import</span> {'{'} registerReferral, getReferralCount {'}'} from &quot;@/lib/referralUtils&quot;;</div>
                     <div></div>
                     <div><span className="text-axone-flounce">const</span> handleReferral = <span className="text-axone-accent">async</span> (referrer: string, referee: string) =&gt; {'{'}</div>
@@ -160,7 +160,7 @@ export default function DocumentationPage() {
                     Le contrat principal qui gère l&apos;enregistrement et le suivi des parrainages.
                   </p>
                   
-                  <div className="bg-axone-black-20 rounded-xl p-4 font-mono text-sm overflow-x-auto">
+                  <div className="bg-black/20 rounded-xl p-4 font-mono text-sm overflow-x-auto">
                     <div><span className="text-axone-accent">contract</span> ReferralRegistry {'{'}</div>
                     <div>&nbsp;&nbsp;mapping(address =&gt; address) <span className="text-axone-flounce">public</span> referrals;</div>
                     <div>&nbsp;&nbsp;mapping(address =&gt; uint256) <span className="text-axone-flounce">public</span> referralCounts;</div>
@@ -195,7 +195,7 @@ export default function DocumentationPage() {
                       <p className="text-white-85 mb-2">
                         Enregistre un nouveau parrainage entre deux adresses Ethereum.
                       </p>
-                      <div className="bg-axone-black-20 rounded-lg p-3 text-sm">
+                      <div className="bg-black/20 rounded-lg p-3 text-sm">
                         <div><span className="text-axone-accent">Parameters:</span> referrer (address), referee (address)</div>
                         <div><span className="text-axone-accent">Returns:</span> Transaction receipt</div>
                       </div>
@@ -208,7 +208,7 @@ export default function DocumentationPage() {
                       <p className="text-white-85 mb-2">
                         Récupère le nombre de parrainages effectués par une adresse.
                       </p>
-                      <div className="bg-axone-black-20 rounded-lg p-3 text-sm">
+                      <div className="bg-black/20 rounded-lg p-3 text-sm">
                         <div><span className="text-axone-accent">Parameters:</span> address (string)</div>
                         <div><span className="text-axone-accent">Returns:</span> number</div>
                       </div>
