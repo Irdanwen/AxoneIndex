@@ -14,7 +14,7 @@ const Header: React.FC = () => {
   
   // Hooks wagmi pour la gestion du wallet
   const { address, isConnected } = useAccount();
-  const { connect, connectors } = useConnect();
+  const { connect } = useConnect();
   const { switchChain, isPending } = useSwitchChain();
 
   useEffect(() => {
@@ -28,7 +28,7 @@ const Header: React.FC = () => {
 
   // Gestionnaire d'erreur pour les changements de chaîne
   useEffect(() => {
-    const handleChainError = (error: any) => {
+    const handleChainError = (error: { code?: number }) => {
       if (error.code === 4902) {
         alert("Chain non supportée, veuillez choisir la bonne chaîne");
       }

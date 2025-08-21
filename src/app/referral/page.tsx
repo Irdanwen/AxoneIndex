@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useAccount, useConnect, useContractRead, useContractWrite, useChainId } from 'wagmi'
+import { injected } from 'wagmi/connectors'
 import GlassCard from '@/components/ui/GlassCard'
 import Button from '@/components/ui/Button'
 import { getCodeHash, REFERRAL_REGISTRY_ADDRESS, SEPOLIA_CHAIN_ID } from '@/lib/referralUtils'
@@ -14,7 +15,7 @@ export default function ReferralPage() {
 
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
-  const { connect, connectors } = useConnect()
+  const { connect } = useConnect()
 
   // Vérifier si l'utilisateur est whitelisté
   const { data: isWhitelisted } = useContractRead({
@@ -64,9 +65,7 @@ export default function ReferralPage() {
 
 
   const handleConnect = () => {
-    if (connectors[0]) {
-      connect({ connector: connectors[0] })
-    }
+    connect({ connector: injected })
   }
 
   const handleGoToApp = () => {

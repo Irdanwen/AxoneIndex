@@ -31,6 +31,9 @@ const config: Config = {
         // Supprimer cette section - gérée par CSS variables
         'black': {
           '20': 'rgba(0,0,0,0.2)',
+        },
+        'axone-black': {
+          '20': 'rgba(0,0,0,0.2)',
         }
       },
       fontFamily: {
