@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui'
 import { ArrowRight, Download, Heart, Settings, Trash2, CheckCircle, Sparkles } from 'lucide-react'
+import Link from 'next/link'
 
 export default function DemoButtonsPage() {
   return (
@@ -115,7 +116,7 @@ export default function DemoButtonsPage() {
 
           {/* Boutons Success et Destructive */}
           <section className="glass-card p-8">
-            <h2 className="text-2xl font-bold text-white-pure mb-6">Boutons d'Action</h2>
+            <h2 className="text-2xl font-bold text-white-pure mb-6">Boutons d&apos;Action</h2>
             <div className="flex flex-wrap gap-4">
               <Button variant="success" size="default">
                 <CheckCircle className="w-4 h-4 mr-2" />
@@ -177,15 +178,15 @@ export default function DemoButtonsPage() {
             <h2 className="text-2xl font-bold text-white-pure mb-6">Navigation</h2>
             <div className="flex flex-wrap justify-center gap-4">
               <Button variant="secondary" asChild>
-                <a href="/">
-                  ← Retour à l'accueil
-                </a>
+                <Link href="/">
+                  ← Retour à l&apos;accueil
+                </Link>
               </Button>
               <Button variant="outline" asChild>
-                <a href="/vaults">
+                <Link href="/vaults">
                   Voir les Vaults
                   <ArrowRight className="w-4 h-4 ml-2" />
-                </a>
+                </Link>
               </Button>
             </div>
           </section>
