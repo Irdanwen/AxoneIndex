@@ -1,0 +1,25 @@
+.vaultGrid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1.5rem !important;
+  row-gap: 1.5rem !important;
+  column-gap: 1.5rem !important;
+}
+
+@media (min-width: 768px) {
+  .vaultGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .vaultGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* S'assurer que les cartes prennent toute la largeur disponible */
+.vaultGrid > * {
+  width: 100%;
+  height: 100%;
+}

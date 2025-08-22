@@ -67,8 +67,8 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
   }, [applyFilters])
 
   return (
-    <div className="mb-6">
-      <div className="flex flex-wrap gap-2 mb-4">
+    <div className="mb-8">
+      <div className="flex flex-wrap gap-3 mb-6">
         {/* Tri TVL */}
         <Button
           variant={sort === 'desc' ? 'default' : 'outline'}

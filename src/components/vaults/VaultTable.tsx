@@ -2,6 +2,7 @@
 
 import { Vault } from '@/lib/vaultTypes'
 import { VaultCard } from './VaultCard'
+import styles from './VaultTable.module.css'
 
 interface VaultTableProps {
   vaults: Vault[]
@@ -9,7 +10,7 @@ interface VaultTableProps {
 
 export function VaultTable({ vaults }: VaultTableProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-40 gap-y-40">
+    <div className={styles.vaultGrid}>
       {vaults.map((vault) => (
         <VaultCard key={vault.id} vault={vault} />
       ))}

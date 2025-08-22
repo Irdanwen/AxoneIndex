@@ -17,7 +17,7 @@ export function VaultCard({ vault }: VaultCardProps) {
   return (
     <div className="rounded-xl border bg-white dark:bg-gray-800 shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 overflow-hidden">
       {/* En-tête avec nom et statut */}
-      <div className="p-4 border-b bg-gray-50 dark:bg-gray-800/50">
+      <div className="p-5 border-b bg-gray-50 dark:bg-gray-800/50">
         <div className="flex justify-between items-start">
           <div className="flex items-center">
             <div className="w-10 h-10 rounded-full bg-gray-200 mr-3 flex overflow-hidden">
@@ -47,15 +47,15 @@ export function VaultCard({ vault }: VaultCardProps) {
       </div>
 
       {/* Corps principal */}
-      <div className="p-4">
+      <div className="p-5 space-y-4">
         {/* TVL - Typo plus grande */}
-        <div className="mb-4">
+        <div>
           <div className="text-2xl font-bold text-gray-900 dark:text-white">${vault.tvl.toLocaleString()}</div>
           <div className="text-sm text-gray-500 dark:text-gray-400">USDC</div>
         </div>
 
         {/* Composition des tokens */}
-        <div className="flex items-center mb-4">
+        <div className="flex items-center">
           <div className="flex -space-x-2 mr-2">
             {vault.tokens.slice(0, 3).map((token, i) => (
               <div key={i} className="w-6 h-6 rounded-full border-2 border-white dark:border-gray-800">
@@ -69,7 +69,7 @@ export function VaultCard({ vault }: VaultCardProps) {
         </div>
 
         {/* Performance avec flèche */}
-        <div className="mb-4">
+        <div>
           <div className="flex items-center justify-between">
             <span className={`font-medium ${vault.performance30d >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {vault.performance30d >= 0 ? '📈' : '📉'} {vault.performance30d >= 0 ? '+' : ''}{vault.performance30d}%
@@ -92,7 +92,7 @@ export function VaultCard({ vault }: VaultCardProps) {
 
         {/* Dépôt utilisateur en badge coloré */}
         {vault.userDeposit > 0 && (
-          <div className="mb-4">
+          <div>
             <span className="inline-flex items-center px-3 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium">
               💵 ${vault.userDeposit.toLocaleString()} USDC
             </span>
@@ -100,7 +100,7 @@ export function VaultCard({ vault }: VaultCardProps) {
         )}
 
         {/* Boutons d'action */}
-        <div className="flex space-x-2">
+        <div className="flex space-x-2 pt-2">
           <Button size="sm" variant="default">
             <span className="mr-1">💰</span> Dépôt
           </Button>
