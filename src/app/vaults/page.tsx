@@ -79,7 +79,7 @@ export default function VaultsPage() {
               Vaults disponibles
             </h2>
             <p className="text-vault-muted">
-              Explorez et gérez vos opportunités d'investissement
+              Explorez et gérez vos opportunités d&apos;investissement
             </p>
           </motion.div>
 

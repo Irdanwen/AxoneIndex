@@ -234,7 +234,7 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
                   {statusOptions.map(option => (
                     <button
                       key={option.value}
-                      onClick={() => setSelectedStatus(option.value as any)}
+                      onClick={() => setSelectedStatus(option.value as 'all' | 'open' | 'closed' | 'paused')}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                         selectedStatus === option.value
                           ? 'bg-vault-brand text-black'
@@ -254,7 +254,7 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
                   {riskOptions.map(option => (
                     <button
                       key={option.value}
-                      onClick={() => setSelectedRisk(option.value as any)}
+                      onClick={() => setSelectedRisk(option.value as 'all' | 'low' | 'medium' | 'high')}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
                         selectedRisk === option.value
                           ? 'bg-vault-brand text-black'

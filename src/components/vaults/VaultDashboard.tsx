@@ -69,7 +69,7 @@ export function VaultDashboard({
           Tableau de bord
         </h1>
         <p className="text-vault-muted">
-          Vue d'ensemble de vos investissements et performances
+          Vue d&apos;ensemble de vos investissements et performances
         </p>
       </motion.div>
 
