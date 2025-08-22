@@ -1,160 +1,160 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { VaultTable } from '@/components/vaults/VaultTable'
+import { VaultCard } from '@/components/vaults/VaultCard'
 import { VaultFilters } from '@/components/vaults/VaultFilters'
+import { VaultDashboard } from '@/components/vaults/VaultDashboard'
 import { MOCK_VAULTS } from '@/lib/vaultMock'
 import { Vault } from '@/lib/vaultTypes'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
-import GlassCard from '@/components/ui/GlassCard'
 import { motion } from 'framer-motion'
+import { Loader2 } from 'lucide-react'
 
 export default function VaultsPage() {
   const [vaults, setVaults] = useState<Vault[]>([])
   const [filteredVaults, setFilteredVaults] = useState<Vault[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   
-  // Calcul des métriques utilisateur
+  // Calculate user metrics
   const totalDeposited = vaults.reduce((sum, v) => sum + v.userDeposit, 0)
   const activeVaults = vaults.filter(v => v.userDeposit > 0).length
-  const globalYield = vaults
-    .filter(v => v.userDeposit > 0)
-    .reduce((sum, v) => sum + v.performance30d, 0) / (activeVaults || 1)
+  const globalYield = activeVaults > 0
+    ? vaults
+        .filter(v => v.userDeposit > 0)
+        .reduce((sum, v) => sum + v.performance30d, 0) / activeVaults
+    : 0
 
   useEffect(() => {
-    const saved = localStorage.getItem('vaults')
-    const data = saved ? JSON.parse(saved) : MOCK_VAULTS
-    setVaults(data)
-    setFilteredVaults(data)
+    // Simulate loading
+    setTimeout(() => {
+      const saved = localStorage.getItem('vaults')
+      const data = saved ? JSON.parse(saved) : MOCK_VAULTS
+      setVaults(data)
+      setFilteredVaults(data)
+      setIsLoading(false)
+    }, 500)
   }, [])
 
+  const handleDeposit = (vaultId: string) => {
+    console.log('Deposit to vault:', vaultId)
+    // TODO: Implement deposit logic
+  }
+
+  const handleWithdraw = (vaultId: string) => {
+    console.log('Withdraw from vault:', vaultId)
+    // TODO: Implement withdraw logic
+  }
+
+  const handleInfo = (vaultId: string) => {
+    console.log('View vault info:', vaultId)
+    // TODO: Navigate to vault details page
+  }
+
   return (
-    <main className="min-h-screen bg-axone-dark">
+    <main className="min-h-screen bg-vault-page">
       <Header />
       
-      {/* Section avec fond en dégradé animé */}
-      <section className="hero-gradient min-h-screen relative overflow-hidden">
-        {/* Particules de fond animées */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <motion.div
-            className="absolute w-2 h-2 bg-axone-accent rounded-full opacity-60"
-            style={{ top: '20%', left: '10%' }}
-            animate={{
-              y: [0, -20, 0],
-              opacity: [0.6, 1, 0.6],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
+      <div className="relative">
+        {/* Background gradient effect */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-vault-brand/5 to-transparent pointer-events-none" />
+        
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
+          {/* Dashboard Header */}
+          <VaultDashboard
+            totalDeposited={totalDeposited}
+            globalYield={globalYield}
+            activeVaults={activeVaults}
+            totalVaults={vaults.length}
           />
-          <motion.div
-            className="absolute w-3 h-3 bg-axone-flounce rounded-full opacity-40"
-            style={{ top: '60%', right: '15%' }}
-            animate={{
-              y: [0, 15, 0],
-              opacity: [0.4, 0.8, 0.4],
-            }}
-            transition={{
-              duration: 5,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 1
-            }}
-          />
-          <motion.div
-            className="absolute w-1 h-1 bg-white-pure rounded-full opacity-80"
-            style={{ top: '40%', left: '80%' }}
-            animate={{
-              y: [0, -10, 0],
-              opacity: [0.8, 1, 0.8],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 2
-            }}
-          />
-        </div>
 
-        <div className="container-custom section-padding pt-32 relative z-10">
+          {/* Page Title and Description */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mb-10"
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mb-8"
           >
-            <h1 className="hero-title text-gradient mb-4">
+            <h2 className="text-3xl font-bold text-vault-primary mb-2">
               Vaults disponibles
-            </h1>
-            <p className="hero-subtitle text-white-85 mb-8">
-              Gérez vos positions et découvrez de nouvelles opportunités
+            </h2>
+            <p className="text-vault-muted">
+              Explorez et gérez vos opportunités d'investissement
             </p>
-            
-            {/* Section résumé utilisateur avec GlassCard */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <GlassCard className="p-6">
-                <div className="flex items-center">
-                  <span className="text-2xl mr-3">💵</span>
-                  <div>
-                    <div className="text-sm text-white-60">Total Déposé</div>
-                    <div className="text-xl font-bold text-white-pure">
-                      ${totalDeposited.toLocaleString()} USDC
-                    </div>
-                  </div>
-                </div>
-              </GlassCard>
-              
-              <GlassCard className="p-6">
-                <div className="flex items-center">
-                  <span className="text-2xl mr-3">📊</span>
-                  <div>
-                    <div className="text-sm text-white-60">Rendement global</div>
-                    <div className={`text-xl font-bold ${globalYield >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {globalYield >= 0 ? '+' : ''}{globalYield.toFixed(2)}%
-                    </div>
-                  </div>
-                </div>
-              </GlassCard>
-              
-              <GlassCard className="p-6">
-                <div className="flex items-center">
-                  <span className="text-2xl mr-3">📂</span>
-                  <div>
-                    <div className="text-sm text-white-60">Vaults actifs</div>
-                    <div className="text-xl font-bold text-white-pure">
-                      {activeVaults}
-                    </div>
-                  </div>
-                </div>
-              </GlassCard>
-            </div>
+          </motion.div>
 
+          {/* Filters */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <VaultFilters 
+              vaults={vaults} 
+              onFilter={setFilteredVaults} 
+            />
+          </motion.div>
+
+          {/* Vaults Grid */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 text-vault-brand animate-spin" />
+            </div>
+          ) : filteredVaults.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
+              transition={{ duration: 0.5 }}
+              className="text-center py-20"
             >
-              <VaultFilters 
-                vaults={vaults} 
-                onFilter={setFilteredVaults} 
-              />
+              <p className="text-vault-muted text-lg mb-2">
+                Aucun vault ne correspond à vos critères
+              </p>
+              <p className="text-vault-dim text-sm">
+                Essayez de modifier vos filtres pour voir plus de résultats
+              </p>
             </motion.div>
-          </motion.div>
-          
-          {/* Table des vaults avec animation */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="w-full"
-          >
-            <VaultTable vaults={filteredVaults} />
-          </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
+              {filteredVaults.map((vault, index) => (
+                <motion.div
+                  key={vault.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                >
+                  <VaultCard 
+                    vault={vault}
+                    onDeposit={() => handleDeposit(vault.id)}
+                    onWithdraw={() => handleWithdraw(vault.id)}
+                    onInfo={() => handleInfo(vault.id)}
+                  />
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+
+          {/* Results count */}
+          {!isLoading && filteredVaults.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+              className="mt-8 text-center"
+            >
+              <p className="text-sm text-vault-dim">
+                {filteredVaults.length} vault{filteredVaults.length > 1 ? 's' : ''} affiché{filteredVaults.length > 1 ? 's' : ''}
+                {filteredVaults.length !== vaults.length && ` sur ${vaults.length}`}
+              </p>
+            </motion.div>
+          )}
         </div>
-      </section>
+      </div>
 
       <Footer />
     </main>

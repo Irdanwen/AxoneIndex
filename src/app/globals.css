@@ -1,6 +1,49 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
 :root {
+  /* Professional Design System for Vaults Page */
+  /* Base colors - Deep teal/green theme */
+  --bg: #0E1A1C;         /* Deep teal/green backdrop (page) */
+  --card: #0f1416;       /* Near-black card */
+  --card-hover: #111618; /* Card hover state */
+  --muted: #172126;      /* Subtle separators */
+  --text: #EAF2F2;       /* Primary text */
+  --text-muted: #A7B4B4; /* Secondary text */
+  --text-dim: #6B7C7C;   /* Tertiary text */
+  
+  /* Brand colors */
+  --brand: #fab062;      /* Sandy Brown accent */
+  --brand-hover: #fbb878; /* Brand hover state */
+  --brand-2: #011f26;    /* Stellar Green accent (dark) */
+  --brand-muted: rgba(250, 176, 98, 0.1); /* Brand background */
+  
+  /* Semantic colors */
+  --success: #17B26A;
+  --success-bg: rgba(23, 178, 106, 0.1);
+  --info: #3B82F6;
+  --info-bg: rgba(59, 130, 246, 0.1);
+  --warning: #F59E0B;
+  --warning-bg: rgba(245, 158, 11, 0.1);
+  --danger: #EF4444;
+  --danger-bg: rgba(239, 68, 68, 0.1);
+  
+  /* UI elements */
+  --ring: #1f3a40;
+  --border: rgba(234, 242, 242, 0.08);
+  --border-strong: rgba(234, 242, 242, 0.16);
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px rgba(250, 176, 98, 0.15);
+  
+  /* Gradients */
+  --gradient-brand: linear-gradient(135deg, var(--brand) 0%, #f89a42 100%);
+  --gradient-card: linear-gradient(180deg, var(--card) 0%, rgba(15, 20, 22, 0.5) 100%);
+  --gradient-success: linear-gradient(135deg, var(--success) 0%, #10a060 100%);
+  
+  /* Existing Axone variables below for compatibility */
   /* Synchronisation avec Shadcn */
   --background: var(--color-axone-light);
   --foreground: var(--color-axone-dark);
@@ -996,7 +1039,7 @@
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: oklch(0.488 0.243 264.376);
   
   /* Override des couleurs Axone pour le mode sombre */
   --color-axone-light: var(--color-axone-dark);
@@ -1035,6 +1078,101 @@
   .prose p {
     color: var(--color-white-85);
     margin-bottom: 1rem;
+  }
+}
+
+/* Custom Utilities for Vaults Page */
+@layer utilities {
+  /* Background utilities */
+  .bg-vault-page {
+    background-color: var(--bg);
+  }
+  
+  .bg-vault-card {
+    background-color: var(--card);
+  }
+  
+  .bg-vault-muted {
+    background-color: var(--muted);
+  }
+  
+  /* Text utilities */
+  .text-vault-primary {
+    color: var(--text);
+  }
+  
+  .text-vault-muted {
+    color: var(--text-muted);
+  }
+  
+  .text-vault-dim {
+    color: var(--text-dim);
+  }
+  
+  /* Brand utilities */
+  .text-vault-brand {
+    color: var(--brand);
+  }
+  
+  .bg-vault-brand {
+    background-color: var(--brand);
+  }
+  
+  .bg-vault-brand-muted {
+    background-color: var(--brand-muted);
+  }
+  
+  /* Border utilities */
+  .border-vault {
+    border-color: var(--border);
+  }
+  
+  .border-vault-strong {
+    border-color: var(--border-strong);
+  }
+  
+  /* Shadow utilities */
+  .shadow-vault-sm {
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .shadow-vault-md {
+    box-shadow: var(--shadow-md);
+  }
+  
+  .shadow-vault-lg {
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .shadow-vault-glow {
+    box-shadow: var(--shadow-glow);
+  }
+  
+  /* Gradient utilities */
+  .gradient-vault-brand {
+    background: var(--gradient-brand);
+  }
+  
+  .gradient-vault-card {
+    background: var(--gradient-card);
+  }
+  
+  /* Glass effect */
+  .glass-vault {
+    background: rgba(15, 20, 22, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+  }
+  
+  /* Hover states */
+  .hover-vault-card {
+    transition: all 0.2s ease;
+  }
+  
+  .hover-vault-card:hover {
+    background-color: var(--card-hover);
+    box-shadow: var(--shadow-vault-glow);
+    transform: translateY(-2px);
   }
 }
 
