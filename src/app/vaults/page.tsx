@@ -25,18 +25,18 @@ export default function VaultsPage() {
   }, [])
 
   return (
-    <div className="max-w-[70%] mx-auto px-4 py-8 bg-white dark:bg-axone-stellar-green min-h-screen">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-axone-stellar-green dark:text-white mb-2">
+    <div className="max-w-[70%] mx-auto px-6 py-10 bg-white dark:bg-axone-stellar-green min-h-screen">
+      <div className="mb-10">
+        <h1 className="text-3xl font-bold text-axone-stellar-green dark:text-white mb-4">
           Vaults disponibles
         </h1>
-        <p className="text-gray-600 dark:text-gray-300">
+        <p className="text-gray-600 dark:text-gray-300 mb-8">
           Gérez vos positions et découvrez de nouvelles opportunités
         </p>
         
         {/* Section résumé utilisateur */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-6">
-          <div className="bg-gray-50 dark:bg-gray-800 p-5 rounded-xl border">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl border">
             <div className="flex items-center">
               <span className="text-2xl mr-3">💵</span>
               <div>
@@ -48,7 +48,7 @@ export default function VaultsPage() {
             </div>
           </div>
           
-          <div className="bg-gray-50 dark:bg-gray-800 p-5 rounded-xl border">
+          <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl border">
             <div className="flex items-center">
               <span className="text-2xl mr-3">📊</span>
               <div>
@@ -60,7 +60,7 @@ export default function VaultsPage() {
             </div>
           </div>
           
-          <div className="bg-gray-50 dark:bg-gray-800 p-5 rounded-xl border">
+          <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl border">
             <div className="flex items-center">
               <span className="text-2xl mr-3">📂</span>
               <div>
