@@ -1,12 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Button } from '@/components/ui'
-import { Input } from '@/components/ui/input'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
+import { useState, useEffect } from 'react'
 import { Vault } from '@/lib/vaultTypes'
+import { Button } from '@/components/ui'
 
 interface VaultFiltersProps {
   vaults: Vault[]
@@ -18,6 +14,24 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
   const [tokens, setTokens] = useState<string[]>([])
   const [status, setStatus] = useState<'all' | 'open' | 'closed' | 'paused'>('all')
   const [showUserVaults, setShowUserVaults] = useState(false)
+  const [availableTokens, setAvailableTokens] = useState<string[]>([])
+
+  // Extraire les tokens disponibles
+  useEffect(() => {
+    const tokensSet = new Set<string>()
+    vaults.forEach(vault => {
+      vault.tokens.forEach(token => tokensSet.add(token.symbol))
+    })
+    setAvailableTokens(Array.from(tokensSet))
+  }, [vaults])
+
+  const toggleToken = (token: string) => {
+    setTokens(prev => 
+      prev.includes(token) 
+        ? prev.filter(t => t !== token) 
+        : [...prev, token]
+    )
+  }
 
   const applyFilters = () => {
     let filtered = [...vaults]
@@ -47,55 +61,67 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
     onFilter(filtered)
   }
 
+  // Appliquer les filtres à chaque changement
+  useEffect(() => {
+    applyFilters()
+  }, [sort, tokens, status, showUserVaults, vaults])
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-      <div>
-        <Label>Tri TVL</Label>
-        <Select value={sort} onValueChange={(v: 'asc' | 'desc') => setSort(v)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Ordre" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="asc">Croissant</SelectItem>
-            <SelectItem value="desc">Décroissant</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+    <div className="mb-6">
+      <div className="flex flex-wrap gap-2 mb-4">
+        {/* Tri TVL */}
+        <Button
+          variant={sort === 'desc' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setSort(sort === 'desc' ? 'asc' : 'desc')}
+          className="flex items-center"
+        >
+          {sort === 'desc' ? '🔽' : '🔼'} TVL
+        </Button>
 
-      <div>
-        <Label>Tokens</Label>
-        <Input 
-          placeholder="Sélectionner..." 
-          value={tokens.join(', ')} 
-          onChange={(e) => setTokens(e.target.value.split(',').map(t => t.trim()).filter(t => t))}
-        />
-      </div>
+        {/* Tokens disponibles */}
+        {availableTokens.map(token => (
+          <Button
+            key={token}
+            variant={tokens.includes(token) ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => toggleToken(token)}
+          >
+            {token}
+          </Button>
+        ))}
 
-      <div>
-        <Label>Statut</Label>
-        <Select value={status} onValueChange={(v: 'all' | 'open' | 'closed' | 'paused') => setStatus(v)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Tous" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous</SelectItem>
-            <SelectItem value="open">Ouvert</SelectItem>
-            <SelectItem value="closed">Fermé</SelectItem>
-            <SelectItem value="paused">En pause</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+        {/* Statut */}
+        {status !== 'all' && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setStatus('all')}
+            className="bg-gray-100 dark:bg-gray-800"
+          >
+            Statut: {status === 'open' ? 'Ouvert' : status === 'paused' ? 'En pause' : 'Fermé'}
+            <span className="ml-1">×</span>
+          </Button>
+        )}
+        {status === 'all' && (
+          <>
+            <Button variant="outline" size="sm" onClick={() => setStatus('open')}>Ouvert</Button>
+            <Button variant="outline" size="sm" onClick={() => setStatus('paused')}>En pause</Button>
+          </>
+        )}
 
-      <div className="flex items-end">
-        <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="user-vaults" 
-            checked={showUserVaults}
-            onCheckedChange={(checked) => setShowUserVaults(checked as boolean)}
-          />
-          <Label htmlFor="user-vaults">Mes vaults</Label>
-        </div>
-        <Button className="ml-4" onClick={applyFilters}>Appliquer</Button>
+        {/* Mes vaults */}
+        {showUserVaults && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowUserVaults(false)}
+            className="bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200"
+          >
+            Mes vaults
+            <span className="ml-1">×</span>
+          </Button>
+        )}
       </div>
     </div>
   )
