@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Vault } from '@/lib/vaultTypes'
 import { Button } from '@/components/ui'
 
@@ -33,7 +33,7 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
     )
   }
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...vaults]
 
     // Tri par TVL
@@ -59,12 +59,12 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
     }
 
     onFilter(filtered)
-  }
+  }, [vaults, sort, tokens, status, showUserVaults, onFilter])
 
   // Appliquer les filtres à chaque changement
   useEffect(() => {
     applyFilters()
-  }, [sort, tokens, status, showUserVaults, vaults])
+  }, [applyFilters])
 
   return (
     <div className="mb-6">

@@ -2,9 +2,10 @@ import { cn } from '@/lib/utils'
 
 interface RiskBadgeProps {
   risk: 'low' | 'medium' | 'high'
+  className?: string
 }
 
-export function RiskBadge({ risk }: RiskBadgeProps) {
+export function RiskBadge({ risk, className }: RiskBadgeProps) {
   const styles = {
     low: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
     medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
@@ -20,7 +21,8 @@ export function RiskBadge({ risk }: RiskBadgeProps) {
   return (
     <span className={cn(
       "px-2 py-1 rounded-full text-xs font-medium",
-      styles[risk]
+      styles[risk],
+      className
     )}>
       {labels[risk]}
     </span>
