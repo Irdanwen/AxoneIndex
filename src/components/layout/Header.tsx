@@ -79,7 +79,7 @@ const Header: React.FC = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3 }}
-            className="flex items-center absolute left-1/2 transform -translate-x-1/2 max-w-[90vw] justify-center gap-4 md:gap-6 lg:gap-8"
+            className="header-nav absolute left-1/2 transform -translate-x-1/2 max-w-[90vw]"
           >
             <ThemeToggle />
             <Button 
