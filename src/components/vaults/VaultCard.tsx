@@ -15,7 +15,7 @@ interface VaultCardProps {
 
 export function VaultCard({ vault }: VaultCardProps) {
   return (
-    <div className="rounded-xl border bg-white dark:bg-gray-800 shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 overflow-hidden">
+    <div className="h-full rounded-xl border bg-white dark:bg-gray-800 shadow-md hover:shadow-lg hover:scale-[1.02] origin-center transition-all duration-200 overflow-hidden flex flex-col">
       {/* En-tête avec nom et statut */}
       <div className="p-4 border-b bg-gray-50 dark:bg-gray-800/50">
         <div className="flex justify-between items-start">
@@ -47,7 +47,7 @@ export function VaultCard({ vault }: VaultCardProps) {
       </div>
 
       {/* Corps principal */}
-      <div className="p-4">
+      <div className="p-4 flex-1">
         {/* TVL - Typo plus grande */}
         <div className="mb-4">
           <div className="text-2xl font-bold text-gray-900 dark:text-white">${vault.tvl.toLocaleString()}</div>
