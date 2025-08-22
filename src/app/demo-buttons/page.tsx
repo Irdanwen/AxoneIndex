@@ -30,17 +30,17 @@ export default function DemoButtonsPage() {
                 <ArrowRight className="w-4 h-4 mr-2" />
                 Default
               </Button>
-              <Button size="md">
+              <Button size="default">
                 <Settings className="w-4 h-4 mr-2" />
-                Medium
+                Default
               </Button>
               <Button size="lg">
                 <Sparkles className="w-5 h-5 mr-2" />
                 Large
               </Button>
-              <Button size="xl">
+              <Button size="lg">
                 <Heart className="w-6 h-6 mr-2" />
-                Extra Large
+                Large
               </Button>
             </div>
           </section>
@@ -49,7 +49,7 @@ export default function DemoButtonsPage() {
           <section className="glass-card p-8">
             <h2 className="text-2xl font-bold text-white-pure mb-6">Boutons Premium</h2>
             <div className="flex flex-wrap gap-4">
-              <Button variant="premium" size="md">
+              <Button variant="premium" size="default">
                 <Sparkles className="w-4 h-4 mr-2" />
                 Premium Effect
               </Button>

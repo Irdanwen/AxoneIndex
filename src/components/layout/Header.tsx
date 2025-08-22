@@ -84,7 +84,7 @@ const Header: React.FC = () => {
             <ThemeToggle />
             <Button 
               variant="secondary" 
-              size="md"
+              size="default"
               asChild
               className="text-axone-dark dark:text-white-pure hover:text-axone-accent"
             >
@@ -94,7 +94,7 @@ const Header: React.FC = () => {
             </Button>
             <Button 
               variant="secondary" 
-              size="md"
+              size="default"
               asChild
               className="text-axone-dark dark:text-white-pure hover:text-axone-accent"
             >
@@ -115,7 +115,7 @@ const Header: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <Button 
                   variant="secondary"
-                  size="md"
+                  size="default"
                   onClick={() => switchChain({ chainId: 998 })}
                   disabled={isPending}
                 >
@@ -128,7 +128,7 @@ const Header: React.FC = () => {
             ) : (
               <Button 
                 variant="default" 
-                size="md"
+                size="default"
                 onClick={() => connect({ connector: injected() })}
                 className="flex items-center space-x-2"
               >
