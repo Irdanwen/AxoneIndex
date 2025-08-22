@@ -25,7 +25,7 @@ export default function VaultsPage() {
   }, [])
 
   return (
-    <div className="max-w-[70%] mx-auto px-6 py-10 bg-white dark:bg-axone-stellar-green min-h-screen">
+    <div className="max-w-7xl mx-auto px-6 py-10 bg-white dark:bg-axone-stellar-green min-h-screen">
       <div className="mb-10">
         <h1 className="text-3xl font-bold text-axone-stellar-green dark:text-white mb-4">
           Vaults disponibles
@@ -78,7 +78,11 @@ export default function VaultsPage() {
           onFilter={setFilteredVaults} 
         />
       </div>
-      <VaultTable vaults={filteredVaults} />
+      
+      {/* Wrapper pour assurer l'espacement */}
+      <div className="w-full">
+        <VaultTable vaults={filteredVaults} />
+      </div>
     </div>
   )
 }
