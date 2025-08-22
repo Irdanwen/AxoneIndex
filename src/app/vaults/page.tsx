@@ -25,7 +25,7 @@ export default function VaultsPage() {
   }, [])
 
   return (
-    <div className="max-w-[80%] mx-auto px-4 py-8 bg-white dark:bg-axone-stellar-green min-h-screen">
+    <div className="max-w-[70%] mx-auto px-4 py-8 bg-white dark:bg-axone-stellar-green min-h-screen">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-axone-stellar-green dark:text-white mb-2">
           Vaults disponibles

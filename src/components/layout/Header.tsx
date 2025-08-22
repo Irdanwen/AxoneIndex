@@ -74,69 +74,75 @@ const Header: React.FC = () => {
             <span className="text-xl font-bold text-axone-dark dark:text-white-pure tracking-tight">Axone</span>
           </motion.div>
 
-          {/* Navigation à droite */}
+          {/* Navigation centrée */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3 }}
-            className="flex items-center space-x-4"
+            className="flex items-center absolute left-1/2 transform -translate-x-1/2 max-w-[90vw] justify-center"
           >
             <ThemeToggle />
+            <div className="mx-4 md:mx-6 lg:mx-8 flex-shrink-0"></div>
             <Button 
-              variant="secondary" 
-              size="default"
+              variant="ghost" 
+              size="sm"
               asChild
-              className="text-axone-dark dark:text-white-pure hover:text-axone-accent"
+              className="text-axone-dark dark:text-white-pure hover:text-axone-accent hover:bg-white-10 dark:hover:bg-axone-dark-light transition-all duration-200 font-medium"
             >
               <a href="/documentation">
                 <span>Documentation</span>
               </a>
             </Button>
+            <div className="mx-4 md:mx-6 lg:mx-8 flex-shrink-0"></div>
             <Button 
-              variant="secondary" 
-              size="default"
+              variant="ghost" 
+              size="sm"
               asChild
-              className="text-axone-dark dark:text-white-pure hover:text-axone-accent"
+              className="text-axone-dark dark:text-white-pure hover:text-axone-accent hover:bg-white-10 dark:hover:bg-axone-dark-light transition-all duration-200 font-medium"
             >
               <a href="/referral-management">
                 <span>Gestion</span>
               </a>
             </Button>
+            <div className="mx-4 md:mx-6 lg:mx-8 flex-shrink-0"></div>
             <Button 
-              variant="premium" 
+              variant="default" 
               size="sm"
               asChild
+              className="bg-axone-accent hover:bg-axone-accent-dark text-axone-dark font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
             >
-              <a href="/demo-buttons">
-                <span>✨ Boutons</span>
+              <a href="/vaults">
+                <span>Application</span>
               </a>
             </Button>
-            {isConnected ? (
-              <div className="flex items-center space-x-2">
-                <Button 
-                  variant="secondary"
-                  size="default"
-                  onClick={() => switchChain({ chainId: 998 })}
-                  disabled={isPending}
-                >
-                  {isPending ? 'Changement...' : 'Basculer vers HyperEVM'}
-                </Button>
-                <span className="text-axone-dark dark:text-white-pure px-3 py-1 rounded-lg bg-white-10 dark:bg-axone-dark-light">
-                  {address?.slice(0,6)}...{address?.slice(-4)}
-                </span>
-              </div>
-            ) : (
-              <Button 
-                variant="default" 
-                size="default"
-                onClick={() => connect({ connector: injected() })}
-                className="flex items-center space-x-2"
-              >
-                <span>Connecter Wallet</span>
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            )}
           </motion.div>
+
+          {/* Section wallet à droite */}
+          {isConnected ? (
+            <div className="flex items-center space-x-2">
+              <Button 
+                variant="secondary"
+                size="sm"
+                onClick={() => switchChain({ chainId: 998 })}
+                disabled={isPending}
+              >
+                {isPending ? 'Changement...' : 'Basculer vers HyperEVM'}
+              </Button>
+              <span className="text-axone-dark dark:text-white-pure px-3 py-1 rounded-lg bg-white-10 dark:bg-axone-dark-light">
+                {address?.slice(0,6)}...{address?.slice(-4)}
+              </span>
+            </div>
+          ) : (
+            <Button 
+              variant="default" 
+              size="sm"
+              onClick={() => connect({ connector: injected() })}
+              className="flex items-center space-x-2"
+            >
+              <span>Connecter Wallet</span>
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          )}
 
         </div>
       </div>

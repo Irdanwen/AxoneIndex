@@ -101,13 +101,13 @@ export function VaultCard({ vault }: VaultCardProps) {
 
         {/* Boutons d'action */}
         <div className="flex space-x-2">
-          <Button size="sm" variant="default" className="flex-1">
+          <Button size="sm" variant="default">
             <span className="mr-1">💰</span> Dépôt
           </Button>
-          <Button size="sm" variant="secondary" className="flex-1">
+          <Button size="sm" variant="secondary">
             <span className="mr-1">↩️</span> Retrait
           </Button>
-          <Button size="sm" variant="outline" className="flex-1" asChild>
+          <Button size="sm" variant="outline" asChild>
             <a href={`/vaults/${vault.id}`}>
               <span className="text-lg">ℹ️</span>
             </a>
