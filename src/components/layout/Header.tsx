@@ -79,10 +79,9 @@ const Header: React.FC = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3 }}
-            className="flex items-center absolute left-1/2 transform -translate-x-1/2 max-w-[90vw] justify-center"
+            className="header-nav absolute left-1/2 transform -translate-x-1/2 max-w-[90vw]"
           >
             <ThemeToggle />
-            <div className="mx-4 md:mx-6 lg:mx-8 flex-shrink-0"></div>
             <Button 
               variant="ghost" 
               size="sm"
@@ -93,7 +92,6 @@ const Header: React.FC = () => {
                 <span>Documentation</span>
               </a>
             </Button>
-            <div className="mx-4 md:mx-6 lg:mx-8 flex-shrink-0"></div>
             <Button 
               variant="ghost" 
               size="sm"
@@ -104,7 +102,6 @@ const Header: React.FC = () => {
                 <span>Gestion</span>
               </a>
             </Button>
-            <div className="mx-4 md:mx-6 lg:mx-8 flex-shrink-0"></div>
             <Button 
               variant="default" 
               size="sm"

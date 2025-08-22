@@ -553,6 +553,26 @@
     width: 100%;
   }
 
+  /* Navigation du header: espacement fiable entre éléments */
+  .header-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .header-nav > * + * {
+    margin-left: 1rem; /* ~gap-4 */
+  }
+  @media (min-width: 768px) {
+    .header-nav > * + * {
+      margin-left: 1.5rem; /* ~md:gap-6 */
+    }
+  }
+  @media (min-width: 1024px) {
+    .header-nav > * + * {
+      margin-left: 2rem; /* ~lg:gap-8 */
+    }
+  }
+
   /* Effets de particules améliorés */
   .particle {
     position: absolute;
