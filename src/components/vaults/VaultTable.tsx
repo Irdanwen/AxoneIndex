@@ -9,7 +9,7 @@ interface VaultTableProps {
 
 export function VaultTable({ vaults }: VaultTableProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 sm:gap-x-8 lg:gap-x-10 gap-y-10 sm:gap-y-14 lg:gap-y-20">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 sm:gap-x-8 lg:gap-x-10 gap-y-12 sm:gap-y-16 lg:gap-y-24">
       {vaults.map((vault) => (
         <div key={vault.id} className="p-1 sm:p-1.5 lg:p-2 h-full">
           <VaultCard vault={vault} />

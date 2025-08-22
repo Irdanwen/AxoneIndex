@@ -26,7 +26,7 @@ export default function VaultsPage() {
 
   return (
     <div className="max-w-[70%] mx-auto px-6 md:px-8 lg:px-12 py-10 md:py-12 bg-white dark:bg-axone-stellar-green min-h-screen">
-      <div className="mb-10 md:mb-12 lg:mb-16">
+      <div className="mb-12 md:mb-16 lg:mb-20">
         <h1 className="text-3xl font-bold text-axone-stellar-green dark:text-white mb-3">
           Vaults disponibles
         </h1>
@@ -35,7 +35,7 @@ export default function VaultsPage() {
         </p>
         
         {/* Section résumé utilisateur */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 my-10 md:my-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 my-12 md:my-16">
           <div className="bg-gray-50 dark:bg-gray-800 p-5 rounded-xl border">
             <div className="flex items-center">
               <span className="text-2xl mr-3">💵</span>
@@ -78,7 +78,7 @@ export default function VaultsPage() {
           onFilter={setFilteredVaults} 
         />
       </div>
-      <div className="mt-14 md:mt-16 lg:mt-20">
+      <div className="mt-16 md:mt-20 lg:mt-24">
         <VaultTable vaults={filteredVaults} />
       </div>
     </div>
