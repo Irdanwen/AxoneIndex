@@ -149,7 +149,7 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
   return (
     <div className="mb-6">
       {/* Search and main controls */}
-      <div className="flex flex-col lg:flex-row gap-4 mb-4">
+      <div className="flex flex-col lg:flex-row gap-4" style={{ marginBottom: '2rem' }}>
         {/* Search bar */}
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-vault-dim" />
@@ -212,7 +212,8 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="p-4 bg-vault-card border border-vault rounded-lg space-y-4">
+            <div className="p-4 bg-vault-card border border-vault rounded-lg" style={{ gap: '2rem' }}>
+              <div className="space-y-4">
               {/* Quick filters */}
               <div className="flex flex-wrap gap-2">
                 <button
@@ -300,6 +301,7 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
                   Réinitialiser les filtres
                 </button>
               )}
+              </div>
             </div>
           </motion.div>
         )}
@@ -307,7 +309,7 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
 
       {/* Active filters display */}
       {hasActiveFilters && !showFilters && (
-        <div className="flex flex-wrap gap-2 mt-2">
+        <div className="flex flex-wrap gap-2" style={{ marginTop: '2rem' }}>
           {searchTerm && (
             <span className="px-2 py-1 bg-vault-muted rounded-lg text-xs text-vault-muted flex items-center gap-1">
               Recherche: {searchTerm}

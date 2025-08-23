@@ -52,14 +52,14 @@ export default function VaultsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-vault-page">
+    <main className="min-h-screen hero-gradient">
       <Header />
       
       <div className="relative">
         {/* Background gradient effect */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-vault-brand/5 to-transparent pointer-events-none" />
         
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
+        <div className="relative z-10 container-custom py-8 pt-24">
           {/* Dashboard Header */}
           <VaultDashboard
             totalDeposited={totalDeposited}
@@ -119,7 +119,8 @@ export default function VaultsPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.4 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6"
+              style={{ gap: '1rem' }}
             >
               {filteredVaults.map((vault, index) => (
                 <motion.div

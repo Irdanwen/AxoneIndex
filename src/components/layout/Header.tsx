@@ -115,31 +115,33 @@ const Header: React.FC = () => {
           </motion.div>
 
           {/* Section wallet à droite */}
-          {isConnected ? (
-            <div className="flex items-center space-x-2">
+          <div style={{ marginRight: '2rem' }}>
+            {isConnected ? (
+              <div className="flex items-center" style={{ gap: '2rem' }}>
+                <Button 
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => switchChain({ chainId: 998 })}
+                  disabled={isPending}
+                >
+                  {isPending ? 'Changement...' : 'Basculer vers HyperEVM'}
+                </Button>
+                <span className="text-axone-dark dark:text-white-pure px-3 py-1 rounded-lg bg-white-10 dark:bg-axone-dark-light">
+                  {address?.slice(0,6)}...{address?.slice(-4)}
+                </span>
+              </div>
+            ) : (
               <Button 
-                variant="secondary"
+                variant="default" 
                 size="sm"
-                onClick={() => switchChain({ chainId: 998 })}
-                disabled={isPending}
+                onClick={() => connect({ connector: injected() })}
+                className="flex items-center space-x-2"
               >
-                {isPending ? 'Changement...' : 'Basculer vers HyperEVM'}
+                <span>Connecter Wallet</span>
+                <ArrowRight className="w-4 h-4" />
               </Button>
-              <span className="text-axone-dark dark:text-white-pure px-3 py-1 rounded-lg bg-white-10 dark:bg-axone-dark-light">
-                {address?.slice(0,6)}...{address?.slice(-4)}
-              </span>
-            </div>
-          ) : (
-            <Button 
-              variant="default" 
-              size="sm"
-              onClick={() => connect({ connector: injected() })}
-              className="flex items-center space-x-2"
-            >
-              <span>Connecter Wallet</span>
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          )}
+            )}
+          </div>
 
         </div>
       </div>

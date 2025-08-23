@@ -145,7 +145,8 @@ const Hero: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="flex flex-wrap justify-center gap-4"
+            className="flex flex-wrap justify-center"
+            style={{ gap: '5rem' }}
           >
             <Button 
               variant="default" 
@@ -170,15 +171,16 @@ const Hero: React.FC = () => {
             </Button>
           </motion.div>
 
-          {/* Espacement explicite */}
-          <div className="h-20 md:h-24 lg:h-32"></div>
+          {/* Espacement entre les boutons et les statistiques */}
+          <div style={{ marginTop: '10rem' }}></div>
 
           {/* Statistiques */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="flex flex-row justify-center items-center"
+            className="flex flex-wrap justify-center items-center max-w-4xl mx-auto"
+            style={{ gap: '10rem' }}
           >
             {stats.map((stat, index) => (
               <motion.div
@@ -187,15 +189,15 @@ const Hero: React.FC = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.7 + index * 0.1 }}
                 whileHover={{ y: -8, scale: 1.05 }}
-                className="text-center group px-lg md:px-xl lg:px-2xl"
+                className="text-center group px-4 py-2 min-w-[120px]"
               >
-                <GlassCard className="flex items-center justify-center w-16 h-16 rounded-2xl mb-4 mx-auto border border-axone-accent-20">
-                  <stat.icon className="w-8 h-8 text-axone-accent" />
+                <GlassCard className="flex items-center justify-center w-14 h-14 rounded-xl mb-3 mx-auto border border-axone-accent-20">
+                  <stat.icon className="w-7 h-7 text-axone-accent" />
                 </GlassCard>
-                <div className="stat-value text-3xl font-black text-white-pure mb-1">
+                <div className="stat-value text-2xl font-bold text-white-pure mb-1">
                   <AnimatedCounter value={stat.value} duration={2} />
                 </div>
-                <div className="stat-label text-white-60 font-medium text-base">{stat.label}</div>
+                <div className="stat-label text-white-60 text-sm font-medium">{stat.label}</div>
               </motion.div>
             ))}
           </motion.div>
