@@ -6,6 +6,7 @@ import { ArrowRight, Users, DollarSign, BarChart3 } from 'lucide-react';
 import { Button } from '../ui';
 import AnimatedCounter from '../ui/AnimatedCounter';
 import GlassCard from '../ui/GlassCard';
+import Link from 'next/link';
 
 const Hero: React.FC = () => {
 
@@ -154,10 +155,10 @@ const Hero: React.FC = () => {
               asChild
               className="btn-with-icon group hover:shadow-glow transition-all duration-300"
             >
-              <a href="/referral">
+              <Link href="/referral">
                 Launch App
                 <ArrowRight className="w-5 h-5 btn-icon" />
-              </a>
+              </Link>
             </Button>
             <Button 
               variant="secondary" 
@@ -165,9 +166,9 @@ const Hero: React.FC = () => {
               asChild
               className="hover:shadow-glow-flounce transition-all duration-300"
             >
-              <a href="/documentation">
+              <Link href="/documentation">
                 Documentation
-              </a>
+              </Link>
             </Button>
           </motion.div>
 

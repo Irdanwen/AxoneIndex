@@ -4,6 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Github, Twitter, MessageCircle, Mail } from 'lucide-react';
 import { Button } from '../ui';
+import Link from 'next/link';
 
 const Footer: React.FC = () => {
   const footerLinks = {
@@ -127,10 +128,10 @@ const Footer: React.FC = () => {
                   asChild
                   className="btn-with-icon hover:shadow-glow transition-all duration-300"
                 >
-                  <a href="/referral">
+                  <Link href="/referral">
                     Launch App
                     <ArrowRight className="w-5 h-5 btn-icon" />
-                  </a>
+                  </Link>
                 </Button>
               </motion.div>
 

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useAccount, useConnect, useSwitchChain } from 'wagmi';
 import { injected } from 'wagmi/connectors';
 import { Button } from '../ui';
@@ -58,7 +59,7 @@ const Header: React.FC = () => {
             className="flex items-center space-x-3"
             whileHover={{ scale: 1.02 }}
           >
-            <a href="/" className="flex items-center space-x-3">
+            <Link href="/" className="flex items-center space-x-3">
               <motion.div 
                 className="w-20 h-20 rounded-full bg-white-10 flex items-center justify-center relative overflow-hidden"
                 whileHover={{ rotate: 360 }}
@@ -73,7 +74,7 @@ const Header: React.FC = () => {
                 />
               </motion.div>
               <span className="text-xl font-bold text-axone-dark dark:text-white-pure tracking-tight">Axone</span>
-            </a>
+            </Link>
           </motion.div>
 
           {/* Navigation centrée */}
@@ -90,9 +91,9 @@ const Header: React.FC = () => {
               asChild
               className="text-axone-dark dark:text-white-pure hover:text-axone-accent hover:bg-white-10 dark:hover:bg-axone-dark-light transition-all duration-200 font-medium"
             >
-              <a href="/documentation">
+              <Link href="/documentation">
                 <span>Documentation</span>
-              </a>
+              </Link>
             </Button>
             <Button 
               variant="ghost" 
@@ -100,9 +101,9 @@ const Header: React.FC = () => {
               asChild
               className="text-axone-dark dark:text-white-pure hover:text-axone-accent hover:bg-white-10 dark:hover:bg-axone-dark-light transition-all duration-200 font-medium"
             >
-              <a href="/referral-management">
+              <Link href="/referral-management">
                 <span>Gestion</span>
-              </a>
+              </Link>
             </Button>
             <Button 
               variant="default" 
@@ -110,9 +111,9 @@ const Header: React.FC = () => {
               asChild
               className="bg-axone-accent hover:bg-axone-accent-dark text-axone-dark font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
             >
-              <a href="/vaults">
+              <Link href="/vaults">
                 <span>Application</span>
-              </a>
+              </Link>
             </Button>
           </motion.div>
 

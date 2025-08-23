@@ -10,6 +10,7 @@ import Stat from '@/components/ui/Stat'
 import { motion } from 'framer-motion'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
+import Link from 'next/link'
 
 export default function ReferralManagement() {
   const [error, setError] = useState('')
@@ -190,9 +191,9 @@ export default function ReferralManagement() {
               }
             </p>
             <Button asChild className="w-full">
-              <a href="/referral">
+              <Link href="/referral">
                 Utiliser un code de parrainage
-              </a>
+              </Link>
             </Button>
           </GlassCard>
         </div>
