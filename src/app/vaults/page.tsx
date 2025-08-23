@@ -59,7 +59,7 @@ export default function VaultsPage() {
         {/* Background gradient effect */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-vault-brand/5 to-transparent pointer-events-none" />
         
-        <div className="relative z-10 container-custom py-8 pt-24">
+        <div className="relative z-10 container-custom py-8" style={{ paddingTop: '10rem' }}>
           {/* Dashboard Header */}
           <VaultDashboard
             totalDeposited={totalDeposited}

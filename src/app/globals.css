@@ -390,6 +390,11 @@
     line-height: 1.8;
     font-family: var(--font-family-poppins);
   }
+
+  /* Suppression du soulignement de tous les liens */
+  a {
+    text-decoration: none;
+  }
 }
 
 @layer components {

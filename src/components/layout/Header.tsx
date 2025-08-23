@@ -58,20 +58,22 @@ const Header: React.FC = () => {
             className="flex items-center space-x-3"
             whileHover={{ scale: 1.02 }}
           >
-            <motion.div 
-              className="w-20 h-20 rounded-full bg-white-10 flex items-center justify-center relative overflow-hidden"
-              whileHover={{ rotate: 360 }}
-              transition={{ duration: 0.6 }}
-            >
-              <Image 
-                src="/core_logo.png" 
-                alt="Axone Logo" 
-                width={64}
-                height={64}
-                className="object-contain"
-              />
-            </motion.div>
-            <span className="text-xl font-bold text-axone-dark dark:text-white-pure tracking-tight">Axone</span>
+            <a href="/" className="flex items-center space-x-3">
+              <motion.div 
+                className="w-20 h-20 rounded-full bg-white-10 flex items-center justify-center relative overflow-hidden"
+                whileHover={{ rotate: 360 }}
+                transition={{ duration: 0.6 }}
+              >
+                <Image 
+                  src="/core_logo.png" 
+                  alt="Axone Logo" 
+                  width={64}
+                  height={64}
+                  className="object-contain"
+                />
+              </motion.div>
+              <span className="text-xl font-bold text-axone-dark dark:text-white-pure tracking-tight">Axone</span>
+            </a>
           </motion.div>
 
           {/* Navigation centrée */}

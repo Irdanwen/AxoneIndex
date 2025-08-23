@@ -52,7 +52,7 @@ export function VaultCard({ vault, onDeposit, onWithdraw, onInfo }: VaultCardPro
   return (
     <div className="bg-vault-card border border-vault rounded-xl overflow-hidden hover-vault-card group h-full flex flex-col">
       {/* Header */}
-      <div className="p-5 border-b border-vault">
+      <div className="border-b border-vault" style={{ padding: '1rem' }}>
         <div className="flex items-center justify-between gap-3 mb-3">
           <h3 className="text-lg font-semibold text-vault-primary truncate">
             {vault.name}
@@ -88,7 +88,7 @@ export function VaultCard({ vault, onDeposit, onWithdraw, onInfo }: VaultCardPro
       </div>
 
       {/* Body */}
-      <div className="p-5 space-y-4 flex-1 flex flex-col">
+      <div className="space-y-4 flex-1 flex flex-col" style={{ padding: '1rem' }}>
         {/* TVL */}
         <div className="flex items-center gap-2">
           <p className="text-xs text-vault-muted">TVL:</p>
