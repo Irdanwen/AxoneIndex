@@ -93,11 +93,11 @@ const Footer: React.FC = () => {
               {/* Message principal */}
               <div className="space-y-6">
                 <h3 className="text-3xl font-bold text-white-pure">
-                  Reprenez le contrôle avec Axone
+                  Reprenez le contr&ocirc;le avec Axone
                 </h3>
                 <p className="text-white-75 text-lg leading-relaxed">
-                  Accédez à une expérience DeFi moderne, sécurisée et transparente. Gardez la main
-                  sur vos actifs tout en générant du rendement grâce à notre protocole.
+                  Acc&eacute;dez &agrave; une exp&eacute;rience DeFi moderne, s&eacute;curis&eacute;e et transparente. Gardez la main
+                  sur vos actifs tout en g&eacute;n&eacute;rant du rendement gr&acirc;ce &agrave; notre protocole.
                 </p>
               </div>
 
@@ -115,7 +115,7 @@ const Footer: React.FC = () => {
                   className="btn-with-icon hover:shadow-glow transition-all duration-300"
                 >
                   <Link href="/vaults">
-                    Accéder à l'application
+                    Acc&eacute;der &agrave; l&apos;application
                     <ArrowRight className="w-5 h-5 btn-icon" />
                   </Link>
                 </Button>
@@ -140,7 +140,7 @@ const Footer: React.FC = () => {
               </div>
             </motion.div>
 
-            {/* Colonne droite - Liens organisés */}
+            {/* Colonne droite - Liens organis&eacute;s */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -188,7 +188,7 @@ const Footer: React.FC = () => {
           </div>
         </div>
 
-        {/* Bas de page - Mentions légales */}
+        {/* Bas de page - Mentions l&eacute;gales */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -198,14 +198,14 @@ const Footer: React.FC = () => {
         >
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-white-60 text-sm">
-              © 2024 Axone Finance. Tous droits réservés.
+              &copy; 2024 Axone Finance. Tous droits r&eacute;serv&eacute;s.
             </div>
             <div className="flex space-x-8">
               <a href="#terms" className="text-white-60 hover:text-axone-accent transition-colors text-sm">
-                Conditions d'utilisation
+                Conditions d&apos;utilisation
               </a>
               <a href="#privacy" className="text-white-60 hover:text-axone-accent transition-colors text-sm">
-                Politique de confidentialité
+                Politique de confidentialit&eacute;
               </a>
               <a href="#cookies" className="text-white-60 hover:text-axone-accent transition-colors text-sm">
                 Politique des cookies

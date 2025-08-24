@@ -60,7 +60,7 @@ export function VaultForm({ initialData, onSave, onDelete, onCancel, autoSave }:
         clearTimeout(autosaveTimerRef.current)
       }
     }
-  }, [autoSave, formData, onSave])
+  }, [autoSave, formData, onSave, totalPercentage])
 
   const addToken = () => {
     setFormData({

@@ -21,9 +21,6 @@ export default function DocumentationPage() {
   const protocolConceptsIds = ['overview-index', 'rebalancing', 'hypercore', 'hyperunit'];
   const tokenDesignIds = ['token', 'launch', 'revenue', 'fees', 'inflation', 'value', 'buyback'];
   const growthIds = ['introduction', 'epoch0', 'epoch1', 'epoch2'];
-  const isProtocolOpen = protocolConceptsIds.includes(selectedSection);
-  const isTokenOpen = tokenDesignIds.includes(selectedSection);
-  const isGrowthOpen = growthIds.includes(selectedSection);
   const orderedSectionIds = ['overview', ...protocolConceptsIds, ...tokenDesignIds, ...growthIds];
   function SectionNav({ currentId }: { currentId: string }) {
     const index = orderedSectionIds.indexOf(currentId);
