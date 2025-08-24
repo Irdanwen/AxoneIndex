@@ -35,6 +35,8 @@ export function VaultForm({ initialData, onSave, onDelete, onCancel, autoSave }:
     onSave(formData)
   }
 
+  const totalPercentage = formData.tokens.reduce((sum, token) => sum + token.percentage, 0)
+
   // Auto-enregistrement (debounce) lorsqu'activé
   useEffect(() => {
     if (!autoSave) return
@@ -81,8 +83,6 @@ export function VaultForm({ initialData, onSave, onDelete, onCancel, autoSave }:
     newTokens[index] = { ...newTokens[index], [field]: value }
     setFormData({ ...formData, tokens: newTokens })
   }
-
-  const totalPercentage = formData.tokens.reduce((sum, token) => sum + token.percentage, 0)
 
   return (
     <form onSubmit={handleSubmit} className="border rounded-lg p-6 bg-white dark:bg-gray-800">
