@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,9 +12,10 @@ interface VaultFormProps {
   onSave: (vault: Vault) => void
   onDelete?: () => void
   onCancel?: () => void
+  autoSave?: boolean
 }
 
-export function VaultForm({ initialData, onSave, onDelete, onCancel }: VaultFormProps) {
+export function VaultForm({ initialData, onSave, onDelete, onCancel, autoSave }: VaultFormProps) {
   const [formData, setFormData] = useState<Vault>(initialData || {
     id: '',
     name: '',
@@ -26,10 +27,40 @@ export function VaultForm({ initialData, onSave, onDelete, onCancel }: VaultForm
     risk: 'low'
   })
 
+  const isFirstRenderRef = useRef(true)
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSave(formData)
   }
+
+  // Auto-enregistrement (debounce) lorsqu'activé
+  useEffect(() => {
+    if (!autoSave) return
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false
+      return
+    }
+
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current)
+    }
+
+    autosaveTimerRef.current = setTimeout(() => {
+      const hasTokens = formData.tokens.length > 0
+      const isValidTotal = totalPercentage === 100
+      if (!hasTokens || isValidTotal) {
+        onSave(formData)
+      }
+    }, 500)
+
+    return () => {
+      if (autosaveTimerRef.current) {
+        clearTimeout(autosaveTimerRef.current)
+      }
+    }
+  }, [autoSave, formData, onSave])
 
   const addToken = () => {
     setFormData({

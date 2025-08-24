@@ -64,47 +64,49 @@ export default function DocumentationPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar de navigation */}
           <div className="lg:col-span-1">
-            <GlassCard className="p-6 sticky top-[10rem] mt-[10rem] mb-[5rem]">
-              <h2 className="text-2xl font-bold text-axone-accent mb-6">
+            <GlassCard padding="sm" className="group p-3 hover:p-6 md:p-3 md:hover:p-6 transition-all duration-300 ease-out sticky top-[10rem] mt-[10rem] mb-[10rem] hover:mb-[5rem]">
+              <h2 className="text-2xl font-bold text-axone-accent mb-2 group-hover:mb-6 transition-all duration-300 ease-out">
                 Documentation
               </h2>
               
-              <nav className="space-y-4">
-                <div className="group">
-                  <div className="text-xs font-semibold tracking-wide text-white-60 mb-2">PROTOCOL CONCEPTS</div>
-                  <div className={`space-y-1 overflow-hidden transition-all duration-300 ease-out ${isProtocolOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 group-hover:max-h-96 group-hover:opacity-100'}`}>
-                    <a href="#overview-index" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'overview-index' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🎯 Overview</a>
-                    <a href="#rebalancing" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'rebalancing' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>⚖️ Smart Rebalancing</a>
-                    <a href="#hypercore" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'hypercore' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🌊 Axone x Hypercore</a>
-                    <a href="#hyperunit" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'hyperunit' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🛡️ Axone x HyperUnit</a>
+              <div className="hidden group-hover:block transition-all duration-300 ease-out">
+                <nav className="space-y-4">
+                  <div>
+                    <div className="text-xs font-semibold tracking-wide text-white-60 mb-2">PROTOCOL CONCEPTS</div>
+                    <div className="space-y-1">
+                      <a href="#overview-index" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'overview-index' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🎯 Overview</a>
+                      <a href="#rebalancing" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'rebalancing' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>⚖️ Smart Rebalancing</a>
+                      <a href="#hypercore" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'hypercore' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🌊 Axone x Hypercore</a>
+                      <a href="#hyperunit" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'hyperunit' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🛡️ Axone x HyperUnit</a>
+                    </div>
                   </div>
-                </div>
 
-                <div className="group">
-                  <div className="text-xs font-semibold tracking-wide text-white-60 mb-2">TOKEN DESIGN</div>
-                  <div className={`space-y-1 overflow-hidden transition-all duration-300 ease-out ${isTokenOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 group-hover:max-h-96 group-hover:opacity-100'}`}>
-                    <a href="#token" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'token' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>⭐ Le Token Axone</a>
-                    <a href="#launch" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'launch' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🚀 Lancement</a>
-                    <a href="#revenue" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'revenue' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>💠 Revenue</a>
-                    <a href="#fees" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'fees' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>💰 Gestion des frais</a>
-                    <a href="#inflation" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'inflation' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>📈 Inflation maîtrisée</a>
-                    <a href="#value" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'value' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🔥 Partage de la valeur</a>
-                    <a href="#buyback" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'buyback' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🌀 Buyback & Burn</a>
+                  <div>
+                    <div className="text-xs font-semibold tracking-wide text-white-60 mb-2">TOKEN DESIGN</div>
+                    <div className="space-y-1">
+                      <a href="#token" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'token' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>⭐ Le Token Axone</a>
+                      <a href="#launch" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'launch' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🚀 Lancement</a>
+                      <a href="#revenue" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'revenue' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>💠 Revenue</a>
+                      <a href="#fees" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'fees' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>💰 Gestion des frais</a>
+                      <a href="#inflation" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'inflation' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>📈 Inflation maîtrisée</a>
+                      <a href="#value" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'value' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🔥 Partage de la valeur</a>
+                      <a href="#buyback" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'buyback' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🌀 Buyback & Burn</a>
+                    </div>
                   </div>
-                </div>
 
-                <div className="group">
-                  <div className="text-xs font-semibold tracking-wide text-white-60 mb-2">STRATEGIE DE CROISSANCE</div>
-                  <div className={`space-y-1 overflow-hidden transition-all duration-300 ease-out ${isGrowthOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 group-hover:max-h-96 group-hover:opacity-100'}`}>
-                    <a href="#introduction" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'introduction' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🌾 Introduction</a>
-                    <a href="#epoch0" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'epoch0' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🌟 Époque 0</a>
-                    <a href="#epoch1" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'epoch1' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🌍 Époque 1</a>
-                    <a href="#epoch2" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'epoch2' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🚀 Époque 2</a>
+                  <div>
+                    <div className="text-xs font-semibold tracking-wide text-white-60 mb-2">STRATEGIE DE CROISSANCE</div>
+                    <div className="space-y-1">
+                      <a href="#introduction" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'introduction' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🌾 Introduction</a>
+                      <a href="#epoch0" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'epoch0' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🌟 Époque 0</a>
+                      <a href="#epoch1" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'epoch1' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🌍 Époque 1</a>
+                      <a href="#epoch2" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'epoch2' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🚀 Époque 2</a>
+                    </div>
                   </div>
-                </div>
-              </nav>
+                </nav>
+              </div>
               
-              <div className="mt-8 pt-6 border-t border-white-10">
+              <div className="mt-2 group-hover:mt-6 pt-0 group-hover:pt-6 border-t border-transparent group-hover:border-white-10 transition-all duration-300 ease-out">
                 <a 
                   href="/referral" 
                   className="btn-primary w-full flex justify-center"

@@ -31,6 +31,10 @@ export default function AdminVaultsPage() {
     setVaults(updated)
   }
 
+  const handleAddNewVault = () => {
+    handleSave(newVault)
+  }
+
   const newVault: Vault = {
     id: '',
     name: '',
@@ -43,12 +47,12 @@ export default function AdminVaultsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="container-custom py-8 relative z-10">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold text-axone-stellar-green dark:text-white">
           Gestion des Vaults
         </h1>
-        <Button onClick={() => setShowNewForm(true)}>
+        <Button onClick={handleAddNewVault}>
           + Nouveau Vault
         </Button>
       </div>
@@ -63,14 +67,16 @@ export default function AdminVaultsPage() {
         </div>
       )}
       
-      <div className="space-y-6">
+      <div>
         {vaults.map(vault => (
-          <VaultForm 
-            key={vault.id} 
-            initialData={vault} 
-            onSave={handleSave}
-            onDelete={() => handleDelete(vault.id)}
-          />
+          <div key={vault.id} className="mb-[10rem] last:mb-0">
+            <VaultForm 
+              initialData={vault} 
+              onSave={handleSave}
+              autoSave
+              onDelete={() => handleDelete(vault.id)}
+            />
+          </div>
         ))}
       </div>
     </div>

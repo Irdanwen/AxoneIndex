@@ -8,37 +8,23 @@ import Link from 'next/link';
 
 const Footer: React.FC = () => {
   const footerLinks = {
-    explore: [
-      { label: 'Protocol', href: '#protocol' },
-      { label: 'Features', href: '#features' },
-      { label: 'Roadmap', href: '#roadmap' },
-      { label: 'Whitepaper', href: '#whitepaper' },
+    navigation: [
+      { label: 'Accueil', href: '/' },
+      { label: 'Documentation', href: '/documentation' },
+      { label: "Application", href: '/vaults' },
+      { label: 'Gestion', href: '/referral-management' },
     ],
-    ecosystem: [
-      { label: 'Developers', href: '#developers' },
-      { label: 'Partners', href: '#partners' },
-      { label: 'Integrations', href: '#integrations' },
-      { label: 'API', href: '#api' },
+    produit: [
+      { label: 'Parrainage', href: '/referral' },
+      { label: 'Admin (accès restreint)', href: '/admin/vaults' },
     ],
-    participate: [
-      { label: 'Governance', href: '#governance' },
-      { label: 'Staking', href: '#staking' },
-      { label: 'Rewards', href: '#rewards' },
-      { label: 'Community', href: '#community' },
-    ],
-    build: [
-      { label: 'Documentation', href: '#docs' },
-      { label: 'GitHub', href: '#github' },
-      { label: 'SDK', href: '#sdk' },
-      { label: 'Support', href: '#support' },
-    ],
-  };
+  } as const;
 
   const socialLinks = [
-    { icon: Twitter, href: '#twitter', label: 'Twitter' },
+    { icon: Twitter, href: '#x', label: 'X' },
     { icon: MessageCircle, href: '#discord', label: 'Discord' },
     { icon: Github, href: '#github', label: 'GitHub' },
-    { icon: Mail, href: '#mail', label: 'Email' },
+    { icon: Mail, href: '#contact', label: 'Email' },
   ];
 
   return (
@@ -107,11 +93,11 @@ const Footer: React.FC = () => {
               {/* Message principal */}
               <div className="space-y-6">
                 <h3 className="text-3xl font-bold text-white-pure">
-                  Control what&apos;s yours with Axone
+                  Reprenez le contrôle avec Axone
                 </h3>
                 <p className="text-white-75 text-lg leading-relaxed">
-                  Join the future of decentralized finance. Maintain full control over your assets 
-                  while earning rewards through our innovative protocol.
+                  Accédez à une expérience DeFi moderne, sécurisée et transparente. Gardez la main
+                  sur vos actifs tout en générant du rendement grâce à notre protocole.
                 </p>
               </div>
 
@@ -128,8 +114,8 @@ const Footer: React.FC = () => {
                   asChild
                   className="btn-with-icon hover:shadow-glow transition-all duration-300"
                 >
-                  <Link href="/referral">
-                    Launch App
+                  <Link href="/vaults">
+                    Accéder à l'application
                     <ArrowRight className="w-5 h-5 btn-icon" />
                   </Link>
                 </Button>
@@ -176,12 +162,23 @@ const Footer: React.FC = () => {
                         transition={{ delay: 0.5 + categoryIndex * 0.1 + linkIndex * 0.05 }}
                         viewport={{ once: true }}
                       >
-                        <a
-                          href={link.href}
-                          className="text-white-75 hover:text-axone-accent transition-colors duration-300 text-sm"
-                        >
-                          {link.label}
-                        </a>
+                        {link.href.startsWith('/') ? (
+                          <Link
+                            href={link.href}
+                            className="text-white-75 hover:text-axone-accent transition-colors duration-300 text-sm"
+                          >
+                            {link.label}
+                          </Link>
+                        ) : (
+                          <a
+                            href={link.href}
+                            className="text-white-75 hover:text-axone-accent transition-colors duration-300 text-sm"
+                            target={link.href.startsWith('#') ? undefined : "_blank"}
+                            rel={link.href.startsWith('#') ? undefined : "noopener noreferrer"}
+                          >
+                            {link.label}
+                          </a>
+                        )}
                       </motion.li>
                     ))}
                   </ul>
@@ -201,17 +198,17 @@ const Footer: React.FC = () => {
         >
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-white-60 text-sm">
-              © 2024 Axone Finance. All rights reserved.
+              © 2024 Axone Finance. Tous droits réservés.
             </div>
             <div className="flex space-x-8">
               <a href="#terms" className="text-white-60 hover:text-axone-accent transition-colors text-sm">
-                Terms of Service
+                Conditions d'utilisation
               </a>
               <a href="#privacy" className="text-white-60 hover:text-axone-accent transition-colors text-sm">
-                Privacy Policy
+                Politique de confidentialité
               </a>
               <a href="#cookies" className="text-white-60 hover:text-axone-accent transition-colors text-sm">
-                Cookie Policy
+                Politique des cookies
               </a>
             </div>
           </div>

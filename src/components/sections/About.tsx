@@ -3,25 +3,26 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Shield, Zap, TrendingUp } from 'lucide-react';
-import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '../ui';
+import GlassCard from '@/components/ui/GlassCard';
 
 const About: React.FC = () => {
   const features = [
     {
-      icon: Shield,
-      title: "Secure Protocol",
-      description: "Multi-layer security with audited smart contracts"
+      icon: TrendingUp,
+      title: 'Rééquilibrage intelligent',
+      description: 'Vos positions s’adaptent automatiquement au marché.'
     },
     {
       icon: Zap,
-      title: "Instant Rewards",
-      description: "Earn rewards immediately without lock-up periods"
+      title: 'Liquidité native Hypercore',
+      description: 'Exécution rapide, slippage minimal, frais optimisés.'
     },
     {
-      icon: TrendingUp,
-      title: "Optimized Performance",
-      description: "AI-driven strategies for maximum yield generation"
+      icon: Shield,
+      title: 'Sécurité HyperUnit',
+      description: 'Actifs natifs, transparents et traçables on-chain.'
     }
   ];
 
@@ -37,8 +38,8 @@ const About: React.FC = () => {
       </div>
 
       <div className="container-custom relative z-10">
-        <div className="grid lg:grid-cols-2 gap-20 items-center">
-          {/* Contenu texte à gauche */}
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          {/* Colonne gauche : message principal */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -46,41 +47,34 @@ const About: React.FC = () => {
             viewport={{ once: true }}
             className="space-y-8"
           >
-
-
-            {/* Titre */}
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.2 }}
               viewport={{ once: true }}
               className="text-5xl lg:text-6xl font-black text-white-pure leading-tight"
             >
-              The Future of{' '}
-              <span className="text-gradient">DeFi</span>
+              Axone <span className="text-gradient">Index</span>
               <br />
-              is Here
+              L’investissement Web3, réinventé
             </motion.h2>
 
-            {/* Description */}
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
+              transition={{ delay: 0.35 }}
               viewport={{ once: true }}
               className="text-xl text-white-85 leading-relaxed"
             >
-              Axone Finance represents the next evolution in decentralized finance. 
-              Our protocol combines cutting-edge technology with proven DeFi principles 
-              to deliver unprecedented opportunities for users to earn while maintaining 
-              complete control over their assets.
+              Exposition instantanée à plusieurs actifs, rééquilibrage automatique, transparence on-chain.
+              Axone transforme la complexité du Web3 en un produit simple, performant et accessible.
             </motion.p>
 
-            {/* Features */}
+            {/* Points clés inspirés de la documentation */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
+              transition={{ delay: 0.45 }}
               viewport={{ once: true }}
               className="space-y-6"
             >
@@ -89,7 +83,7 @@ const About: React.FC = () => {
                   key={feature.title}
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 + index * 0.1 }}
+                  transition={{ delay: 0.5 + index * 0.1 }}
                   viewport={{ once: true }}
                   className="flex items-start space-x-4 group"
                 >
@@ -97,127 +91,81 @@ const About: React.FC = () => {
                     <feature.icon className="w-6 h-6 text-axone-accent" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white-pure mb-2">{feature.title}</h3>
+                    <h3 className="text-xl font-bold text-white-pure mb-1">{feature.title}</h3>
                     <p className="text-white-75">{feature.description}</p>
                   </div>
                 </motion.div>
               ))}
             </motion.div>
 
-            {/* CTA Button */}
+            {/* CTAs */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
+              transition={{ delay: 0.6 }}
               viewport={{ once: true }}
+              className="flex flex-col sm:flex-row"
             >
-              <Button 
-                variant="secondary" 
-                size="lg" 
-                className="btn-with-icon hover:shadow-glow-flounce transition-all duration-300"
-              >
-                Access Axone
-                <ArrowRight className="w-5 h-5 btn-icon" />
+              <Button asChild size="lg" className="hover:shadow-glow-flounce mb-[2rem] last:mb-0 sm:mb-0 sm:mr-[2rem] last:sm:mr-0 w-[20rem]">
+                <Link href="/documentation">
+                  Découvrir la documentation
+                  <ArrowRight className="w-5 h-5 ml-2 inline-block align-middle" />
+                </Link>
+              </Button>
+              <Button asChild variant="secondary" size="lg" className="hover:shadow-glow mb-[2rem] last:mb-0 sm:mb-0 sm:mr-[2rem] last:sm:mr-0 w-[20rem]">
+                <Link href="/referral">
+                  Accéder à la plateforme
+                </Link>
               </Button>
             </motion.div>
           </motion.div>
 
-          {/* Illustration à droite */}
+          {/* Colonne droite : cartes d'aperçu inspirées de la doc */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="relative min-h-[400px] md:min-h-[500px] lg:min-h-[600px] flex items-center justify-center"
+            className=""
           >
-            {/* Carte principale */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 }}
-              viewport={{ once: true }}
-              className="glass-card-strong p-3 md:p-4 lg:p-5 rounded-2xl relative overflow-hidden border border-axone-accent-20 hover:border-axone-accent transition-colors w-30"
-            >
-              {/* Effet de brillance */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white-10 to-transparent transform -skew-x-12 -translate-x-full animate-shimmer"></div>
-              
-              <div className="relative z-10 text-center">
-                {/* Logo Axone du projet */}
-                <motion.div 
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  transition={{ duration: 0.3 }}
-                  className="w-25 h-25 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4 shadow-glow overflow-hidden"
-                >
-                  <Image 
-                    src="/core_logo.png" 
-                    alt="Axone Logo" 
-                    width={100}
-                    height={100}
-                    className="w-full h-full object-contain p-2"
-                  />
-                </motion.div>
-                
-                <h3 className="text-lg md:text-xl font-bold text-white-pure mb-2 md:mb-3">
-                  Axone Token
-                </h3>
-                <p className="text-white-85 mb-3 md:mb-4 leading-relaxed text-xs md:text-sm">
-                  The native token powering the Axone ecosystem with{' '}
-                  <span className="text-axone-accent font-semibold">governance rights</span> and{' '}
-                  <span className="text-axone-flounce font-semibold">reward distribution</span>
+            <GlassCard className="p-6 border border-axone-accent-20 max-w-[30rem] mb-[2rem] last:mb-0">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <TrendingUp className="w-5 h-5 text-axone-accent" />
+                  <h3 className="text-lg font-bold text-white-pure">Smart Rebalancing</h3>
+                </div>
+                <p className="text-white-85 text-sm leading-relaxed">
+                  Toutes les heures, vos index s’ajustent automatiquement : capture des gains,
+                  réduction du risque, allocation optimisée — sans effort.
                 </p>
-                
-                {/* Stats */}
-                <div className="grid grid-cols-2 gap-2 md:gap-3 lg:gap-4">
-                  <div className="text-center">
-                    <div className="text-lg md:text-xl font-black text-axone-accent">1M</div>
-                    <div className="text-xs text-white-60 font-medium">Total Supply</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg md:text-xl font-black text-axone-flounce">$2.45</div>
-                    <div className="text-xs text-white-60 font-medium">Current Price</div>
-                  </div>
-                </div>
               </div>
-            </motion.div>
+            </GlassCard>
 
-            {/* Cartes flottantes */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-              viewport={{ once: true }}
-              whileHover={{ y: -5, scale: 1.05 }}
-              className="absolute -top-2 -right-2 md:-top-3 md:-right-3 lg:-top-4 lg:-right-4 glass-card p-2 md:p-3 lg:p-4 rounded-xl border border-axone-accent-20 hover:border-axone-accent transition-all duration-300"
-            >
-              <div className="flex items-center space-x-2 md:space-x-3">
-                <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-white-pure" />
+            <GlassCard className="p-6 border border-axone-flounce-20 max-w-[30rem] mb-[2rem] last:mb-0">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Zap className="w-5 h-5 text-axone-flounce" />
+                  <h3 className="text-lg font-bold text-white-pure">Hypercore Liquidity</h3>
                 </div>
-                <div>
-                  <div className="text-sm md:text-base font-bold text-white-pure">+24.7%</div>
-                  <div className="text-xs text-white-60 font-medium">30d</div>
-                </div>
+                <p className="text-white-85 text-sm leading-relaxed">
+                  Accès direct à la liquidité native d’Hyperliquid : exécution instantanée,
+                  slippage minimal, expérience fluide à chaque transaction.
+                </p>
               </div>
-            </motion.div>
+            </GlassCard>
 
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
-              viewport={{ once: true }}
-              whileHover={{ y: -5, scale: 1.05 }}
-              className="absolute -bottom-2 -left-2 md:-bottom-3 md:-left-3 lg:-bottom-4 lg:-left-4 glass-card p-2 md:p-3 lg:p-4 rounded-xl border border-axone-flounce-20 hover:border-axone-flounce transition-all duration-300"
-            >
-              <div className="flex items-center space-x-2 md:space-x-3">
-                <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-secondary rounded-lg flex items-center justify-center">
-                  <Shield className="w-3 h-3 md:w-4 md:h-4 text-white-pure" />
+            <GlassCard className="p-6 border border-white-10 max-w-[30rem] mb-[2rem] last:mb-0">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Shield className="w-5 h-5 text-white-85" />
+                  <h3 className="text-lg font-bold text-white-pure">HyperUnit Security</h3>
                 </div>
-                <div>
-                  <div className="text-sm md:text-base font-bold text-white-pure">Audited</div>
-                  <div className="text-xs text-white-60 font-medium">Security</div>
-                </div>
+                <p className="text-white-85 text-sm leading-relaxed">
+                  Transparence et sécurité au cœur du protocole : actifs natifs, traçabilité on-chain,
+                  alignement durable avec l’écosystème Hyperliquid.
+                </p>
               </div>
-            </motion.div>
+            </GlassCard>
           </motion.div>
         </div>
       </div>

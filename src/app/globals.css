@@ -734,6 +734,7 @@
     bottom: 0;
     background: radial-gradient(circle at 50% 50%, rgba(250, 176, 98, 0.1) 0%, transparent 50%);
     animation: var(--animation-pulse-glow);
+    pointer-events: none;
   }
 
   /* Titres améliorés */
