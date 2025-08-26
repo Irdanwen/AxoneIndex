@@ -1,0 +1,8 @@
+out/
+cache/
+.env
+lib/
+broadcast/
+foundry-artifacts/
+node_modules/
+
