@@ -2,12 +2,9 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
-import {CoreInteractionHandler} from "../src/CoreInteractionHandler.sol";
-import {VaultContract} from "../src/VaultContract.sol";
+import {CoreInteractionHandler, ICoreWriter, IERC20 as IERC20Handler} from "../src/CoreInteractionHandler.sol";
+import {VaultContract, IHandler, IERC20 as IERC20Vault} from "../src/VaultContract.sol";
 import {L1Read} from "../src/interfaces/L1Read.sol";
-
-interface ICoreWriter { function sendRawAction(bytes calldata) external; }
-interface IERC20 { function decimals() external view returns (uint8); }
 
 contract Deploy is Script {
     function run() external {
@@ -20,16 +17,17 @@ contract Deploy is Script {
         CoreInteractionHandler handler = new CoreInteractionHandler(
             L1Read(l1readAddr),
             ICoreWriter(coreWriterAddr),
-            IERC20(usdcEvm)
+            IERC20Handler(usdcEvm)
         );
-        VaultContract vault = new VaultContract(IERC20(usdcEvm));
+        VaultContract vault = new VaultContract(IERC20Vault(usdcEvm));
 
-        vault.setHandler(handler);
+        vault.setHandler(IHandler(address(handler)));
         handler.setVault(address(vault));
 
-        // TODO utilisateur: configurer liens Core
+        // TODO utilisateur: configurer liens Core Spot
         // handler.setUsdcCoreLink(<USDC_CORE_SYSTEM_ADDR>, <USDC_CORE_TOKEN_ID>);
-        // handler.setPerpIds(<BTC_ID>, <HYPE_ID>);
+        // handler.setSpotIds(<BTC_SPOT_ID>, <HYPE_SPOT_ID>);
+        // handler.setSpotTokenIds(<USDC_TOKEN_ID>, <BTC_TOKEN_ID>, <HYPE_TOKEN_ID>);
         // handler.setLimits(200_000_000, 3600);
         // handler.setParams(50, 10, 100);
         // vault.setFees(0, 0, 9000);

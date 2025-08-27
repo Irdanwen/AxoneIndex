@@ -12,8 +12,8 @@ interface IERC20 {
 }
 
 interface IHandler {
-    function equityUsd1e18() external view returns (uint256);
-    function executeDeposit(uint64 usdc1e6, bool moveToPerp, bool forceRebalance) external;
+    function equitySpotUsd1e18() external view returns (uint256);
+    function executeDeposit(uint64 usdc1e6, bool forceRebalance) external;
     function pullFromCoreToEvm(uint64 usdc1e6) external returns (uint64);
     function sweepToVault(uint64 amount1e6) external;
 }
@@ -85,7 +85,7 @@ contract VaultContract {
     // NAV/PPS
     function nav1e18() public view returns (uint256) {
         uint256 evm1e18 = usdc.balanceOf(address(this)) * 1e12;
-        uint256 coreEq1e18 = address(handler) == address(0) ? 0 : handler.equityUsd1e18();
+        uint256 coreEq1e18 = address(handler) == address(0) ? 0 : handler.equitySpotUsd1e18();
         return evm1e18 + coreEq1e18;
     }
 
@@ -130,7 +130,7 @@ contract VaultContract {
             if (deployAmt > 0) {
                 // targeted approve for handler pull
                 require(usdc.approve(address(handler), deployAmt), "approve fail");
-                handler.executeDeposit(deployAmt, true, true);
+                handler.executeDeposit(deployAmt, true);
             }
         }
     }
