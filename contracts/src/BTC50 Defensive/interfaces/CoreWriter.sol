@@ -10,3 +10,5 @@ contract CoreWriter {
     emit RawAction(msg.sender, data);
   }
 }
+
+

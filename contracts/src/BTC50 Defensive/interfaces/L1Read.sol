@@ -255,3 +255,4 @@ contract L1Read {
     return abi.decode(result, (CoreUserExists));
   }
 }
+
