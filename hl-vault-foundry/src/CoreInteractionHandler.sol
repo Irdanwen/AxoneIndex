@@ -29,8 +29,12 @@ contract CoreInteractionHandler {
     address public vault;
     address public usdcCoreSystemAddress;
     uint64 public usdcCoreTokenId;
-    uint32 public perpBTC;
-    uint32 public perpHYPE;
+    // Spot market ids (BTC/USDC and HYPE/USDC)
+    uint32 public spotBTC;
+    uint32 public spotHYPE;
+    // Spot token ids for balances
+    uint64 public spotTokenBTC;
+    uint64 public spotTokenHYPE;
 
     // Risk params
     uint64 public maxOutboundPerEpoch;
@@ -49,7 +53,8 @@ contract CoreInteractionHandler {
     event ParamsSet(uint64 maxSlippageBps, uint64 marketEpsilonBps, uint64 deadbandBps);
     event VaultSet(address vault);
     event UsdcCoreLinkSet(address systemAddress, uint64 tokenId);
-    event PerpIdsSet(uint32 btc, uint32 hype);
+    event SpotIdsSet(uint32 btcSpot, uint32 hypeSpot);
+    event SpotTokenIdsSet(uint64 usdcToken, uint64 btcToken, uint64 hypeToken);
     event OutboundToCore(bytes data);
     event InboundFromCore(uint64 amount1e6);
     event Rebalanced(int256 dBtc1e18, int256 dHype1e18);
@@ -78,10 +83,17 @@ contract CoreInteractionHandler {
         emit UsdcCoreLinkSet(systemAddr, tokenId);
     }
 
-    function setPerpIds(uint32 btc, uint32 hype) external {
-        perpBTC = btc;
-        perpHYPE = hype;
-        emit PerpIdsSet(btc, hype);
+    function setSpotIds(uint32 btcSpot, uint32 hypeSpot) external {
+        spotBTC = btcSpot;
+        spotHYPE = hypeSpot;
+        emit SpotIdsSet(btcSpot, hypeSpot);
+    }
+
+    function setSpotTokenIds(uint64 usdcToken, uint64 btcToken, uint64 hypeToken) external {
+        usdcCoreTokenId = usdcToken;
+        spotTokenBTC = btcToken;
+        spotTokenHYPE = hypeToken;
+        emit SpotTokenIdsSet(usdcToken, btcToken, hypeToken);
     }
 
     function setLimits(uint64 _maxOutboundPerEpoch, uint64 _epochLength) external {
@@ -97,36 +109,54 @@ contract CoreInteractionHandler {
         emit ParamsSet(_maxSlippageBps, _marketEpsilonBps, _deadbandBps);
     }
 
-    // Views
-    function equityUsd1e18() public view returns (uint256) {
-        // Core equity only (1e6 → 1e18). EVM USDC est compté dans le Vault.
-        L1Read.AccountMarginSummary memory s = l1read.accountMarginSummary(perpBTC, vault);
-        int256 coreRawUsd1e6 = s.rawUsd; // signed
-        return coreRawUsd1e6 > 0 ? uint256(uint64(coreRawUsd1e6)) * 1e12 : 0;
+    // Views (spot)
+    function spotBalance(address coreUser, uint64 tokenId) public view returns (uint64) {
+        L1Read.SpotBalance memory b = l1read.spotBalance(coreUser, tokenId);
+        return b.total;
     }
 
-    function perpOraclePx1e8(uint32 asset) public view returns (uint64) {
-        uint64 px = l1read.oraclePx(asset);
+    function spotOraclePx1e8(uint32 spotAsset) public view returns (uint64) {
+        uint64 px = l1read.spotPx(spotAsset);
         if (px == 0) revert OracleZero();
         return px;
     }
 
-    function perpPositionNotionalUsd1e18(uint32 asset) public view returns (int256) {
-        L1Read.Position memory p = l1read.position(vault, uint16(asset));
-        // ntl in 1e8, convert to 1e18
-        int256 ntl1e8 = int256(uint256(p.entryNtl));
-        return ntl1e8 * 1e10;
+    function equitySpotUsd1e18() public view returns (uint256) {
+        // Core spot equity only. EVM USDC est compté dans le Vault.
+        uint256 usdcBal1e6 = spotBalance(address(this), usdcCoreTokenId);
+        uint256 btcBal1e0 = spotBalance(address(this), spotTokenBTC);
+        uint256 hypeBal1e0 = spotBalance(address(this), spotTokenHYPE);
+
+        uint256 pxB1e8 = spotOraclePx1e8(spotBTC);
+        uint256 pxH1e8 = spotOraclePx1e8(spotHYPE);
+
+        // USDC 1e6 -> 1e18, assets: balance 1e0 * px1e8 * 1e10
+        uint256 usdc1e18 = usdcBal1e6 * 1e12;
+        uint256 btcUsd1e18 = btcBal1e0 * pxB1e8 * 1e10;
+        uint256 hypeUsd1e18 = hypeBal1e0 * pxH1e8 * 1e10;
+        return usdc1e18 + btcUsd1e18 + hypeUsd1e18;
     }
 
     // Core flows
-    function executeDeposit(uint64 usdc1e6, bool moveToPerp, bool forceRebalance) external onlyVault {
+    function executeDeposit(uint64 usdc1e6, bool forceRebalance) external onlyVault {
         _rateLimit(usdc1e6);
         // Pull USDC from vault to handler
         require(usdc.transferFrom(msg.sender, address(this), usdc1e6), "transferFrom fail");
         // EVM->Core spot: send to system address to credit Core spot balance
         require(usdc.transfer(usdcCoreSystemAddress, usdc1e6), "transfer to system fail");
-        if (moveToPerp) {
-            _send(coreWriter, HLConstants.encodeUsdClassTransfer(usdc1e6, true));
+        // After crediting USDC spot, place two IOC buys ~50/50 into BTC and HYPE
+        uint256 halfUsd1e18 = (uint256(usdc1e6) * 1e12) / 2;
+        uint64 pxB = spotOraclePx1e8(spotBTC);
+        uint64 pxH = spotOraclePx1e8(spotHYPE);
+        uint64 szB1e8 = _toSz1e8(int256(halfUsd1e18), pxB);
+        uint64 szH1e8 = _toSz1e8(int256(halfUsd1e18), pxH);
+        if (szB1e8 > 0) {
+            uint64 pxBLimit = _limitFromOracle(pxB, true);
+            _send(coreWriter, HLConstants.encodeLimitOrder(spotBTC, true, pxBLimit, szB1e8, false, HLConstants.TIF_IOC, 0));
+        }
+        if (szH1e8 > 0) {
+            uint64 pxHLimit = _limitFromOracle(pxH, true);
+            _send(coreWriter, HLConstants.encodeLimitOrder(spotHYPE, true, pxHLimit, szH1e8, false, HLConstants.TIF_IOC, 0));
         }
         if (forceRebalance) {
             rebalancePortfolio(0, 0);
@@ -134,8 +164,19 @@ contract CoreInteractionHandler {
     }
 
     function pullFromCoreToEvm(uint64 usdc1e6) external onlyVault returns (uint64) {
-        // Perp -> Spot USD class transfer, then spot send to EVM credit
-        _send(coreWriter, HLConstants.encodeUsdClassTransfer(usdc1e6, false));
+        // Ensure enough USDC spot by selling BTC/HYPE via IOC if needed
+        uint256 usdcBal = spotBalance(address(this), usdcCoreTokenId);
+        if (usdcBal < usdc1e6) {
+            uint256 shortfall1e6 = usdc1e6 - usdcBal;
+            // Try to sell BTC first, then HYPE
+            _sellAssetForUsd(spotBTC, spotTokenBTC, shortfall1e6);
+            // Refresh balance and compute remaining
+            usdcBal = spotBalance(address(this), usdcCoreTokenId);
+            if (usdcBal < usdc1e6) {
+                _sellAssetForUsd(spotHYPE, spotTokenHYPE, usdc1e6 - usdcBal);
+            }
+        }
+        // Spot send to credit EVM
         _send(coreWriter, HLConstants.encodeSpotSend(usdcCoreSystemAddress, usdcCoreTokenId, usdc1e6));
         emit InboundFromCore(usdc1e6);
         return usdc1e6;
@@ -146,30 +187,34 @@ contract CoreInteractionHandler {
     }
 
     function rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype) public {
-        // Read equity and positions
-        uint256 eq1e18 = equityUsd1e18();
-        int256 posB1e18 = perpPositionNotionalUsd1e18(perpBTC);
-        int256 posH1e18 = perpPositionNotionalUsd1e18(perpHYPE);
+        // Read spot balances and prices
+        uint256 usdcBal1e6 = spotBalance(address(this), usdcCoreTokenId);
+        uint256 btcBal1e0 = spotBalance(address(this), spotTokenBTC);
+        uint256 hypeBal1e0 = spotBalance(address(this), spotTokenHYPE);
+        uint64 pxB = spotOraclePx1e8(spotBTC);
+        uint64 pxH = spotOraclePx1e8(spotHYPE);
 
-        (int256 dB, int256 dH) = Rebalancer50Lib.computeDeltas(eq1e18, posB1e18, posH1e18, deadbandBps);
-        // Compute limit prices around oracle
-        uint64 pxB = perpOraclePx1e8(perpBTC);
-        uint64 pxH = perpOraclePx1e8(perpHYPE);
+        // Current USD notionals per leg (1e18)
+        int256 posB1e18 = int256(btcBal1e0 * uint256(pxB) * 1e10);
+        int256 posH1e18 = int256(hypeBal1e0 * uint256(pxH) * 1e10);
+        uint256 equity1e18 = (usdcBal1e6 * 1e12) + uint256(int256(posB1e18)) + uint256(int256(posH1e18));
 
-        // Convert deltas 1e18 USD into size 1e8: sz = |deltaUsd1e18| / price1e8 => multiply by 1e10
+        (int256 dB, int256 dH) = Rebalancer50Lib.computeDeltas(equity1e18, posB1e18, posH1e18, deadbandBps);
+
+        // Convert deltas 1e18 USD into size 1e8
         uint64 szB1e8 = _toSz1e8(dB, pxB);
         uint64 szH1e8 = _toSz1e8(dH, pxH);
 
-        // Send up to two IOC orders
+        // Send IOC orders on spot markets
         if (szB1e8 > 0) {
             bool isBuyB = dB > 0;
             uint64 pxBLimit = _limitFromOracle(pxB, isBuyB);
-            _send(coreWriter, HLConstants.encodeLimitOrder(perpBTC, isBuyB, pxBLimit, szB1e8, dB < 0, HLConstants.TIF_IOC, cloidBtc));
+            _send(coreWriter, HLConstants.encodeLimitOrder(spotBTC, isBuyB, pxBLimit, szB1e8, false, HLConstants.TIF_IOC, cloidBtc));
         }
         if (szH1e8 > 0) {
             bool isBuyH = dH > 0;
             uint64 pxHLimit = _limitFromOracle(pxH, isBuyH);
-            _send(coreWriter, HLConstants.encodeLimitOrder(perpHYPE, isBuyH, pxHLimit, szH1e8, dH < 0, HLConstants.TIF_IOC, cloidHype));
+            _send(coreWriter, HLConstants.encodeLimitOrder(spotHYPE, isBuyH, pxHLimit, szH1e8, false, HLConstants.TIF_IOC, cloidHype));
         }
         emit Rebalanced(dB, dH);
     }
@@ -190,10 +235,22 @@ contract CoreInteractionHandler {
     function _toSz1e8(int256 deltaUsd1e18, uint64 price1e8) internal pure returns (uint64) {
         if (deltaUsd1e18 == 0 || price1e8 == 0) return 0;
         uint256 absUsd = uint256(deltaUsd1e18 > 0 ? deltaUsd1e18 : -deltaUsd1e18);
-        // size1e8 = (notional1e18 / price1e8) / 1e2
-        uint256 s = (absUsd / uint256(price1e8)) / 100; // divide by 1e2
+        // size1e8 = (absUsd1e18 / price1e8) / 1e10
+        uint256 s = absUsd / uint256(price1e8) / 1e10;
         if (s > type(uint64).max) return type(uint64).max;
         return uint64(s);
+    }
+
+    function _sellAssetForUsd(uint32 spotAsset, uint64 tokenId, uint256 targetUsd1e6) internal {
+        if (targetUsd1e6 == 0) return;
+        uint64 px = spotOraclePx1e8(spotAsset);
+        // Convert target USD to base size 1e8
+        uint256 targetUsd1e18 = targetUsd1e6 * 1e12;
+        uint64 sz1e8 = _toSz1e8(int256(targetUsd1e18), px);
+        if (sz1e8 == 0) return;
+        // Sell with lower bound price
+        uint64 pxLimit = _limitFromOracle(px, false);
+        _send(coreWriter, HLConstants.encodeLimitOrder(spotAsset, false, pxLimit, sz1e8, false, HLConstants.TIF_IOC, 0));
     }
 
     function _send(ICoreWriter writer, bytes memory data) internal {
