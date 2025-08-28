@@ -4,20 +4,18 @@ pragma solidity ^0.8.24;
 import {HLConstants} from "./utils/HLConstants.sol";
 import {Rebalancer50Lib} from "./Rebalancer50Lib.sol";
 import {L1Read} from "./interfaces/L1Read.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 interface ICoreWriter {
     function sendRawAction(bytes calldata data) external;
 }
 
-interface IERC20 {
-    function transfer(address to, uint256 amount) external returns (bool);
-    function transferFrom(address from, address to, uint256 amount) external returns (bool);
-    function approve(address spender, uint256 amount) external returns (bool);
-    function balanceOf(address owner) external view returns (uint256);
-    function decimals() external view returns (uint8);
-}
+// IERC20 importé via OpenZeppelin ci-dessus
 
 contract CoreInteractionHandler {
+    using SafeERC20 for IERC20;
     
 
     // Immutable system contracts
@@ -44,6 +42,12 @@ contract CoreInteractionHandler {
     uint64 public maxSlippageBps; // for IOC limit price
     uint64 public marketEpsilonBps; // widen limit to mimic marketable IOC
     uint64 public deadbandBps;
+    uint64 public maxOracleDeviationBps;
+
+    uint64 public lastPxBtc1e8;
+    uint64 public lastPxHype1e8;
+    bool public pxInitB;
+    bool public pxInitH;
 
     error NotVault();
     error NotOwner();
@@ -72,17 +76,21 @@ contract CoreInteractionHandler {
         _;
     }
 
-    constructor(L1Read _l1read, ICoreWriter _coreWriter, IERC20 _usdc) {
+    constructor(L1Read _l1read, ICoreWriter _coreWriter, IERC20 _usdc, uint64 _maxOutboundPerEpoch, uint64 _epochLength) {
         l1read = _l1read;
         coreWriter = _coreWriter;
         usdc = _usdc;
         lastEpochStart = uint64(block.timestamp);
         owner = msg.sender;
         // Defaults
-        if (epochLength == 0) epochLength = 3600;
+        require(_epochLength > 0, "EPOCH_0");
+        require(_maxOutboundPerEpoch > 0, "MAX_OUTBOUND_0");
+        epochLength = _epochLength;
+        maxOutboundPerEpoch = _maxOutboundPerEpoch;
         if (maxSlippageBps == 0) maxSlippageBps = 50;
         if (marketEpsilonBps == 0) marketEpsilonBps = 10;
-        if (deadbandBps == 0) deadbandBps = 100;
+        deadbandBps = 50; // par défaut 0.5%
+        maxOracleDeviationBps = 500; // 5%
     }
 
     // Admin setters (to be called by deployer/owner offchain in this sample; add auth as needed)
@@ -104,7 +112,11 @@ contract CoreInteractionHandler {
     }
 
     function setSpotTokenIds(uint64 usdcToken, uint64 btcToken, uint64 hypeToken) external onlyOwner {
-        usdcCoreTokenId = usdcToken;
+        if (usdcCoreTokenId == 0) {
+            usdcCoreTokenId = usdcToken;
+        } else {
+            require(usdcToken == usdcCoreTokenId, "USDC_ID_CONFLICT");
+        }
         spotTokenBTC = btcToken;
         spotTokenHYPE = hypeToken;
         emit SpotTokenIdsSet(usdcToken, btcToken, hypeToken);
@@ -112,16 +124,23 @@ contract CoreInteractionHandler {
 
     function setLimits(uint64 _maxOutboundPerEpoch, uint64 _epochLength) external onlyOwner {
         require(_epochLength > 0, "EPOCH_0");
+        require(_maxOutboundPerEpoch > 0, "MAX_OUTBOUND_0");
         maxOutboundPerEpoch = _maxOutboundPerEpoch;
         epochLength = _epochLength;
         emit LimitsSet(_maxOutboundPerEpoch, _epochLength);
     }
 
     function setParams(uint64 _maxSlippageBps, uint64 _marketEpsilonBps, uint64 _deadbandBps) external onlyOwner {
+        require(_deadbandBps <= 50, "DEADBAND_TOO_HIGH");
         maxSlippageBps = _maxSlippageBps;
         marketEpsilonBps = _marketEpsilonBps;
         deadbandBps = _deadbandBps;
         emit ParamsSet(_maxSlippageBps, _marketEpsilonBps, _deadbandBps);
+    }
+
+    function setMaxOracleDeviationBps(uint64 _maxDeviationBps) external onlyOwner {
+        require(_maxDeviationBps > 0 && _maxDeviationBps <= 5000, "BAD_DEV_BPS");
+        maxOracleDeviationBps = _maxDeviationBps;
     }
 
     // Views (spot)
@@ -157,13 +176,13 @@ contract CoreInteractionHandler {
         if (usdcCoreSystemAddress == address(0) || usdcCoreTokenId == 0) revert("USDC_CORE_NOT_SET");
         _rateLimit(usdc1e6);
         // Pull USDC from vault to handler
-        require(usdc.transferFrom(msg.sender, address(this), usdc1e6), "transferFrom fail");
+        usdc.safeTransferFrom(msg.sender, address(this), usdc1e6);
         // EVM->Core spot: send to system address to credit Core spot balance
-        require(usdc.transfer(usdcCoreSystemAddress, usdc1e6), "transfer to system fail");
+        usdc.safeTransfer(usdcCoreSystemAddress, usdc1e6);
         // After crediting USDC spot, place two IOC buys ~50/50 into BTC and HYPE
         uint256 halfUsd1e18 = (uint256(usdc1e6) * 1e12) / 2;
-        uint64 pxB = spotOraclePx1e8(spotBTC);
-        uint64 pxH = spotOraclePx1e8(spotHYPE);
+        uint64 pxB = _validatedOraclePx1e8(true);
+        uint64 pxH = _validatedOraclePx1e8(false);
         uint64 szB1e8 = _toSz1e8(int256(halfUsd1e18), pxB);
         uint64 szH1e8 = _toSz1e8(int256(halfUsd1e18), pxH);
         if (szB1e8 > 0) {
@@ -208,8 +227,8 @@ contract CoreInteractionHandler {
         uint256 usdcBal1e6 = spotBalance(address(this), usdcCoreTokenId);
         uint256 btcBal1e0 = spotBalance(address(this), spotTokenBTC);
         uint256 hypeBal1e0 = spotBalance(address(this), spotTokenHYPE);
-        uint64 pxB = spotOraclePx1e8(spotBTC);
-        uint64 pxH = spotOraclePx1e8(spotHYPE);
+        uint64 pxB = _validatedOraclePx1e8(true);
+        uint64 pxH = _validatedOraclePx1e8(false);
 
         // Current USD notionals per leg (1e18)
         int256 posB1e18 = int256(btcBal1e0 * uint256(pxB) * 1e10);
@@ -251,7 +270,7 @@ contract CoreInteractionHandler {
         // size1e8 = (absUsd1e18 / price1e8) / 1e10
         uint256 s = absUsd / uint256(price1e8) / 1e10;
         if (s > type(uint64).max) return type(uint64).max;
-        return uint64(s);
+        return SafeCast.toUint64(s);
     }
 
     function _sellAssetForUsd(uint32 spotAsset, uint64 tokenId, uint256 targetUsd1e6) internal {
@@ -279,6 +298,26 @@ contract CoreInteractionHandler {
         }
         if (sentThisEpoch + amount1e6 > maxOutboundPerEpoch) revert RateLimited();
         sentThisEpoch += amount1e6;
+    }
+
+    function _validatedOraclePx1e8(bool isBtc) internal returns (uint64) {
+        uint32 asset = isBtc ? spotBTC : spotHYPE;
+        uint64 px = spotOraclePx1e8(asset);
+        uint64 lastPx = isBtc ? lastPxBtc1e8 : lastPxHype1e8;
+        bool init = isBtc ? pxInitB : pxInitH;
+        if (init && lastPx != 0) {
+            uint256 up = uint256(lastPx) * (10_000 + maxOracleDeviationBps) / 10_000;
+            uint256 down = uint256(lastPx) * (10_000 - maxOracleDeviationBps) / 10_000;
+            require(uint256(px) <= up && uint256(px) >= down, "ORACLE_DEV");
+        }
+        if (isBtc) {
+            lastPxBtc1e8 = px;
+            pxInitB = true;
+        } else {
+            lastPxHype1e8 = px;
+            pxInitH = true;
+        }
+        return px;
     }
 }
 

@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo, useState } from 'react'
 import { Vault } from '@/lib/vaultTypes'
 import { 
   TrendingUp, 
@@ -11,6 +12,13 @@ import {
   AlertTriangle,
   Activity
 } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { useAccount, useReadContract, useWaitForTransactionReceipt, useWriteContract } from 'wagmi'
+import { waitForTransactionReceipt } from 'wagmi/actions'
+import { config } from '@/lib/wagmi'
+import { parseUnits, formatUnits } from 'viem'
+import { erc20Abi } from '@/lib/abi/erc20'
+import { vaultContractAbi } from '@/lib/abi/VaultContract'
 
 interface VaultCardProps {
   vault: Vault
@@ -22,6 +30,82 @@ interface VaultCardProps {
 export function VaultCard({ vault, onDeposit, onWithdraw, onInfo }: VaultCardProps) {
   const isPositive = vault.performance30d >= 0
   const hasDeposit = vault.userDeposit > 0
+  const { address: userAddress } = useAccount()
+  const [depositAmount, setDepositAmount] = useState<string>('')
+  const [withdrawAmount, setWithdrawAmount] = useState<string>('')
+
+  const vaultAddress = vault.contractAddress as `0x${string}` | undefined
+  const usdcAddress = vault.usdcAddress as `0x${string}` | undefined
+
+  const { data: pps } = useReadContract({
+    abi: vaultContractAbi,
+    address: vaultAddress,
+    functionName: 'pps1e18',
+    query: { enabled: Boolean(vaultAddress) }
+  })
+
+  const { data: userShares } = useReadContract({
+    abi: vaultContractAbi,
+    address: vaultAddress,
+    functionName: 'balanceOf',
+    args: userAddress ? [userAddress] : undefined,
+    query: { enabled: Boolean(vaultAddress && userAddress) }
+  })
+
+  const { writeContract, data: txHash, isPending } = useWriteContract()
+  const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash: txHash })
+
+  const isBusy = isPending || isConfirming
+
+  const canInteract = useMemo(() => Boolean(vaultAddress && usdcAddress), [vaultAddress, usdcAddress])
+
+  const handleDepositInternal = async () => {
+    if (!canInteract || !userAddress) return
+    try {
+      const amount1e6 = parseUnits(depositAmount || '0', 6)
+      if (amount1e6 <= 0n) return
+      // Approve USDC
+      const approveHash = await writeContract({
+        abi: erc20Abi,
+        address: usdcAddress!,
+        functionName: 'approve',
+        args: [vaultAddress!, amount1e6]
+      })
+      if (approveHash) {
+        await waitForTransactionReceipt(config, { hash: approveHash })
+      }
+      // Deposit amount in 1e6
+      await writeContract({
+        abi: vaultContractAbi,
+        address: vaultAddress!,
+        functionName: 'deposit',
+        args: [amount1e6]
+      })
+      setDepositAmount('')
+    } catch (e) {
+      // noop: erreurs visibles dans wallet/console
+    }
+  }
+
+  const handleWithdrawInternal = async () => {
+    if (!canInteract || !userAddress) return
+    try {
+      const enteredShares = parseUnits(withdrawAmount || '0', 18)
+      if (enteredShares <= 0n) return
+      const maxShares = (userShares as bigint) || 0n
+      const sharesToBurn = enteredShares > maxShares ? maxShares : enteredShares
+      if (sharesToBurn <= 0n) return
+      await writeContract({
+        abi: vaultContractAbi,
+        address: vaultAddress!,
+        functionName: 'withdraw',
+        args: [sharesToBurn]
+      })
+      setWithdrawAmount('')
+    } catch (e) {
+      // noop
+    }
+  }
   
   // Risk colors
   const riskColors = {
@@ -130,19 +214,51 @@ export function VaultCard({ vault, onDeposit, onWithdraw, onInfo }: VaultCardPro
         {/* Spacer to push buttons to bottom */}
         <div className="flex-1" />
 
+        {/* Inputs d'action */}
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Input
+              type="number"
+              placeholder="Montant à déposer (USDC)"
+              value={depositAmount}
+              onChange={(e) => setDepositAmount(e.target.value)}
+              className="dark:bg-gray-800 dark:text-white"
+            />
+          </div>
+          <div>
+            <Input
+              type="number"
+              placeholder="Montant à retirer (shares)"
+              value={withdrawAmount}
+              onChange={(e) => setWithdrawAmount(e.target.value)}
+              className="dark:bg-gray-800 dark:text-white"
+            />
+            <div className="mt-1 text-[11px] text-vault-dim flex items-center gap-2">
+              <span>Max: {formatUnits(((userShares as bigint) || 0n), 18)}</span>
+              <button
+                type="button"
+                className="underline"
+                onClick={() => setWithdrawAmount(formatUnits(((userShares as bigint) || 0n), 18))}
+              >
+                Tout
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Action buttons */}
         <div className="flex gap-2 pt-2">
           <button
-            onClick={onDeposit}
+            onClick={onDeposit ? onDeposit : handleDepositInternal}
             className="flex-1 px-4 py-2.5 bg-vault-brand hover:bg-vault-brand/90 text-black font-medium rounded-lg transition-colors"
-            disabled={vault.status === 'closed'}
+            disabled={vault.status === 'closed' || !canInteract || isBusy}
           >
             Déposer
           </button>
           <button
-            onClick={onWithdraw}
+            onClick={onWithdraw ? onWithdraw : handleWithdrawInternal}
             className="flex-1 px-4 py-2.5 bg-vault-muted hover:bg-vault-muted/80 text-vault-primary font-medium rounded-lg transition-colors"
-            disabled={!hasDeposit}
+            disabled={!canInteract || isBusy}
           >
             Retirer
           </button>
@@ -154,6 +270,9 @@ export function VaultCard({ vault, onDeposit, onWithdraw, onInfo }: VaultCardPro
             <Info className="w-4 h-4" />
           </button>
         </div>
+        {!canInteract && (
+          <div className="text-xs text-vault-dim">Renseignez les adresses dans la gestion du vault pour activer les actions.</div>
+        )}
       </div>
     </div>
   )

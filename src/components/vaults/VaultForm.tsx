@@ -24,7 +24,9 @@ export function VaultForm({ initialData, onSave, onDelete, onCancel, autoSave }:
     userDeposit: 0,
     performance30d: 0,
     status: 'open',
-    risk: 'low'
+    risk: 'low',
+    contractAddress: '',
+    usdcAddress: ''
   })
 
   const isFirstRenderRef = useRef(true)
@@ -168,6 +170,27 @@ export function VaultForm({ initialData, onSave, onDelete, onCancel, autoSave }:
         </div>
       </div>
       
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <Label>Adresse du contrat Vault</Label>
+          <Input
+            placeholder="0x..."
+            value={formData.contractAddress || ''}
+            onChange={(e) => setFormData({ ...formData, contractAddress: e.target.value })}
+            className="dark:bg-gray-700 dark:text-white"
+          />
+        </div>
+        <div>
+          <Label>Adresse du token USDC</Label>
+          <Input
+            placeholder="0x..."
+            value={formData.usdcAddress || ''}
+            onChange={(e) => setFormData({ ...formData, usdcAddress: e.target.value })}
+            className="dark:bg-gray-700 dark:text-white"
+          />
+        </div>
+      </div>
+
       <div className="mt-6">
         <div className="flex justify-between items-center mb-2">
           <Label>Composition des tokens</Label>

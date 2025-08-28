@@ -15,7 +15,9 @@ export const MOCK_VAULTS: Vault[] = [
     userDeposit: 500,
     performance30d: 4.2,
     status: 'open',
-    risk: 'medium'
+    risk: 'medium',
+    contractAddress: '',
+    usdcAddress: ''
   },
   {
     id: '2',
@@ -28,7 +30,9 @@ export const MOCK_VAULTS: Vault[] = [
     userDeposit: 0,
     performance30d: 1.8,
     status: 'open',
-    risk: 'low'
+    risk: 'low',
+    contractAddress: '',
+    usdcAddress: ''
   },
   {
     id: '3',
@@ -43,7 +47,9 @@ export const MOCK_VAULTS: Vault[] = [
     userDeposit: 1200,
     performance30d: 8.5,
     status: 'open',
-    risk: 'high'
+    risk: 'high',
+    contractAddress: '',
+    usdcAddress: ''
   },
   {
     id: '4',
@@ -57,6 +63,8 @@ export const MOCK_VAULTS: Vault[] = [
     userDeposit: 250,
     performance30d: 0.8,
     status: 'paused',
-    risk: 'low'
+    risk: 'low',
+    contractAddress: '',
+    usdcAddress: ''
   }
 ]

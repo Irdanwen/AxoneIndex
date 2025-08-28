@@ -2,15 +2,8 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-interface IERC20 {
-    function name() external view returns (string memory);
-    function symbol() external view returns (string memory);
-    function decimals() external view returns (uint8);
-    function balanceOf(address owner) external view returns (uint256);
-    function transfer(address to, uint256 amount) external returns (bool);
-    function transferFrom(address from, address to, uint256 amount) external returns (bool);
-    function approve(address spender, uint256 amount) external returns (bool);
-}
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface IHandler {
     function equitySpotUsd1e18() external view returns (uint256);
@@ -20,6 +13,7 @@ interface IHandler {
 }
 
 contract VaultContract is ReentrancyGuard {
+    using SafeERC20 for IERC20;
     // ERC20 share
     string public constant name = "Core50 Vault Share";
     string public constant symbol = "c50USD";
@@ -40,6 +34,7 @@ contract VaultContract is ReentrancyGuard {
     struct WithdrawRequest {
         address user;
         uint256 shares;
+        uint16 feeBpsSnapshot; // fige les frais au moment de la demande
         bool settled;
     }
     WithdrawRequest[] public withdrawQueue;
@@ -114,7 +109,7 @@ contract VaultContract is ReentrancyGuard {
     function deposit(uint64 amount1e6) external notPaused nonReentrant {
         require(amount1e6 > 0, "amount=0");
         uint256 navPre = nav1e18();
-        require(usdc.transferFrom(msg.sender, address(this), amount1e6), "pull fail");
+        usdc.safeTransferFrom(msg.sender, address(this), amount1e6);
         uint256 sharesMint;
         if (totalSupply == 0) {
             sharesMint = uint256(amount1e6) * 1e12; // 1:1 PPS = 1e18
@@ -132,9 +127,14 @@ contract VaultContract is ReentrancyGuard {
         if (address(handler) != address(0) && autoDeployBps > 0) {
             uint64 deployAmt = uint64((uint256(amount1e6) * uint256(autoDeployBps)) / 10000);
             if (deployAmt > 0) {
-                // reset then set (USDC compatibility)
-                require(usdc.approve(address(handler), 0), "approve0");
-                require(usdc.approve(address(handler), deployAmt), "approve");
+                // Optimisation de gas: ne remet à zéro et n'approuve que si nécessaire
+                uint256 currentAllowance = usdc.allowance(address(this), address(handler));
+                if (currentAllowance < deployAmt) {
+                    if (currentAllowance > 0) {
+                        usdc.safeApprove(address(handler), 0);
+                    }
+                    usdc.safeApprove(address(handler), deployAmt);
+                }
                 handler.executeDeposit(deployAmt, true);
             }
         }
@@ -156,13 +156,13 @@ contract VaultContract is ReentrancyGuard {
                 uint256 fee = (uint256(pay) * withdrawFeeBps) / 10000;
                 pay = uint64(uint256(pay) - fee);
             }
-            require(usdc.transfer(msg.sender, pay), "pay fail");
+            usdc.safeTransfer(msg.sender, pay);
             emit WithdrawPaid(type(uint256).max, msg.sender, pay);
             emit NavUpdated(nav1e18());
         } else {
             // enqueue
             uint256 id = withdrawQueue.length;
-            withdrawQueue.push(WithdrawRequest({user: msg.sender, shares: shares, settled: false}));
+            withdrawQueue.push(WithdrawRequest({user: msg.sender, shares: shares, feeBpsSnapshot: withdrawFeeBps, settled: false}));
             emit WithdrawRequested(id, msg.sender, shares);
         }
     }
@@ -176,11 +176,13 @@ contract VaultContract is ReentrancyGuard {
         require(pay1e6 > 0, "zero");
         uint256 pps = pps1e18();
         uint256 due1e18 = (r.shares * pps) / 1e18;                   // brut
-        uint256 net1e18 = (due1e18 * (10000 - withdrawFeeBps)) / 10000; // net après frais
+        // Utilise les frais figés à la demande pour éviter tout sur/sous-paiement
+        uint256 net1e18 = (due1e18 * (10000 - r.feeBpsSnapshot)) / 10000; // net après frais
         uint64 maxPay = uint64(net1e18 / 1e12);
-        require(pay1e6 <= maxPay, "overpay");
+        // Le règlement doit être exact pour éviter un sous-paiement silencieux
+        require(pay1e6 == maxPay, "pay!=due");
         r.settled = true;
-        require(usdc.transfer(to, pay1e6), "transfer");
+        usdc.safeTransfer(to, pay1e6);
         emit WithdrawPaid(id, to, pay1e6);
         emit NavUpdated(nav1e18());
     }

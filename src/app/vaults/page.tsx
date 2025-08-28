@@ -36,15 +36,9 @@ export default function VaultsPage() {
     }, 500)
   }, [])
 
-  const handleDeposit = (vaultId: string) => {
-    console.log('Deposit to vault:', vaultId)
-    // TODO: Implement deposit logic
-  }
-
-  const handleWithdraw = (vaultId: string) => {
-    console.log('Withdraw from vault:', vaultId)
-    // TODO: Implement withdraw logic
-  }
+  // Plus besoin de handlers ici: VaultCard gère les interactions on-chain avec inputs
+  const handleDeposit = (_vaultId: string) => {}
+  const handleWithdraw = (_vaultId: string) => {}
 
   const handleInfo = (vaultId: string) => {
     console.log('View vault info:', vaultId)
@@ -131,8 +125,6 @@ export default function VaultsPage() {
                 >
                   <VaultCard 
                     vault={vault}
-                    onDeposit={() => handleDeposit(vault.id)}
-                    onWithdraw={() => handleWithdraw(vault.id)}
                     onInfo={() => handleInfo(vault.id)}
                   />
                 </motion.div>

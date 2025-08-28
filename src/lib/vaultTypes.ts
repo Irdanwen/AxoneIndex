@@ -12,4 +12,8 @@ export interface Vault {
   performance30d: number
   status: 'open' | 'closed' | 'paused'
   risk: 'low' | 'medium' | 'high'
+  // Adresse du smart contract du vault (BTC50 Defensive)
+  contractAddress?: string
+  // Adresse du token USDC utilisé pour les dépôts (6 décimales)
+  usdcAddress?: string
 }
