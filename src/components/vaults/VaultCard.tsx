@@ -52,7 +52,7 @@ export function VaultCard({ vault, onDeposit, onWithdraw, onInfo }: VaultCardPro
     query: { enabled: Boolean(vaultAddress && userAddress) }
   })
 
-  const { writeContract, data: txHash, isPending } = useWriteContract()
+  const { writeContractAsync, data: txHash, isPending } = useWriteContract()
   const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash: txHash })
 
   const isBusy = isPending || isConfirming
@@ -65,17 +65,15 @@ export function VaultCard({ vault, onDeposit, onWithdraw, onInfo }: VaultCardPro
       const amount1e6 = parseUnits(depositAmount || '0', 6)
       if (amount1e6 <= 0n) return
       // Approve USDC
-      const approveHash = await writeContract({
+      const approveHash = await writeContractAsync({
         abi: erc20Abi,
         address: usdcAddress!,
         functionName: 'approve',
         args: [vaultAddress!, amount1e6]
       })
-      if (approveHash) {
-        await waitForTransactionReceipt(config, { hash: approveHash })
-      }
+      await waitForTransactionReceipt(config, { hash: approveHash })
       // Deposit amount in 1e6
-      await writeContract({
+      await writeContractAsync({
         abi: vaultContractAbi,
         address: vaultAddress!,
         functionName: 'deposit',
@@ -95,7 +93,7 @@ export function VaultCard({ vault, onDeposit, onWithdraw, onInfo }: VaultCardPro
       const maxShares = (userShares as bigint) || 0n
       const sharesToBurn = enteredShares > maxShares ? maxShares : enteredShares
       if (sharesToBurn <= 0n) return
-      await writeContract({
+      await writeContractAsync({
         abi: vaultContractAbi,
         address: vaultAddress!,
         functionName: 'withdraw',
