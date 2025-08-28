@@ -8,7 +8,7 @@ La page de parrainage (`/referral`) permet aux utilisateurs de s'authentifier vi
 
 ### 1. Connexion Wallet
 - Support de MetaMask et autres wallets compatibles
-- Vérification automatique du réseau Sepolia
+- Vérification automatique du réseau HyperEVM Testnet
 - Affichage de l'adresse connectée
 
 ### 2. Vérification Whitelist
@@ -21,15 +21,15 @@ La page de parrainage (`/referral`) permet aux utilisateurs de s'authentifier vi
 - Appel à la fonction `useCode(codeHash)` du contrat
 
 ### 4. Gestion d'Erreurs
-- Vérification du réseau (Sepolia requis)
+- Vérification du réseau (HyperEVM Testnet requis)
 - Validation des codes de parrainage
 - Messages d'erreur explicites
 
 ## Configuration Technique
 
 ### Contrat
-- **Adresse**: `0xE77b9AB620c90eeFC761Afd5C8e60F9913A3CA4f`
-- **Réseau**: Sepolia (Chain ID: 11155111)
+- **Adresse**: `0xd9145CCE52D386f254917e481eB44e9943F39138`
+- **Réseau**: HyperEVM Testnet (Chain ID: 998)
 - **ABI**: `src/lib/abi/ReferralRegistry.json`
 
 ### Dépendances
@@ -57,7 +57,7 @@ console.log(hash)
 ## Flux Utilisateur
 
 1. **Non connecté** → Page de connexion wallet
-2. **Mauvais réseau** → Demande de changement vers Sepolia
+2. **Mauvais réseau** → Demande de changement vers HyperEVM Testnet
 3. **Déjà whitelisté** → Bouton "Go App" vers google.com
 4. **Non whitelisté** → Formulaire de saisie de code
 

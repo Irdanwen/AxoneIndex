@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useAccount, useContractRead, useContractWrite, useChainId } from 'wagmi'
-import { REFERRAL_REGISTRY_ADDRESS, SEPOLIA_CHAIN_ID } from '@/lib/referralUtils'
+import { REFERRAL_REGISTRY_ADDRESS, HYPEREVM_CHAIN_ID } from '@/lib/referralUtils'
 import ReferralRegistryABI from '@/lib/abi/ReferralRegistry.json'
 import GlassCard from '@/components/ui/GlassCard'
 import { Button } from '@/components/ui'
@@ -63,7 +63,7 @@ export default function ReferralManagement() {
     console.log('handleCreateCode appelé')
     console.log('isConnected:', isConnected)
     console.log('chainId:', chainId)
-    console.log('SEPOLIA_CHAIN_ID:', SEPOLIA_CHAIN_ID)
+    console.log('HYPEREVM_CHAIN_ID:', HYPEREVM_CHAIN_ID)
     console.log('address:', address)
     console.log('isWhitelisted:', isWhitelisted)
     console.log('hasReferrer:', hasReferrer)
@@ -75,8 +75,8 @@ export default function ReferralManagement() {
       return
     }
 
-    if (chainId !== SEPOLIA_CHAIN_ID) {
-      setError('Veuillez vous connecter au réseau Sepolia')
+    if (chainId !== HYPEREVM_CHAIN_ID) {
+      setError('Veuillez vous connecter au réseau HyperEVM Testnet')
       return
     }
 
@@ -151,17 +151,17 @@ export default function ReferralManagement() {
   }
 
   // Si l'utilisateur n'est pas sur le bon réseau
-  if (chainId !== SEPOLIA_CHAIN_ID) {
+  if (chainId !== HYPEREVM_CHAIN_ID) {
     return (
       <div className="min-h-screen bg-axone-dark flex items-center justify-center p-4">
         <div className="container-custom">
           <GlassCard className="w-full p-8 text-center">
             <h1 className="text-3xl font-bold text-white-pure mb-6">Réseau Incorrect</h1>
             <p className="text-white-75 mb-8">
-              Veuillez vous connecter au réseau Sepolia pour continuer
+              Veuillez vous connecter au réseau HyperEVM Testnet pour continuer
             </p>
             <p className="text-sm text-white-60 mb-4">
-              Réseau actuel: {chainId === 1 ? 'Ethereum Mainnet' : chainId === 11155111 ? 'Sepolia' : `Chain ID: ${chainId}`}
+              Réseau actuel: {chainId === 1 ? 'Ethereum Mainnet' : chainId === 998 ? 'HyperEVM Testnet' : `Chain ID: ${chainId}`}
             </p>
           </GlassCard>
         </div>

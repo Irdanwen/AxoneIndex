@@ -1,6 +1,5 @@
 import { createConfig, http } from 'wagmi'
 import { defineChain } from 'viem'
-import { sepolia } from 'wagmi/chains'
 import { injected } from 'wagmi/connectors'
 
 // Définition du réseau HyperEVM
@@ -22,12 +21,11 @@ const hyperEVM = defineChain({
 });
 
 export const config = createConfig({
-  chains: [sepolia, hyperEVM],
+  chains: [hyperEVM],
   connectors: [
     injected()
   ],
   transports: {
-    [sepolia.id]: http(),
     [hyperEVM.id]: http(hyperEVM.rpcUrls.default.http[0])
   }
 })

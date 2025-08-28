@@ -5,7 +5,7 @@ import { useAccount, useConnect, useContractRead, useContractWrite, useChainId }
 import { injected } from 'wagmi/connectors'
 import GlassCard from '@/components/ui/GlassCard'
 import { Button } from '@/components/ui'
-import { getCodeHash, REFERRAL_REGISTRY_ADDRESS, SEPOLIA_CHAIN_ID } from '@/lib/referralUtils'
+import { getCodeHash, REFERRAL_REGISTRY_ADDRESS, HYPEREVM_CHAIN_ID } from '@/lib/referralUtils'
 import ReferralRegistryABI from '@/lib/abi/ReferralRegistry.json'
 
 export default function ReferralPage() {
@@ -34,8 +34,8 @@ export default function ReferralPage() {
       return
     }
 
-    if (chainId !== SEPOLIA_CHAIN_ID) {
-      setError('Veuillez vous connecter au réseau Sepolia')
+    if (chainId !== HYPEREVM_CHAIN_ID) {
+      setError('Veuillez vous connecter au réseau HyperEVM Testnet')
       return
     }
 
@@ -92,17 +92,17 @@ export default function ReferralPage() {
   }
 
   // Si l'utilisateur n'est pas sur le bon réseau
-  if (chainId !== SEPOLIA_CHAIN_ID) {
+  if (chainId !== HYPEREVM_CHAIN_ID) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-blue-50 flex items-center justify-center p-4">
         <div className="container-custom">
           <GlassCard className="w-full p-8 text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">Réseau Incorrect</h1>
           <p className="text-gray-600 mb-8">
-            Veuillez vous connecter au réseau Sepolia pour continuer
+            Veuillez vous connecter au réseau HyperEVM Testnet pour continuer
           </p>
           <p className="text-sm text-gray-500 mb-4">
-            Réseau actuel: {chainId === 1 ? 'Ethereum Mainnet' : chainId === 11155111 ? 'Sepolia' : `Chain ID: ${chainId}`}
+            Réseau actuel: {chainId === 1 ? 'Ethereum Mainnet' : chainId === 998 ? 'HyperEVM Testnet' : `Chain ID: ${chainId}`}
           </p>
         </GlassCard>
         </div>

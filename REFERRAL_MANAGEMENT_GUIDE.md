@@ -8,7 +8,7 @@ La page de gestion des referrals (`/referral-management`) permet aux utilisateur
 
 ### 1. Protection d'accès
 - **Vérification obligatoire** : Seuls les utilisateurs ayant un parrain peuvent accéder à cette page
-- **Vérification réseau** : L'utilisateur doit être connecté au réseau Sepolia
+- **Vérification réseau** : L'utilisateur doit être connecté au réseau HyperEVM Testnet
 - **Vérification wallet** : L'utilisateur doit avoir un wallet connecté
 
 ### 2. Affichage des données
@@ -56,14 +56,14 @@ La page de gestion des referrals (`/referral-management`) permet aux utilisateur
 ### États d'interface
 - **Chargement** - Pendant les vérifications
 - **Accès refusé** - Si l'utilisateur n'a pas de parrain
-- **Réseau incorrect** - Si pas sur Sepolia
+- **Réseau incorrect** - Si pas sur HyperEVM Testnet
 - **Non connecté** - Si pas de wallet connecté
 
 ## Sécurité
 
 ### Vérifications côté client
 - ✅ Vérification de la connexion wallet
-- ✅ Vérification du réseau (Sepolia uniquement)
+- ✅ Vérification du réseau (HyperEVM Testnet uniquement)
 - ✅ Vérification de l'existence d'un parrain
 - ✅ Gestion des erreurs de transaction
 

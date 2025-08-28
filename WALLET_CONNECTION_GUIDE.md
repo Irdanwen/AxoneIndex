@@ -39,7 +39,6 @@ Les modifications suivantes ont été implémentées avec succès :
 ## 🔧 Configuration MetaMask Requise
 
 Assurez-vous que MetaMask est configuré avec :
-- **Sepolia Test Network** (déjà configuré par défaut)
 - **HyperEVM Testnet** (ajouté automatiquement via wagmi)
 
 ### Configuration manuelle HyperEVM (si nécessaire) :
