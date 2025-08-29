@@ -71,4 +71,15 @@ export default function NouvellePage() {
 - **Pause & sécurité**: Les transferts sont bloqués si le vault est en pause et sont protégés contre la réentrance.
 - **Compatibilité**: Les fonctions ERC20 standard sont disponibles: `transfer`, `approve`, `transferFrom`, `allowance`, `balanceOf`.
 
+## Transferts de parts de vault
+- Les parts `c50USD` sont transférables via les fonctions ERC20 standard.
+- **Restrictions** :
+  - Les transferts vers `0x0` sont interdits (`zero address`).
+  - Les transferts de montant `0` sont interdits (`zero value`).
+  - Les autorisations (`approve`) doivent être réinitialisées à `0` avant modification.
+
+### Annulation des demandes de retrait
+- Les demandes de retrait en file d'attente peuvent être annulées si le solde courant de l'appelant couvre la quantité de parts en attente d'annulation.
+- Cette logique n'est plus limitée à l'adresse d'origine de la demande.
+
 <div class="MB-[20rem]"></div>
