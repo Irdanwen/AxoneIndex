@@ -30,6 +30,8 @@ contract VaultContract is ReentrancyGuard {
 
     uint256 public totalSupply;
     mapping(address => uint256) public balanceOf;
+    // AJOUTER CETTE MAPPING POUR LES AUTORISATIONS
+    mapping(address => mapping(address => uint256)) public allowance;
 
     struct WithdrawRequest {
         address user;
@@ -48,6 +50,9 @@ contract VaultContract is ReentrancyGuard {
     event PausedSet(bool paused);
     event RecallAndSweep(uint64 amount1e6);
     event NavUpdated(uint256 nav1e18);
+    // AJOUTER CES ÉVÉNEMENTS
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "not owner");
@@ -98,11 +103,15 @@ contract VaultContract is ReentrancyGuard {
     function _mint(address to, uint256 amount) internal {
         totalSupply += amount;
         balanceOf[to] += amount;
+        // AJOUTER CET ÉVÉNEMENT
+        emit Transfer(address(0), to, amount);
     }
 
     function _burn(address from, uint256 amount) internal {
         balanceOf[from] -= amount;
         totalSupply -= amount;
+        // AJOUTER CET ÉVÉNEMENT
+        emit Transfer(from, address(0), amount);
     }
 
     // Deposit in USDC (1e6)
@@ -130,10 +139,7 @@ contract VaultContract is ReentrancyGuard {
                 // Optimisation de gas: ne remet à zéro et n'approuve que si nécessaire
                 uint256 currentAllowance = usdc.allowance(address(this), address(handler));
                 if (currentAllowance < deployAmt) {
-                    if (currentAllowance > 0) {
-                        usdc.safeApprove(address(handler), 0);
-                    }
-                    usdc.safeApprove(address(handler), deployAmt);
+                    usdc.forceApprove(address(handler), deployAmt);
                 }
                 handler.executeDeposit(deployAmt, true);
             }
@@ -203,6 +209,32 @@ contract VaultContract is ReentrancyGuard {
         handler.sweepToVault(amount1e6);
         emit RecallAndSweep(amount1e6);
         emit NavUpdated(nav1e18());
+    }
+
+    // AJOUTER CES FONCTIONS APRÈS LA FONCTION cancelWithdrawRequest
+    function transfer(address to, uint256 value) external notPaused nonReentrant returns (bool) {
+        _transfer(msg.sender, to, value);
+        return true;
+    }
+
+    function approve(address spender, uint256 value) external returns (bool) {
+        allowance[msg.sender][spender] = value;
+        emit Approval(msg.sender, spender, value);
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint256 value) external notPaused nonReentrant returns (bool) {
+        require(allowance[from][msg.sender] >= value, "allowance too low");
+        allowance[from][msg.sender] -= value;
+        _transfer(from, to, value);
+        return true;
+    }
+
+    function _transfer(address from, address to, uint256 value) internal {
+        require(balanceOf[from] >= value, "insufficient balance");
+        balanceOf[from] -= value;
+        balanceOf[to] += value;
+        emit Transfer(from, to, value);
     }
 }
 

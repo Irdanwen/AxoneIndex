@@ -11,6 +11,8 @@ import { motion } from 'framer-motion'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { isReferralProtectedRoute } from '@/lib/referralRoutesConfig'
 
 export default function ReferralManagement() {
   const [error, setError] = useState('')
@@ -20,6 +22,8 @@ export default function ReferralManagement() {
 
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
+  const pathname = usePathname()
+  const isProtectedRoute = isReferralProtectedRoute(pathname || '')
 
   // Vérification d'accès - vérifier si l'utilisateur a un parrain via referrerOf
   const { data: referrer, isLoading: isLoadingAccess } = useContractRead({
@@ -129,77 +133,79 @@ export default function ReferralManagement() {
     }
   }
 
-
-
-  // Si l'utilisateur n'est pas connecté
-  if (!isConnected) {
-    return (
-      <div className="min-h-screen bg-axone-dark flex items-center justify-center p-4">
-        <div className="container-custom">
-          <GlassCard className="w-full p-8 text-center">
-            <h1 className="text-3xl font-bold text-white-pure mb-6">Connexion Requise</h1>
-            <p className="text-white-75 mb-8">
-              Connectez votre wallet pour accéder à la gestion de vos parrainages
-            </p>
-            <Button className="w-full">
-              Connecter Wallet
-            </Button>
-          </GlassCard>
+  // === 🔒 Protection centralisée ===
+  if (isProtectedRoute) {
+    // Si l'utilisateur n'est pas connecté
+    if (!isConnected) {
+      return (
+        <div className="min-h-screen bg-axone-dark flex items-center justify-center p-4">
+          <div className="container-custom">
+            <GlassCard className="w-full p-8 text-center">
+              <h1 className="text-3xl font-bold text-white-pure mb-6">Connexion Requise</h1>
+              <p className="text-white-75 mb-8">
+                Connectez votre wallet pour accéder à la gestion de vos parrainages
+              </p>
+              <Button className="w-full">
+                Connecter Wallet
+              </Button>
+            </GlassCard>
+          </div>
         </div>
-      </div>
-    )
-  }
+      )
+    }
 
-  // Si l'utilisateur n'est pas sur le bon réseau
-  if (chainId !== HYPEREVM_CHAIN_ID) {
-    return (
-      <div className="min-h-screen bg-axone-dark flex items-center justify-center p-4">
-        <div className="container-custom">
-          <GlassCard className="w-full p-8 text-center">
-            <h1 className="text-3xl font-bold text-white-pure mb-6">Réseau Incorrect</h1>
-            <p className="text-white-75 mb-8">
-              Veuillez vous connecter au réseau HyperEVM Testnet pour continuer
-            </p>
-            <p className="text-sm text-white-60 mb-4">
-              Réseau actuel: {chainId === 1 ? 'Ethereum Mainnet' : chainId === 998 ? 'HyperEVM Testnet' : `Chain ID: ${chainId}`}
-            </p>
-          </GlassCard>
+    // Si l'utilisateur n'est pas sur le bon réseau
+    if (chainId !== HYPEREVM_CHAIN_ID) {
+      return (
+        <div className="min-h-screen bg-axone-dark flex items-center justify-center p-4">
+          <div className="container-custom">
+            <GlassCard className="w-full p-8 text-center">
+              <h1 className="text-3xl font-bold text-white-pure mb-6">Réseau Incorrect</h1>
+              <p className="text-white-75 mb-8">
+                Veuillez vous connecter au réseau HyperEVM Testnet pour continuer
+              </p>
+              <p className="text-sm text-white-60 mb-4">
+                Réseau actuel: {chainId === 1 ? 'Ethereum Mainnet' : chainId === 998 ? 'HyperEVM Testnet' : `Chain ID: ${chainId}`}
+              </p>
+            </GlassCard>
+          </div>
         </div>
-      </div>
-    )
-  }
+      )
+    }
 
-  // Vérification d'accès
-  if (isLoadingAccess) {
-    return (
-      <div className="min-h-screen bg-axone-dark flex items-center justify-center">
-        <div className="text-white-pure text-xl">Vérification de l&apos;accès...</div>
-      </div>
-    )
-  }
-
-  if (!isWhitelisted || !hasReferrer) {
-    return (
-      <div className="min-h-screen bg-axone-dark flex items-center justify-center p-4">
-        <div className="container-custom">
-          <GlassCard className="w-full p-8 text-center">
-            <h2 className="text-2xl font-bold text-error mb-4">Accès refusé</h2>
-            <p className="text-white-75 mb-6">
-              {!isWhitelisted 
-                ? "Vous devez être whitelisté pour accéder à cette page" 
-                : "Vous devez avoir un parrain pour accéder à cette page"
-              }
-            </p>
-            <Button asChild className="w-full">
-              <Link href="/referral">
-                Utiliser un code de parrainage
-              </Link>
-            </Button>
-          </GlassCard>
+    // Vérification d'accès
+    if (isLoadingAccess) {
+      return (
+        <div className="min-h-screen bg-axone-dark flex items-center justify-center">
+          <div className="text-white-pure text-xl">Vérification de l&apos;accès...</div>
         </div>
-      </div>
-    )
+      )
+    }
+
+    if (!isWhitelisted || !hasReferrer) {
+      return (
+        <div className="min-h-screen bg-axone-dark flex items-center justify-center p-4">
+          <div className="container-custom">
+            <GlassCard className="w-full p-8 text-center">
+              <h2 className="text-2xl font-bold text-error mb-4">Accès refusé</h2>
+              <p className="text-white-75 mb-6">
+                {!isWhitelisted 
+                  ? "Vous devez être whitelisté pour accéder à cette page" 
+                  : "Vous devez avoir un parrain pour accéder à cette page"
+                }
+              </p>
+              <Button asChild className="w-full">
+                <Link href="/referral">
+                  Utiliser un code de parrainage
+                </Link>
+              </Button>
+            </GlassCard>
+          </div>
+        </div>
+      )
+    }
   }
+  // === 🔒 Fin de la protection ===
 
   return (
     <>
@@ -264,7 +270,7 @@ export default function ReferralManagement() {
                 <Button
                   onClick={handleCreateCode}
                   disabled={isCreatingCodePending || isLoading}
-                                      className="bg-gradient-primary text-white-pure py-3 rounded-lg font-bold hover:opacity-90 transition"
+                  className="bg-gradient-primary text-white-pure py-3 rounded-lg font-bold hover:opacity-90 transition"
                   style={{ width: '25rem' }}
                 >
                   {isCreatingCodePending ? 'Création...' : 'Créer un code de parrainage'}
@@ -317,32 +323,32 @@ export default function ReferralManagement() {
               ) : Array.isArray(unusedCodes) && unusedCodes.length > 0 ? (
                 <div className="grid gap-4">
                   {unusedCodes.map((code, i) => (
-                                    <GlassCard key={i} className="flex flex-col items-center p-4 text-center" style={{ maxWidth: '50rem', margin: '0 auto' }}>
-                  <span className="font-mono bg-axone-dark-light px-3 py-1 rounded break-all text-white-pure mb-4">
-                    {code}
-                  </span>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText(code)
-                        setCopiedCode(code)
-                        setTimeout(() => setCopiedCode(null), 2000)
-                      }}
-                      className="text-sm bg-info/20 hover:bg-info px-3 py-1 rounded transition text-info"
-                    >
-                      {copiedCode === code ? 'Copié !' : 'Copier'}
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setError('Cette fonction nécessite les droits administrateur')
-                      }}
-                      disabled={isLoading}
-                      className="text-sm bg-error/20 hover:bg-error px-3 py-1 rounded transition text-error"
-                    >
-                      Supprimer
-                    </button>
-                  </div>
-                </GlassCard>
+                    <GlassCard key={i} className="flex flex-col items-center p-4 text-center" style={{ maxWidth: '50rem', margin: '0 auto' }}>
+                      <span className="font-mono bg-axone-dark-light px-3 py-1 rounded break-all text-white-pure mb-4">
+                        {code}
+                      </span>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText(code)
+                            setCopiedCode(code)
+                            setTimeout(() => setCopiedCode(null), 2000)
+                          }}
+                          className="text-sm bg-info/20 hover:bg-info px-3 py-1 rounded transition text-info"
+                        >
+                          {copiedCode === code ? 'Copié !' : 'Copier'}
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setError('Cette fonction nécessite les droits administrateur')
+                          }}
+                          disabled={isLoading}
+                          className="text-sm bg-error/20 hover:bg-error px-3 py-1 rounded transition text-error"
+                        >
+                          Supprimer
+                        </button>
+                      </div>
+                    </GlassCard>
                   ))}
                 </div>
               ) : null}

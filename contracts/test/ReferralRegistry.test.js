@@ -90,9 +90,10 @@ describe("ReferralRegistry", function () {
     });
 
     it("Devrait permettre de créer un code généré automatiquement", async function () {
-      const rawCode = await referralRegistry.connect(user1).createCode();
-      expect(rawCode.length).to.be.greaterThan(0);
-      
+      await referralRegistry.connect(user1)["createCode()"]();
+      const unused = await referralRegistry.getUnusedCodes(user1.address);
+      expect(unused.length).to.be.greaterThan(0);
+      const rawCode = unused[unused.length - 1];
       const codeHash = ethers.keccak256(ethers.toUtf8Bytes(rawCode));
       const code = await referralRegistry.codes(codeHash);
       expect(code.creator).to.equal(user1.address);
@@ -105,7 +106,9 @@ describe("ReferralRegistry", function () {
 
     beforeEach(async function () {
       await referralRegistry.whitelistDirect(user1.address);
-      rawCode = await referralRegistry.connect(user1).createCode();
+      await referralRegistry.connect(user1)["createCode()"]();
+      const unused = await referralRegistry.getUnusedCodes(user1.address);
+      rawCode = unused[unused.length - 1];
       codeHash = ethers.keccak256(ethers.toUtf8Bytes(rawCode));
     });
 
@@ -152,7 +155,11 @@ describe("ReferralRegistry", function () {
     });
 
     it("Devrait permettre au owner de révoquer un code", async function () {
-      const rawCode = await referralRegistry.connect(user1).createCode();
+      const rawCodesBefore = await referralRegistry.getUnusedCodes(user1.address);
+      await referralRegistry.connect(user1)["createCode()"]();
+      const unused = await referralRegistry.getUnusedCodes(user1.address);
+      expect(unused.length).to.be.greaterThan(rawCodesBefore.length);
+      const rawCode = unused[unused.length - 1];
       const codeHash = ethers.keccak256(ethers.toUtf8Bytes(rawCode));
       
       await referralRegistry.revokeCode(codeHash);
@@ -162,7 +169,11 @@ describe("ReferralRegistry", function () {
     });
 
     it("Devrait empêcher les non-owners de révoquer un code", async function () {
-      const rawCode = await referralRegistry.connect(user1).createCode();
+      const rawCodesBefore = await referralRegistry.getUnusedCodes(user1.address);
+      await referralRegistry.connect(user1)["createCode()"]();
+      const unused = await referralRegistry.getUnusedCodes(user1.address);
+      expect(unused.length).to.be.greaterThan(rawCodesBefore.length);
+      const rawCode = unused[unused.length - 1];
       const codeHash = ethers.keccak256(ethers.toUtf8Bytes(rawCode));
       
       await expect(
