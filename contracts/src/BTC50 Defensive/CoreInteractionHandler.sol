@@ -187,17 +187,11 @@ contract CoreInteractionHandler {
         uint64 szH1e8 = _toSz1e8(int256(halfUsd1e18), pxH);
         if (szB1e8 > 0) {
             uint64 pxBLimit = _limitFromOracle(pxB, true);
-            {
-                LimitOrderParams memory p = LimitOrderParams(spotBTC, true, pxBLimit, szB1e8, false, HLConstants.TIF_IOC, 0);
-                _sendLimitOrder(coreWriter, p);
-            }
+            _sendLimitOrderDirect(spotBTC, true, pxBLimit, szB1e8, 0);
         }
         if (szH1e8 > 0) {
             uint64 pxHLimit = _limitFromOracle(pxH, true);
-            {
-                LimitOrderParams memory p = LimitOrderParams(spotHYPE, true, pxHLimit, szH1e8, false, HLConstants.TIF_IOC, 0);
-                _sendLimitOrder(coreWriter, p);
-            }
+            _sendLimitOrderDirect(spotHYPE, true, pxHLimit, szH1e8, 0);
         }
         if (forceRebalance) {
             rebalancePortfolio(0, 0);
@@ -251,18 +245,12 @@ contract CoreInteractionHandler {
         if (szB1e8 > 0) {
             bool isBuyB = dB > 0;
             uint64 pxBLimit = _limitFromOracle(pxB, isBuyB);
-            {
-                LimitOrderParams memory p = LimitOrderParams(spotBTC, isBuyB, pxBLimit, szB1e8, false, HLConstants.TIF_IOC, cloidBtc);
-                _sendLimitOrder(coreWriter, p);
-            }
+            _sendLimitOrderDirect(spotBTC, isBuyB, pxBLimit, szB1e8, cloidBtc);
         }
         if (szH1e8 > 0) {
             bool isBuyH = dH > 0;
             uint64 pxHLimit = _limitFromOracle(pxH, isBuyH);
-            {
-                LimitOrderParams memory p = LimitOrderParams(spotHYPE, isBuyH, pxHLimit, szH1e8, false, HLConstants.TIF_IOC, cloidHype);
-                _sendLimitOrder(coreWriter, p);
-            }
+            _sendLimitOrderDirect(spotHYPE, isBuyH, pxHLimit, szH1e8, cloidHype);
         }
         emit Rebalanced(dB, dH);
     }
@@ -294,10 +282,7 @@ contract CoreInteractionHandler {
         if (sz1e8 == 0) return;
         // Sell with lower bound price
         uint64 pxLimit = _limitFromOracle(px, false);
-        {
-            LimitOrderParams memory p = LimitOrderParams(spotAsset, false, pxLimit, sz1e8, false, HLConstants.TIF_IOC, 0);
-            _sendLimitOrder(coreWriter, p);
-        }
+        _sendLimitOrderDirect(spotAsset, false, pxLimit, sz1e8, 0);
     }
 
     function _send(ICoreWriter writer, bytes memory data) internal {
@@ -356,6 +341,27 @@ contract CoreInteractionHandler {
                 p.reduceOnly,
                 p.tif,
                 p.cloid
+            )
+        );
+    }
+
+    function _sendLimitOrderDirect(
+        uint32 asset,
+        bool isBuy,
+        uint64 limitPx1e8,
+        uint64 sz1e8,
+        uint128 cloid
+    ) internal {
+        _send(
+            coreWriter,
+            HLConstants.encodeLimitOrder(
+                asset,
+                isBuy,
+                limitPx1e8,
+                sz1e8,
+                false,
+                HLConstants.TIF_IOC,
+                cloid
             )
         );
     }

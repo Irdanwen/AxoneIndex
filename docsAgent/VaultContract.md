@@ -101,11 +101,18 @@ Où :
 
 ## Approvals ERC20 vers le `handler`
 
-- L'approbation USDC utilise `forceApprove` (via OpenZeppelin SafeERC20 v5) afin de gérer de façon sûre les tokens non-standard qui exigent un reset de l'allowance.
+- L'approbation USDC utilise `safeApprove` avec un reset préalable à 0 lorsque l'`allowance` actuelle est inférieure au montant requis. Ceci assure la compatibilité avec les tokens qui exigent de remettre l'allowance à 0 avant d'augmenter une nouvelle approval.
 
+```solidity
+uint256 currentAllowance = usdc.allowance(address(this), address(handler));
+if (currentAllowance < deployAmt) {
+    usdc.safeApprove(address(handler), 0);
+    usdc.safeApprove(address(handler), deployAmt);
+}
+```
+
+- Avertissement: certains tokens non-standard peuvent se comporter différemment vis-à-vis d'`approve`. La stratégie ci-dessus (reset à 0 puis nouvelle approval) est la recommandation d'OpenZeppelin via `SafeERC20` et couvre la majorité des cas.
 
 ## Références
-- Code source : `contracts/src/BTC50 Defensive/VaultContract.sol`
-- Documentation CoreWriter : [Hyperliquid GitBook](https://hyperliquid.gitbook.io/hyperliquid-docs)
 
-> **Note** : Cette documentation reflète l'état du contrat au 2025-08-29. Vérifier les commits récents pour les évolutions non documentées.
+- Code source : `
