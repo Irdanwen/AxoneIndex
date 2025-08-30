@@ -273,7 +273,7 @@ contract CoreInteractionHandler {
         return SafeCast.toUint64(s);
     }
 
-    function _sellAssetForUsd(uint32 spotAsset, uint64 tokenId, uint256 targetUsd1e6) internal {
+    function _sellAssetForUsd(uint32 spotAsset, uint64 /*tokenId*/, uint256 targetUsd1e6) internal {
         if (targetUsd1e6 == 0) return;
         uint64 px = spotOraclePx1e8(spotAsset);
         // Convert target USD to base size 1e8
