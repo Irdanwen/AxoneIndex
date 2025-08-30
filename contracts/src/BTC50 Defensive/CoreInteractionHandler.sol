@@ -187,11 +187,17 @@ contract CoreInteractionHandler {
         uint64 szH1e8 = _toSz1e8(int256(halfUsd1e18), pxH);
         if (szB1e8 > 0) {
             uint64 pxBLimit = _limitFromOracle(pxB, true);
-            _send(coreWriter, HLConstants.encodeLimitOrder(spotBTC, true, pxBLimit, szB1e8, false, HLConstants.TIF_IOC, 0));
+            {
+                LimitOrderParams memory p = LimitOrderParams(spotBTC, true, pxBLimit, szB1e8, false, HLConstants.TIF_IOC, 0);
+                _sendLimitOrder(coreWriter, p);
+            }
         }
         if (szH1e8 > 0) {
             uint64 pxHLimit = _limitFromOracle(pxH, true);
-            _send(coreWriter, HLConstants.encodeLimitOrder(spotHYPE, true, pxHLimit, szH1e8, false, HLConstants.TIF_IOC, 0));
+            {
+                LimitOrderParams memory p = LimitOrderParams(spotHYPE, true, pxHLimit, szH1e8, false, HLConstants.TIF_IOC, 0);
+                _sendLimitOrder(coreWriter, p);
+            }
         }
         if (forceRebalance) {
             rebalancePortfolio(0, 0);
@@ -245,12 +251,18 @@ contract CoreInteractionHandler {
         if (szB1e8 > 0) {
             bool isBuyB = dB > 0;
             uint64 pxBLimit = _limitFromOracle(pxB, isBuyB);
-            _send(coreWriter, HLConstants.encodeLimitOrder(spotBTC, isBuyB, pxBLimit, szB1e8, false, HLConstants.TIF_IOC, cloidBtc));
+            {
+                LimitOrderParams memory p = LimitOrderParams(spotBTC, isBuyB, pxBLimit, szB1e8, false, HLConstants.TIF_IOC, cloidBtc);
+                _sendLimitOrder(coreWriter, p);
+            }
         }
         if (szH1e8 > 0) {
             bool isBuyH = dH > 0;
             uint64 pxHLimit = _limitFromOracle(pxH, isBuyH);
-            _send(coreWriter, HLConstants.encodeLimitOrder(spotHYPE, isBuyH, pxHLimit, szH1e8, false, HLConstants.TIF_IOC, cloidHype));
+            {
+                LimitOrderParams memory p = LimitOrderParams(spotHYPE, isBuyH, pxHLimit, szH1e8, false, HLConstants.TIF_IOC, cloidHype);
+                _sendLimitOrder(coreWriter, p);
+            }
         }
         emit Rebalanced(dB, dH);
     }
@@ -282,7 +294,10 @@ contract CoreInteractionHandler {
         if (sz1e8 == 0) return;
         // Sell with lower bound price
         uint64 pxLimit = _limitFromOracle(px, false);
-        _send(coreWriter, HLConstants.encodeLimitOrder(spotAsset, false, pxLimit, sz1e8, false, HLConstants.TIF_IOC, 0));
+        {
+            LimitOrderParams memory p = LimitOrderParams(spotAsset, false, pxLimit, sz1e8, false, HLConstants.TIF_IOC, 0);
+            _sendLimitOrder(coreWriter, p);
+        }
     }
 
     function _send(ICoreWriter writer, bytes memory data) internal {
@@ -318,6 +333,31 @@ contract CoreInteractionHandler {
             pxInitH = true;
         }
         return px;
+    }
+
+    struct LimitOrderParams {
+        uint32 asset;
+        bool isBuy;
+        uint64 limitPx1e8;
+        uint64 sz1e8;
+        bool reduceOnly;
+        uint8 tif;
+        uint128 cloid;
+    }
+
+    function _sendLimitOrder(ICoreWriter writer, LimitOrderParams memory p) internal {
+        _send(
+            writer,
+            HLConstants.encodeLimitOrder(
+                p.asset,
+                p.isBuy,
+                p.limitPx1e8,
+                p.sz1e8,
+                p.reduceOnly,
+                p.tif,
+                p.cloid
+            )
+        );
     }
 }
 
