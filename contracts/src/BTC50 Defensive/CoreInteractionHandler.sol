@@ -223,44 +223,45 @@ contract CoreInteractionHandler {
     }
 
     function rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype) public {
+        RebalanceVars memory v;
         // Read spot balances and prices
-        uint256 usdcBal1e6 = spotBalance(address(this), usdcCoreTokenId);
-        uint256 btcBal1e0 = spotBalance(address(this), spotTokenBTC);
-        uint256 hypeBal1e0 = spotBalance(address(this), spotTokenHYPE);
-        uint64 pxB = _validatedOraclePx1e8(true);
-        uint64 pxH = _validatedOraclePx1e8(false);
+        v.usdcBal1e6 = spotBalance(address(this), usdcCoreTokenId);
+        v.btcBal1e0 = spotBalance(address(this), spotTokenBTC);
+        v.hypeBal1e0 = spotBalance(address(this), spotTokenHYPE);
+        v.pxB = _validatedOraclePx1e8(true);
+        v.pxH = _validatedOraclePx1e8(false);
 
         // Current USD notionals per leg (1e18)
-        int256 posB1e18 = int256(btcBal1e0 * uint256(pxB) * 1e10);
-        int256 posH1e18 = int256(hypeBal1e0 * uint256(pxH) * 1e10);
-        uint256 equity1e18 = (usdcBal1e6 * 1e12) + uint256(int256(posB1e18)) + uint256(int256(posH1e18));
+        v.posB1e18 = int256(v.btcBal1e0 * uint256(v.pxB) * 1e10);
+        v.posH1e18 = int256(v.hypeBal1e0 * uint256(v.pxH) * 1e10);
+        v.equity1e18 = (v.usdcBal1e6 * 1e12) + uint256(int256(v.posB1e18)) + uint256(int256(v.posH1e18));
 
-        (int256 dB, int256 dH) = Rebalancer50Lib.computeDeltas(equity1e18, posB1e18, posH1e18, deadbandBps);
+        (v.dB, v.dH) = Rebalancer50Lib.computeDeltas(v.equity1e18, v.posB1e18, v.posH1e18, deadbandBps);
 
         // Convert deltas 1e18 USD into size 1e8
-        uint64 szB1e8 = _toSz1e8(dB, pxB);
-        uint64 szH1e8 = _toSz1e8(dH, pxH);
+        v.szB1e8 = _toSz1e8(v.dB, v.pxB);
+        v.szH1e8 = _toSz1e8(v.dH, v.pxH);
 
         // Send IOC orders on spot markets
-        if (szB1e8 > 0) {
+        if (v.szB1e8 > 0) {
             _sendLimitOrderDirect(
                 spotBTC,
-                dB > 0,
-                _limitFromOracle(pxB, dB > 0),
-                szB1e8,
+                v.dB > 0,
+                _limitFromOracle(v.pxB, v.dB > 0),
+                v.szB1e8,
                 cloidBtc
             );
         }
-        if (szH1e8 > 0) {
+        if (v.szH1e8 > 0) {
             _sendLimitOrderDirect(
                 spotHYPE,
-                dH > 0,
-                _limitFromOracle(pxH, dH > 0),
-                szH1e8,
+                v.dH > 0,
+                _limitFromOracle(v.pxH, v.dH > 0),
+                v.szH1e8,
                 cloidHype
             );
         }
-        emit Rebalanced(dB, dH);
+        emit Rebalanced(v.dB, v.dH);
     }
 
     // Internal utils
@@ -336,6 +337,21 @@ contract CoreInteractionHandler {
         bool reduceOnly;
         uint8 tif;
         uint128 cloid;
+    }
+
+    struct RebalanceVars {
+        uint256 usdcBal1e6;
+        uint256 btcBal1e0;
+        uint256 hypeBal1e0;
+        uint64 pxB;
+        uint64 pxH;
+        int256 posB1e18;
+        int256 posH1e18;
+        uint256 equity1e18;
+        int256 dB;
+        int256 dH;
+        uint64 szB1e8;
+        uint64 szH1e8;
     }
 
     function _sendLimitOrder(ICoreWriter writer, LimitOrderParams memory p) internal {
