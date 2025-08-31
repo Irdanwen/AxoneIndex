@@ -243,14 +243,22 @@ contract CoreInteractionHandler {
 
         // Send IOC orders on spot markets
         if (szB1e8 > 0) {
-            bool isBuyB = dB > 0;
-            uint64 pxBLimit = _limitFromOracle(pxB, isBuyB);
-            _sendLimitOrderDirect(spotBTC, isBuyB, pxBLimit, szB1e8, cloidBtc);
+            _sendLimitOrderDirect(
+                spotBTC,
+                dB > 0,
+                _limitFromOracle(pxB, dB > 0),
+                szB1e8,
+                cloidBtc
+            );
         }
         if (szH1e8 > 0) {
-            bool isBuyH = dH > 0;
-            uint64 pxHLimit = _limitFromOracle(pxH, isBuyH);
-            _sendLimitOrderDirect(spotHYPE, isBuyH, pxHLimit, szH1e8, cloidHype);
+            _sendLimitOrderDirect(
+                spotHYPE,
+                dH > 0,
+                _limitFromOracle(pxH, dH > 0),
+                szH1e8,
+                cloidHype
+            );
         }
         emit Rebalanced(dB, dH);
     }
