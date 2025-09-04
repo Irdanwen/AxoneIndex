@@ -1,11 +1,25 @@
 # Documentation du projet AxoneIndex
 
+## Table des matières
+- [Introduction](#introduction)
+- [Configuration initiale](#configuration-initiale)
+- [Architecture](#architecture)
+- [Guides pratiques](#guides-pratiques)
+  - [Gestion des parrainages](./REFERRAL_MANAGEMENT_GUIDE.md)
+  - [Connexion wallet](./WALLET_CONNECTION_GUIDE.md)
+  - [Implémentation des vaults](./VAULTS_IMPLEMENTATION.md)
+  - [UI – Corrections CSS](./ui/CORRECTIONS_SUMMARY.md)
+  - [UI – Theme Toggle](./ui/THEME_TOGGLE_SUMMARY.md)
+  - [Ops – Build Vercel (final)](./ops/VERCEL_BUILD_FIX_FINAL.md)
+  - [Ops – CSS Vercel](./ops/VERCEL_CSS_FIX.md)
+  - [Contrat Vault (technique)](./contracts/VaultContract.md)
+
 ## Introduction
 AxoneIndex est une plateforme DeFi construite sur HyperEVM (Hyperliquid). Elle combine des contrats intelligents Solidity et une interface Next.js (App Router) pour offrir des coffres (vaults), une gestion de parrainages et une intégration wallet moderne.
 
 ## Configuration initiale
-- Guide de démarrage parrainage: [REFERRAL_GUIDE.md](../REFERRAL_GUIDE.md)
-- Implémentation des vaults: [VAULTS_IMPLEMENTATION.md](../VAULTS_IMPLEMENTATION.md)
+- Guide de démarrage parrainage: [REFERRAL_GUIDE.md](./REFERRAL_GUIDE.md)
+- Implémentation des vaults: [VAULTS_IMPLEMENTATION.md](./VAULTS_IMPLEMENTATION.md)
 - Prérequis techniques:
   - Node.js ≥ 18 (LTS recommandée)
   - pnpm 9.x (aligné avec les déploiements CI/CD)
@@ -67,5 +81,11 @@ AxoneIndex est une plateforme DeFi construite sur HyperEVM (Hyperliquid). Elle c
   - `scripts/`: scripts utilitaires côté frontend (ex. optimisation d’images)
 
 ## Guides pratiques
-- [Gestion des parrainages](../REFERRAL_MANAGEMENT_GUIDE.md)
-- [Connexion wallet](../WALLET_CONNECTION_GUIDE.md)
+- [Gestion des parrainages](./REFERRAL_MANAGEMENT_GUIDE.md)
+- [Connexion wallet](./WALLET_CONNECTION_GUIDE.md)
+- [Implémentation des vaults](./VAULTS_IMPLEMENTATION.md)
+- [Corrections CSS (UI)](./ui/CORRECTIONS_SUMMARY.md)
+- [Theme Toggle (UI)](./ui/THEME_TOGGLE_SUMMARY.md)
+- [Build Vercel (ops)](./ops/VERCEL_BUILD_FIX_FINAL.md)
+- [CSS Vercel (ops)](./ops/VERCEL_CSS_FIX.md)
+- [Docs contrat Vault](./contracts/VaultContract.md)

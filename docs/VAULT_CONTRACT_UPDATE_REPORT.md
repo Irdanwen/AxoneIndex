@@ -28,7 +28,7 @@ Mise à jour complète de la documentation technique pour refléter les évoluti
 
 ## 📚 Mises à Jour DocsAgent
 
-✅ **Nouveau document** : [`docsAgent/VaultContract.md`](/docsAgent/VaultContract.md)
+✅ **Nouveau document** : [`docs/contracts/VaultContract.md`](/docs/contracts/VaultContract.md)
 - Structure technique organisée par fonctionnalité
 - Exemples concrets de calculs (dépôt de 1000 USDC)
 - Formules mathématiques pour NAV/PPS

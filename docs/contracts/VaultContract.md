@@ -37,14 +37,14 @@ function deposit(uint64 amount1e6) external
 3. Déploie automatiquement `autoDeployBps`% vers Core
 4. Met à jour le suivi des dépôts utilisateur
 
-> **Exemple** : Dépôt de 1000 USDC avec autoDeployBps=9000 → 900 USDC envoyés vers Core
+> Exemple : Dépôt de 1000 USDC avec autoDeployBps=9000 → 900 USDC envoyés vers Core
 
 ### 📤 Retrait
 ```solidity
 function withdraw(uint256 shares) external
 ```
-- **Cas immédiat** : Paiement si liquidité suffisante
-- **Cas différé** : Ajout à `withdrawQueue` si liquidité insuffisante
+- Cas immédiat : Paiement si liquidité suffisante
+- Cas différé : Ajout à `withdrawQueue` si liquidité insuffisante
 - Calcul des frais basé sur `withdrawFeeBps` et la portion du retrait couverte par le dépôt restant enregistré (`deposits[user]`). Le BPS de frais est figé au moment de la mise en file si le retrait est différé.
 
 ### ⚙️ Gestion Core
@@ -82,15 +82,15 @@ Où :
 
 ## Bonnes pratiques d'implémentation
 
-1. **Gestion des frais** :
+1. Gestion des frais :
    - `depositFeeBps` s'applique sur les parts mintées au dépôt
    - `withdrawFeeBps` s'applique à la portion du paiement en USDC (1e6) couverte par le dépôt enregistré de l'utilisateur (min du brut dû et du dépôt restant). En cas de retrait différé, le `feeBpsSnapshot` prend la valeur de `withdrawFeeBps` au moment de la demande
 
-2. **Sécurité** :
+2. Sécurité :
    - Toutes les fonctions critiques utilisent `nonReentrant`
    - Vérification des adresses zéro dans `_transfer`
 
-3. **Audit recommandé** :
+3. Audit recommandé :
    - Vérifier la cohérence entre `deposits` et calcul des frais de retrait
    - Tester les scénarios de liquidité insuffisante (mise en file et règlement via `settleWithdraw`)
 
@@ -113,6 +113,3 @@ if (currentAllowance < deployAmt) {
 
 - Avertissement: certains tokens non-standard peuvent se comporter différemment vis-à-vis d'`approve`. La stratégie ci-dessus (reset à 0 puis nouvelle approval) est la recommandation d'OpenZeppelin via `SafeERC20` et couvre la majorité des cas.
 
-## Références
-
-- Code source : `

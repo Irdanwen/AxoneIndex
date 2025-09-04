@@ -201,6 +201,19 @@ Utilisez les classes d'animation existantes ou créez-en de nouvelles dans la co
 ### Modifier le contenu
 Les textes et données sont facilement modifiables dans les composants correspondants.
 
+## 📚 Documentation
+
+- Guide global de la doc: `docs/README.md`
+- Referral: `docs/REFERRAL_GUIDE.md`
+- Gestion des referrals: `docs/REFERRAL_MANAGEMENT_GUIDE.md`
+- Connexion Wallet & HyperEVM: `docs/WALLET_CONNECTION_GUIDE.md`
+- Implémentation des Vaults: `docs/VAULTS_IMPLEMENTATION.md`
+- Contrat Vault (technique): `docs/contracts/VaultContract.md`
+- UI – Theme Toggle: `docs/ui/THEME_TOGGLE_SUMMARY.md`
+- UI – Corrections CSS: `docs/ui/CORRECTIONS_SUMMARY.md`
+- Ops – Build Vercel (final): `docs/ops/VERCEL_BUILD_FIX_FINAL.md`
+- Ops – CSS Vercel: `docs/ops/VERCEL_CSS_FIX.md`
+
 ## 📄 Licence
 
 Ce projet est sous licence MIT. Voir le fichier LICENSE pour plus de détails.
