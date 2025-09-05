@@ -11,22 +11,22 @@ describe("AxoneToken", function () {
     [owner, addr1, addr2] = await ethers.getSigners();
     
     const AxoneToken = await ethers.getContractFactory("AxoneToken");
-    axoneToken = await AxoneToken.deploy(owner.address);
+    axoneToken = await AxoneToken.deploy(owner.address, owner.address, owner.address);
   });
 
   describe("Déploiement", function () {
     it("Devrait avoir le bon nom et symbole", async function () {
-      expect(await axoneToken.name()).to.equal("Axone Token");
-      expect(await axoneToken.symbol()).to.equal("AXONE");
+      expect(await axoneToken.name()).to.equal("Axone");
+      expect(await axoneToken.symbol()).to.equal("AXN");
     });
 
     it("Devrait avoir le bon supply initial", async function () {
-      const expectedSupply = ethers.parseEther("1000000"); // 1 million de tokens
+      const expectedSupply = BigInt("100000000") * ethers.parseEther("1");
       expect(await axoneToken.totalSupply()).to.equal(expectedSupply);
     });
 
     it("Devrait assigner le supply initial au owner", async function () {
-      const expectedSupply = ethers.parseEther("1000000");
+      const expectedSupply = BigInt("100000000") * ethers.parseEther("1");
       expect(await axoneToken.balanceOf(owner.address)).to.equal(expectedSupply);
     });
   });

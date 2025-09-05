@@ -1,5 +1,15 @@
 # Changelog
 
+## [2025-09-05] - Correctif décimales AxoneSale et docs
+
+### 🔴 Correction critique
+- Correction du calcul USDC dans `AxoneSale.sol` en normalisant les décimales (AXN 18, USDC 6)
+- Ajout de `USDC_DECIMALS` et redéfinition de `PRICE_PER_AXN_IN_USDC` à `USDC_DECIMALS / 10` (0,1 USDC)
+
+### 📝 Documentation
+- Nouveau: `docs/contracts/AxoneSale.md`
+- Index docs mis à jour pour référencer AxoneSale
+
 ## [2024-08-18] - Corrections critiques
 
 ### 🔴 **Erreurs bloquantes corrigées**

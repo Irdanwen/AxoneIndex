@@ -1,115 +1,43 @@
-# VaultContract.sol - Documentation Technique
+# VaultContract — Frais de Retrait par Paliers et Flux
 
-## Vue d'ensemble
-Contrat de vault gérant des parts tokenisées (ERC20) représentant une participation dans un portefeuille hybride EVM/Core. Intègre :
-- Gestion de liquidités en USDC (1e6)
-- Calcul de NAV combinant solde EVM et equity Core
-- Mécanismes de dépôt/retrait avec frais paramétrables
-- Déploiement automatique vers Core via CoreWriter
+## Résumé
+`VaultContract.sol` émet des parts (18 décimales) contre des dépôts en USDC (1e6), gère la NAV/PPS, des retraits immédiats ou différés, et l’auto-déploiement partiel vers Core. Les frais de retrait dépendent désormais du montant retiré (brut), via des paliers configurables.
 
-## Composants clés
+## Frais de Retrait
+- `setFees(depositFeeBps, withdrawFeeBps, autoDeployBps)` fixe les valeurs par défaut.
+- `setWithdrawFeeTiers(WithdrawFeeTier[])` permet d’ajouter des paliers:
+  - `WithdrawFeeTier { uint64 amount1e6; uint16 feeBps; }`
+  - Les paliers sont interprétés dans l’ordre: le premier `amount1e6` supérieur ou égal au montant brut détermine `feeBps`.
+  - Si aucun palier ne correspond, fallback sur `withdrawFeeBps`.
+- `getWithdrawFeeBpsForAmount(uint64 amount1e6)` retourne le BPS applicable.
 
-### Interfaces critiques
-```solidity
-interface IHandler {
-    function equitySpotUsd1e18() external view returns (uint256);
-    function executeDeposit(uint64 usdc1e6, bool forceRebalance) external;
-    function pullFromCoreToEvm(uint64 usdc1e6) external returns (uint64);
-    function sweepToVault(uint64 amount1e6) external;
-}
-```
-
-### Variables d'état
-| Variable | Description |
-|----------|-------------|
-| `deposits` | Suivi des dépôts USDC bruts par utilisateur (1e6) |
-| `autoDeployBps` | % des dépôts automatiquement déployés vers Core (défaut: 9000 = 90%) |
-| `withdrawQueue` | File d'attente pour les retraits en cas de liquidité insuffisante |
-
-## Fonctionnalités principales
-
-### 💰 Dépôt
-```solidity
-function deposit(uint64 amount1e6) external
-```
-1. Calcule les parts à mint en fonction du NAV
-2. Applique `depositFeeBps` sur les parts mintées
-3. Déploie automatiquement `autoDeployBps`% vers Core
-4. Met à jour le suivi des dépôts utilisateur
-
-> Exemple : Dépôt de 1000 USDC avec autoDeployBps=9000 → 900 USDC envoyés vers Core
-
-### 📤 Retrait
-```solidity
-function withdraw(uint256 shares) external
-```
-- Cas immédiat : Paiement si liquidité suffisante
-- Cas différé : Ajout à `withdrawQueue` si liquidité insuffisante
-- Calcul des frais basé sur `withdrawFeeBps` et la portion du retrait couverte par le dépôt restant enregistré (`deposits[user]`). Le BPS de frais est figé au moment de la mise en file si le retrait est différé.
-
-### ⚙️ Gestion Core
-```solidity
-function recallFromCoreAndSweep(uint64 amount1e6) external onlyOwner
-```
-Permet de rapatrier des fonds depuis Core vers EVM en deux étapes :
-1. `pullFromCoreToEvm()` : Récupère les fonds sur Core
-2. `sweepToVault()` : Transfère vers la vault
-
-## Nouvelles fonctionnalités (v2.1+)
-
-### 🔗 Implémentation ERC20 complète
-Ajout des fonctions standard :
-- `transfer()`/`transferFrom()` avec gestion des allowances
-- Événements `Transfer`/`Approval`
-- Validation des adresses zéro
-
-```solidity
-function transfer(address to, uint256 value) external returns (bool) {
-    require(value > 0, "zero value");
-    _transfer(msg.sender, to, value);
-    return true;
-}
-```
-
-### 📊 Calcul du NAV
-$$
-NAV_{1e18 = (EVM_{balance \times 10^{12}) + Core_{equity}
-$$
-
-Où :
-- $EVM_{balance}$ = Solde USDC du contrat
-- $Core_{equity}$ = Valeur equity Core via `handler.equitySpotUsd1e18()`
-
-## Bonnes pratiques d'implémentation
-
-1. Gestion des frais :
-   - `depositFeeBps` s'applique sur les parts mintées au dépôt
-   - `withdrawFeeBps` s'applique à la portion du paiement en USDC (1e6) couverte par le dépôt enregistré de l'utilisateur (min du brut dû et du dépôt restant). En cas de retrait différé, le `feeBpsSnapshot` prend la valeur de `withdrawFeeBps` au moment de la demande
-
-2. Sécurité :
-   - Toutes les fonctions critiques utilisent `nonReentrant`
-   - Vérification des adresses zéro dans `_transfer`
-
-3. Audit recommandé :
-   - Vérifier la cohérence entre `deposits` et calcul des frais de retrait
-   - Tester les scénarios de liquidité insuffisante (mise en file et règlement via `settleWithdraw`)
+## Retraits
+- `withdraw(uint256 shares)`:
+  - Calcule le montant brut en USDC à partir du PPS courant.
+  - Applique `feeBps` déterminé par `getWithdrawFeeBpsForAmount(gross1e6)`.
+  - Si la trésorerie EVM couvre le montant net → paiement immédiat et événement `WithdrawPaid`.
+  - Sinon → mise en file avec snapshot du `feeBps` calculé à la demande.
+- `settleWithdraw(uint256 id, uint64 pay1e6, address to)`:
+  - Recalcule le montant brut d’après le PPS courant.
+  - Utilise le `feeBpsSnapshot` stocké dans la file pour exiger un paiement net exact.
 
 ## Événements
+- `WithdrawRequested(id, user, shares)`
+- `WithdrawPaid(id, to, amount1e6)`
+- `WithdrawCancelled(id, user, shares)`
+- `FeesSet(depositFeeBps, withdrawFeeBps, autoDeployBps)`
+- `WithdrawFeeTiersSet()`
 
-- `NavUpdated(uint256 nav1e18)` : Émis après chaque opération modifiant l'état économique (dépôt, retrait, règlement, rappel/sweep). Reflète le NAV courant en 1e18.
-- `RecallAndSweep(uint64 amount1e6)` : Émis lorsque des fonds sont rappelés depuis Core puis transférés au vault.
-
-## Approvals ERC20 vers le `handler`
-
-- L'approbation USDC utilise `safeApprove` avec un reset préalable à 0 lorsque l'`allowance` actuelle est inférieure au montant requis. Ceci assure la compatibilité avec les tokens qui exigent de remettre l'allowance à 0 avant d'augmenter une nouvelle approval.
-
+## Exemple de Configuration
 ```solidity
-uint256 currentAllowance = usdc.allowance(address(this), address(handler));
-if (currentAllowance < deployAmt) {
-    usdc.safeApprove(address(handler), 0);
-    usdc.safeApprove(address(handler), deployAmt);
-}
+// Paliers de frais sur montant brut
+VaultContract.WithdrawFeeTier[] memory tiers = new VaultContract.WithdrawFeeTier[](3);
+tiers[0] = VaultContract.WithdrawFeeTier({amount1e6: 1_000_000, feeBps: 50});    // <= 1 USDC : 0,50%
+tiers[1] = VaultContract.WithdrawFeeTier({amount1e6: 10_000_000, feeBps: 30});  // <= 10 USDC : 0,30%
+tiers[2] = VaultContract.WithdrawFeeTier({amount1e6: 100_000_000, feeBps: 10}); // <= 100 USDC : 0,10%
+vault.setWithdrawFeeTiers(tiers);
 ```
 
-- Avertissement: certains tokens non-standard peuvent se comporter différemment vis-à-vis d'`approve`. La stratégie ci-dessus (reset à 0 puis nouvelle approval) est la recommandation d'OpenZeppelin via `SafeERC20` et couvre la majorité des cas.
-
+## Notes
+- Les dépôts utilisateurs précédemment utilisés pour calculer des frais “sur base de dépôt” ne sont plus pris en compte pour la détermination des frais; la logique est désormais strictement basée sur le montant brut.
+- Les paliers doivent être définis en USDC 1e6 (6 décimales).

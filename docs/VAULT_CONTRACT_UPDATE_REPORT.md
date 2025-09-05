@@ -34,6 +34,36 @@ Mise à jour complète de la documentation technique pour refléter les évoluti
 - Formules mathématiques pour NAV/PPS
 - Bonnes pratiques de sécurité et audit
 
+## 🔄 Changements Récents (2025-09-05)
+
+### CoreInteractionHandler.sol
+- Ajout d'un rôle `rebalancer` défini par l'owner via `setRebalancer(address)`.
+- Restriction d'accès à `rebalancePortfolio` avec le modificateur `onlyRebalancer`.
+- Refactor interne avec `_rebalance(...)` pour permettre les appels internes (ex. depuis `executeDeposit`) sans contourner l'authentification externe.
+
+### VaultContract.sol
+- Introduction de paliers de frais de retrait: `WithdrawFeeTier[] withdrawFeeTiers` et setter `setWithdrawFeeTiers(WithdrawFeeTier[])`.
+- Les frais de retrait sont désormais calculés sur le montant brut retiré (USDC 1e6) via `getWithdrawFeeBpsForAmount(amount1e6)`.
+- Dans `withdraw`, le BPS applicable est déterminé à la demande; si retrait différé, ce BPS est figé dans `feeBpsSnapshot` de la file.
+- Dans `settleWithdraw`, le paiement net requis est calculé à partir du montant brut (PPS courant) et du BPS figé.
+
+### Impacts et Considérations
+- Les intégrations off-chain qui appellent `rebalancePortfolio` doivent utiliser l'adresse `rebalancer` configurée.
+- Les frontends doivent exposer la configuration des paliers de frais (lecture) pour une meilleure transparence utilisateur.
+- Les scripts de déploiement doivent prévoir la configuration initiale de `setRebalancer` et des `setWithdrawFeeTiers`.
+
+### Extrait de configuration (exemple)
+```solidity
+// Rebalancer
+handler.setRebalancer(0x1234...);
+
+// Paliers
+VaultContract.WithdrawFeeTier[] memory tiers = new VaultContract.WithdrawFeeTier[](2);
+tiers[0] = VaultContract.WithdrawFeeTier({amount1e6: 5_000_000, feeBps: 40}); // 5 USDC → 0.40%
+tiers[1] = VaultContract.WithdrawFeeTier({amount1e6: 50_000_000, feeBps: 20}); // 50 USDC → 0.20%
+vault.setWithdrawFeeTiers(tiers);
+```
+
 ## ⚠️ Points d'Attention
 
 1. **Consistance terminologique** :

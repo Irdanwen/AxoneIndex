@@ -49,8 +49,13 @@ contract CoreInteractionHandler {
     bool public pxInitB;
     bool public pxInitH;
 
+    // Fees config
+    address public feeVault;
+    uint64 public feeBps; // out of 10_000
+
     error NotVault();
     error NotOwner();
+    error NotRebalancer();
     error RateLimited();
     error OracleZero();
 
@@ -63,8 +68,12 @@ contract CoreInteractionHandler {
     event OutboundToCore(bytes data);
     event InboundFromCore(uint64 amount1e6);
     event Rebalanced(int256 dBtc1e18, int256 dHype1e18);
+    event FeeConfigSet(address feeVault, uint64 feeBps);
+    event SweepWithFee(uint64 gross1e6, uint64 fee1e6, uint64 net1e6);
+    event RebalancerSet(address rebalancer);
 
     address public owner;
+    address public rebalancer;
 
     modifier onlyOwner(){
         if(msg.sender!=owner) revert NotOwner();
@@ -76,7 +85,12 @@ contract CoreInteractionHandler {
         _;
     }
 
-    constructor(L1Read _l1read, ICoreWriter _coreWriter, IERC20 _usdc, uint64 _maxOutboundPerEpoch, uint64 _epochLength) {
+    modifier onlyRebalancer() {
+        if (msg.sender != rebalancer) revert NotRebalancer();
+        _;
+    }
+
+    constructor(L1Read _l1read, ICoreWriter _coreWriter, IERC20 _usdc, uint64 _maxOutboundPerEpoch, uint64 _epochLength, address _feeVault, uint64 _feeBps) {
         l1read = _l1read;
         coreWriter = _coreWriter;
         usdc = _usdc;
@@ -91,6 +105,10 @@ contract CoreInteractionHandler {
         if (marketEpsilonBps == 0) marketEpsilonBps = 10;
         deadbandBps = 50; // par défaut 0.5%
         maxOracleDeviationBps = 500; // 5%
+        require(_feeBps <= 10_000, "FEE_BPS");
+        feeVault = _feeVault;
+        feeBps = _feeBps;
+        emit FeeConfigSet(_feeVault, _feeBps);
     }
 
     // Admin setters (to be called by deployer/owner offchain in this sample; add auth as needed)
@@ -141,6 +159,18 @@ contract CoreInteractionHandler {
     function setMaxOracleDeviationBps(uint64 _maxDeviationBps) external onlyOwner {
         require(_maxDeviationBps > 0 && _maxDeviationBps <= 5000, "BAD_DEV_BPS");
         maxOracleDeviationBps = _maxDeviationBps;
+    }
+
+    function setFeeConfig(address _feeVault, uint64 _feeBps) external onlyOwner {
+        require(_feeBps <= 10_000, "FEE_BPS");
+        feeVault = _feeVault;
+        feeBps = _feeBps;
+        emit FeeConfigSet(_feeVault, _feeBps);
+    }
+
+    function setRebalancer(address _rebalancer) external onlyOwner {
+        rebalancer = _rebalancer;
+        emit RebalancerSet(_rebalancer);
     }
 
     // Views (spot)
@@ -194,7 +224,7 @@ contract CoreInteractionHandler {
             _sendLimitOrderDirect(spotHYPE, true, pxHLimit, szH1e8, 0);
         }
         if (forceRebalance) {
-            rebalancePortfolio(0, 0);
+            _rebalance(0, 0);
         }
     }
 
@@ -219,10 +249,27 @@ contract CoreInteractionHandler {
     }
 
     function sweepToVault(uint64 amount1e6) external onlyVault {
-        require(usdc.transfer(vault, amount1e6), "sweep fail");
+        if (amount1e6 == 0) {
+            return;
+        }
+        uint64 feeAmt1e6 = 0;
+        if (feeBps > 0) {
+            require(feeVault != address(0), "FEE_VAULT");
+            feeAmt1e6 = uint64((uint256(amount1e6) * uint256(feeBps)) / 10_000);
+            if (feeAmt1e6 > 0) {
+                require(usdc.transfer(feeVault, feeAmt1e6), "fee sweep fail");
+            }
+        }
+        uint64 net1e6 = amount1e6 - feeAmt1e6;
+        require(usdc.transfer(vault, net1e6), "sweep fail");
+        emit SweepWithFee(amount1e6, feeAmt1e6, net1e6);
     }
 
-    function rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype) public {
+    function rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype) public onlyRebalancer {
+        _rebalance(cloidBtc, cloidHype);
+    }
+
+    function _rebalance(uint128 cloidBtc, uint128 cloidHype) internal {
         (int256 dB, int256 dH, uint64 pxB, uint64 pxH) = _computeRebalanceDeltas();
         _placeRebalanceOrders(dB, dH, pxB, pxH, cloidBtc, cloidHype);
         emit Rebalanced(dB, dH);

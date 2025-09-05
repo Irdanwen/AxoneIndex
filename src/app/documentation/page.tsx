@@ -598,11 +598,14 @@ export default function DocumentationPage() {
                     <h3 className="text-xl font-bold text-axone-accent">📈 Inflation maîtrisée – Une croissance partagée avec nos utilisateurs</h3>
                     <p>
                       Le token $AXN est conçu pour croître avec son écosystème et récompenser ceux qui font vivre le protocole.
-                      C’est pourquoi nous avons instauré une inflation fixe de 3% par an, pensée comme un véritable moteur de valeur.
+                      L’inflation est fixe à 3% par an et est désormais calculée sur la supply circulante (et non la supply totale),
+                      avec la possibilité d’exclure certaines adresses (trésorerie, vesting, burn) du calcul.
                     </p>
                     <div className="space-y-3">
                       <p className="leading-relaxed font-semibold">🔹 Concrètement :</p>
                       <ul className="list-disc pl-6 space-y-2">
+                        <li>Le contrat calcule la supply circulante via <code>circulatingSupply()</code> et distribue l’inflation en conséquence.</li>
+                        <li>Les adresses non-circulantes peuvent être gérées par l’owner via <code>setExcludedFromCirculating(address,bool)</code>.</li>
                         <li>Cette inflation est intégralement reversée aux détenteurs des index Axone, renforçant leur implication dans le protocole.</li>
                         <li>Elle accroît la valeur des index au fil du temps, offrant une récompense supplémentaire aux investisseurs engagés.</li>
                         <li>Elle stimule l’adoption des produits Axone, en créant un cercle vertueux où l’activité génère davantage de bénéfices pour la communauté.</li>

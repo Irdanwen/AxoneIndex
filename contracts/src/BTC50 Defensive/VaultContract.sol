@@ -28,6 +28,9 @@ contract VaultContract is ReentrancyGuard {
     uint16 public withdrawFeeBps; // applied on payout
     uint16 public autoDeployBps; // fraction of deposit auto deployed to Core
 
+    struct WithdrawFeeTier { uint64 amount1e6; uint16 feeBps; }
+    WithdrawFeeTier[] public withdrawFeeTiers; // trié par amount1e6 croissant
+
     uint256 public totalSupply;
     mapping(address => uint256) public balanceOf;
     // AJOUTER CETTE MAPPING POUR LES AUTORISATIONS
@@ -55,6 +58,7 @@ contract VaultContract is ReentrancyGuard {
     // AJOUTER CES ÉVÉNEMENTS
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
+    event WithdrawFeeTiersSet();
 
     modifier onlyOwner() {
         require(msg.sender == owner, "not owner");
@@ -84,6 +88,30 @@ contract VaultContract is ReentrancyGuard {
         withdrawFeeBps = _withdrawFeeBps;
         autoDeployBps = _autoDeployBps;
         emit FeesSet(_depositFeeBps, _withdrawFeeBps, _autoDeployBps);
+    }
+
+    event WithdrawFeeTiersSet();
+
+    function setWithdrawFeeTiers(WithdrawFeeTier[] memory tiers) external onlyOwner {
+        delete withdrawFeeTiers;
+        // copie dans le storage
+        for (uint256 i = 0; i < tiers.length; i++) {
+            require(tiers[i].feeBps <= 10000, "fee range");
+            withdrawFeeTiers.push(tiers[i]);
+        }
+        emit WithdrawFeeTiersSet();
+    }
+
+    function getWithdrawFeeBpsForAmount(uint64 amount1e6) public view returns (uint16) {
+        uint16 bps = withdrawFeeBps;
+        uint256 n = withdrawFeeTiers.length;
+        for (uint256 i = 0; i < n; i++) {
+            if (amount1e6 <= withdrawFeeTiers[i].amount1e6) {
+                bps = withdrawFeeTiers[i].feeBps;
+                break;
+            }
+        }
+        return bps;
     }
 
     function pause() external onlyOwner { paused = true; emit PausedSet(true); }
@@ -158,29 +186,24 @@ contract VaultContract is ReentrancyGuard {
         require(balanceOf[msg.sender] >= shares, "balance");
         uint256 pps = pps1e18();
         _burn(msg.sender, shares);
-        // Target payout (brut) et frais basés sur withdrawFeeBps sur la portion liée au dépôt
+        // Payout brut et frais basés sur le montant (gross)
         uint256 target1e18 = (shares * pps) / 1e18;                 // brut 1e18
         uint64 gross1e6 = uint64(target1e18 / 1e12);                // brut 1e6
-        uint256 depRemain = deposits[msg.sender];
-        uint256 base1e6 = _getBaseAmount(gross1e6, depRemain);      // min(gross, deposit)
-        uint256 fee1e6 = (withdrawFeeBps > 0 && base1e6 > 0)
-            ? (base1e6 * uint256(withdrawFeeBps)) / 10000
+        uint16 feeBpsApplied = getWithdrawFeeBpsForAmount(gross1e6);
+        uint256 fee1e6 = (feeBpsApplied > 0 && gross1e6 > 0)
+            ? (uint256(gross1e6) * uint256(feeBpsApplied)) / 10000
             : 0;
         uint64 net1e6 = uint64(uint256(gross1e6) - fee1e6);         // net 1e6
         uint256 cash = usdc.balanceOf(address(this));
         if (cash >= net1e6) {
             usdc.safeTransfer(msg.sender, net1e6);
-            // Le dépôt consommé est la base utilisée pour le calcul des frais
-            if (depRemain > 0) {
-                deposits[msg.sender] = depRemain - base1e6;
-            }
             emit WithdrawPaid(type(uint256).max, msg.sender, net1e6);
             emit NavUpdated(nav1e18());
         } else {
             // enqueue
             uint256 id = withdrawQueue.length;
             // fige le BPS utilisé pour le retrait différé
-            withdrawQueue.push(WithdrawRequest({user: msg.sender, shares: shares, feeBpsSnapshot: withdrawFeeBps, settled: false}));
+            withdrawQueue.push(WithdrawRequest({user: msg.sender, shares: shares, feeBpsSnapshot: feeBpsApplied, settled: false}));
             emit WithdrawRequested(id, msg.sender, shares);
         }
     }
@@ -195,21 +218,15 @@ contract VaultContract is ReentrancyGuard {
         uint256 pps = pps1e18();
         uint256 due1e18 = (r.shares * pps) / 1e18;                   // brut 1e18
         uint64 gross1e6 = uint64(due1e18 / 1e12);                    // brut 1e6
-        // Calcul des frais avec BPS figé et proportion au dépôt restant au moment du règlement
-        uint256 depRemainUser = deposits[r.user];
-        uint256 base1e6_settle = _getBaseAmount(gross1e6, depRemainUser); // min(gross, deposit)
-        uint256 fee1e6_settle = (r.feeBpsSnapshot > 0 && base1e6_settle > 0)
-            ? (base1e6_settle * uint256(r.feeBpsSnapshot)) / 10000
+        // Calcul des frais avec BPS figé et basé sur le montant brut
+        uint256 fee1e6_settle = (r.feeBpsSnapshot > 0 && gross1e6 > 0)
+            ? (uint256(gross1e6) * uint256(r.feeBpsSnapshot)) / 10000
             : 0;
         uint64 maxPay = uint64(uint256(gross1e6) - fee1e6_settle);   // net 1e6
         // Le règlement doit être exact pour éviter un sous-paiement silencieux
         require(pay1e6 == maxPay, "pay!=due");
         r.settled = true;
         usdc.safeTransfer(to, pay1e6);
-        // Diminue le dépôt enregistré du demandeur d'origine de la base utilisée
-        if (depRemainUser > 0) {
-            deposits[r.user] = depRemainUser - base1e6_settle;
-        }
         emit WithdrawPaid(id, to, pay1e6);
         emit NavUpdated(nav1e18());
     }

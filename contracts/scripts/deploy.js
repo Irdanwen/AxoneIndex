@@ -26,7 +26,7 @@ async function main() {
   try {
     console.log("\n🔧 Déploiement du AxoneToken...");
     const AxoneToken = await hre.ethers.getContractFactory("AxoneToken");
-    const axoneToken = await AxoneToken.deploy(deployer.address);
+    const axoneToken = await AxoneToken.deploy(deployer.address, deployer.address, deployer.address);
     await axoneToken.waitForDeployment();
     
     const axoneTokenAddress = await axoneToken.getAddress();
@@ -34,7 +34,7 @@ async function main() {
 
     // Vérification du déploiement
     const totalSupply = await axoneToken.totalSupply();
-    console.log("📊 Supply total:", ethers.formatEther(totalSupply), "AXONE");
+    console.log("📊 Supply total:", ethers.formatEther(totalSupply), "AXN");
 
     console.log("\n🎉 Déploiement terminé avec succès!");
     console.log("\n📋 Adresses des contrats:");

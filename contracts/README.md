@@ -79,10 +79,24 @@ npm run test:referral  # Test complet du ReferralRegistry
 
 ### AxoneToken
 - **Type** : ERC20 Token
-- **Nom** : Axone Token
-- **Symbole** : AXONE
-- **Supply initial** : 1,000,000 tokens
-- **Fonctionnalités** : Mint, Burn, Transfer
+- **Nom** : Axone
+- **Symbole** : AXN
+- **Supply initial** : 100,000,000 tokens
+- **Fonctionnalités** : Mint (inflation), Burn, Transfer, Pause
+- **Inflation** : 3% annuelle, calculée sur la supply circulante via `circulatingSupply()`
+- **Supply circulante** : possibilité d'exclure certaines adresses (trésorerie, vesting, burn)
+  - Admin : `setExcludedFromCirculating(address, bool)`
+  - Getters : `circulatingSupply()`, `getExcludedAddresses()`, `isAddressExcludedFromCirculating(address)`
+- **Paramètres d'inflation** : `setInflationRecipient(address)`, `setInflationInterval(uint256)`, `nextMintTimestamp()`
+
+### AxoneSale
+- **Type** : Contrat de vente publique USDC → AXN
+- **Fonctionnalités** : Achat en USDC, plafond de vente, pause d'urgence, retrait des invendus
+  - Détails clés:
+    - Décimales: `AXN` 1e18, `USDC` 1e6
+    - Prix: `PRICE_PER_AXN_IN_USDC = 100_000` (0,1 USDC en 6 décimales)
+    - Formule: `usdcAmount = (axnAmount * PRICE_PER_AXN_IN_USDC) / AXN_DECIMALS`
+    - Flux: `USDC.transferFrom(buyer→treasury)` puis `AXN.transfer(contract→buyer)`
 
 ## Sécurité
 
@@ -103,13 +117,15 @@ Les artefacts compilés (ABI et adresses) peuvent être utilisés dans votre app
   - Dépôt en USDC 1e6 via `deposit(uint64 amount1e6)` avec frais de dépôt optionnels (`depositFeeBps`).
   - Retrait immédiat si la trésorerie EVM est suffisante, sinon mise en file et règlement ultérieur via `settleWithdraw`.
   - Déploiement automatique d'une fraction du dépôt vers Core via `autoDeployBps` (par défaut 90%).
-  - Sécurité: `ReentrancyGuard`, `paused`, `SafeERC20` et snapshot des frais de retrait au moment de la demande.
+  - Frais de retrait dépendants du montant retiré (brut): configuration par paliers avec `setWithdrawFeeTiers(WithdrawFeeTier[])`. Si aucun palier ne correspond, fallback sur `withdrawFeeBps`.
+  - Sécurité: `ReentrancyGuard`, `paused`, `SafeERC20`, snapshot des frais (BPS) au moment de la demande pour les retraits différés.
 
 - **CoreInteractionHandler** (`contracts/src/BTC50 Defensive/CoreInteractionHandler.sol`)
   - Pont vers Core: envoi USDC spot, placements d'ordres IOC BTC/HYPE, rebalancement 50/50.
   - Limitation de débit par epoch: `maxOutboundPerEpoch`, `epochLength` (obligatoirement non nuls).
   - Paramètres de marché: `maxSlippageBps`, `marketEpsilonBps`, `deadbandBps` (≤ 50 bps), garde d'écart oracle via `maxOracleDeviationBps` (par défaut 5%).
-  - Sécurité: `onlyVault` pour les flux de fonds, validation de prix oracle avec mémoire du dernier prix.
+  - Sécurité: `onlyVault` pour les flux de fonds, `onlyRebalancer` pour `rebalancePortfolio`, validation de prix oracle avec mémoire du dernier prix.
+  - Admin: `setRebalancer(address)` pour définir l'adresse autorisée à appeler le rééquilibrage.
 
 - **Librairies**
   - `Rebalancer50Lib.sol`: calcule les deltas USD pour revenir au 50/50 avec deadband.
@@ -179,8 +195,8 @@ Les artefacts compilés (ABI et adresses) peuvent être utilisés dans votre app
 - Le Vault transférera automatiquement une fraction (`autoDeployBps`) vers le Handler, qui: crédite USDC spot sur Core, puis passe des IOC pour acheter BTC/HYPE, puis (si `forceRebalance=true` côté Vault) peut rebalancer 50/50.
 
 8) Tester les retraits
-- `Vault.withdraw(shares)` retire selon la trésorerie EVM; sinon crée une demande en file.
-- `settleWithdraw(id, pay1e6, to)` doit payer exactement le dû net calculé au moment de la demande (snapshot des frais).
+- `Vault.withdraw(shares)` retire selon la trésorerie EVM; sinon crée une demande en file. Les frais appliqués dépendent du montant brut (USDC 1e6) selon les paliers configurés via `setWithdrawFeeTiers`; la valeur de BPS utilisée est figée au moment de la demande si le retrait est différé.
+- `settleWithdraw(id, pay1e6, to)` doit payer exactement le dû net calculé avec le BPS figé au moment de la demande (basé sur le montant brut à cette date).
 
 ### Bonnes pratiques et sécurité
 
@@ -189,3 +205,41 @@ Les artefacts compilés (ABI et adresses) peuvent être utilisés dans votre app
 - `deadbandBps` limité à `≤ 50` pour éviter une dérive excessive.
 - La garde oracle bloque un prix s’écartant de `maxOracleDeviationBps` par rapport au dernier observé; ajustez prudemment.
 - Tous les transferts USDC utilisent `SafeERC20`.
+
+### Exemples de configuration
+
+```solidity
+// Définir l'adresse rebalancer (seul autorisé à appeler rebalancePortfolio)
+handler.setRebalancer(0x1234...ABCD);
+
+// Configurer des paliers de frais de retrait (USDC 1e6)
+VaultContract.WithdrawFeeTier[] memory tiers = new VaultContract.WithdrawFeeTier[](3);
+tiers[0] = VaultContract.WithdrawFeeTier({amount1e6: 1_000_000, feeBps: 50});    // <= 1 USDC : 0,50%
+tiers[1] = VaultContract.WithdrawFeeTier({amount1e6: 10_000_000, feeBps: 30});  // <= 10 USDC : 0,30%
+tiers[2] = VaultContract.WithdrawFeeTier({amount1e6: 100_000_000, feeBps: 10}); // <= 100 USDC : 0,10%
+vault.setWithdrawFeeTiers(tiers);
+```
+
+### How‑to (déploiement rapide) — Configurer rebalancer & paliers de frais
+
+1. Après déploiement des contrats, reliez Vault et Handler:
+   - `vault.setHandler(handlerAddress)`
+   - `handler.setVault(vaultAddress)`
+2. Définissez l’adresse autorisée à rééquilibrer:
+   - `handler.setRebalancer(0x...REBALANCER)`
+3. Paramétrez les frais (défauts):
+   - `vault.setFees(depositFeeBps, withdrawFeeBps, autoDeployBps)`
+4. Configurez les paliers de frais de retrait (USDC 1e6):
+   - Construire un tableau `WithdrawFeeTier[]` et appeler `vault.setWithdrawFeeTiers(tiers)`
+
+Exemple succinct (Remix/Script):
+```solidity
+// Rebalancer
+handler.setRebalancer(0x1234...ABCD);
+
+// Paliers de frais (brut en USDC 1e6)
+VaultContract.WithdrawFeeTier[] memory tiers = new VaultContract.WithdrawFeeTier[](2);
+tiers[0] = VaultContract.WithdrawFeeTier({amount1e6: 5_000_000, feeBps: 40});
+tiers[1] = VaultContract.WithdrawFeeTiers({amount1e6: 50_000_000, feeBps: 20});
+vault.setWithdrawFeeTiers(tiers);
+```

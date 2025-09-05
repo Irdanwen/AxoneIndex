@@ -66,3 +66,4 @@ Solution : Vérifiez que MetaMask est installé et déverrouillé
 - L'interface s'adapte dynamiquement selon l'état de connexion
 - Les états de chargement sont gérés avec `isPending`
 
+
