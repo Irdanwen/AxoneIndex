@@ -15,7 +15,7 @@ Ce document décrit l’architecture, les paramètres, et les étapes de déploi
 
 - CoreInteractionHandler
   - `constructor(L1Read _l1read, ICoreWriter _coreWriter, IERC20 _usdc, uint64 _maxOutboundPerEpoch, uint64 _epochLength, address _feeVault, uint64 _feeBps)`
-  - Dépend de `L1Read`, `CoreWriter`, `USDC` (ERC20 6 décimales)
+  - Dépend de `L1Read`, `CoreWriter`, `USDC` (ERC20 8 décimales)
 
 - VaultContract
   - `constructor(IERC20 _usdc)`
@@ -30,8 +30,8 @@ Toutes les unités sont précisées entre parenthèses.
 - Pour CoreInteractionHandler (au déploiement)
   - **L1READ_ADDRESS**: adresse du contrat `L1Read` sur votre EVM (wrapper de lectures Core precompile).
   - **CORE_WRITER_ADDRESS**: adresse du contrat writer officiel pour envoyer des actions vers Core. À défaut, utiliser le stub `CoreWriter` pour tests.
-  - **USDC_ADDRESS**: adresse ERC20 USDC (6 décimales) sur votre EVM.
-  - **MAX_OUTBOUND_PER_EPOCH_1e6 (uint64)**: plafond d’USDC émis EVM→Core par epoch, en unités 1e6. Ex: 100k USDC → `100000 * 1e6`.
+  - **USDC_ADDRESS**: adresse ERC20 USDC (8 décimales) sur votre EVM.
+  - **MAX_OUTBOUND_PER_EPOCH_1e8 (uint64)**: plafond d’USDC émis EVM→Core par epoch, en unités 1e8. Ex: 100k USDC → `100000 * 1e8`.
   - **EPOCH_LENGTH_SECONDS (uint64)**: durée d’une epoch en secondes (ex: `86400`).
   - **FEE_VAULT_ADDRESS**: adresse (multisig) recevant les frais de sweep.
   - **FEE_BPS (uint64)**: frais en bps (0–10000), appliqués dans `sweepToVault`.
@@ -43,7 +43,7 @@ Toutes les unités sont précisées entre parenthèses.
     - `USDC_CORE_TOKEN_ID (uint64)`: ID du token USDC côté Core.
   - `setSpotIds(SPOT_BTC_ID, SPOT_HYPE_ID)` (uint32/uint32): IDs marchés spot BTC/USDC et HYPE/USDC.
   - `setSpotTokenIds(USDC_TOKEN_ID, BTC_TOKEN_ID, HYPE_TOKEN_ID)` (uint64/uint64/uint64): IDs des tokens spot correspondants. `USDC_TOKEN_ID` doit égaler `usdcCoreTokenId`.
-  - `setLimits(MAX_OUTBOUND_PER_EPOCH_1e6, EPOCH_LENGTH_SECONDS)`: ajuste la rate limit.
+  - `setLimits(MAX_OUTBOUND_PER_EPOCH_1e8, EPOCH_LENGTH_SECONDS)`: ajuste la rate limit.
   - `setParams(MAX_SLIPPAGE_BPS, MARKET_EPSILON_BPS, DEADBAND_BPS)`:
     - `MAX_SLIPPAGE_BPS`: par ex. 50 (=0,5%).
     - `MARKET_EPSILON_BPS`: par ex. 10 (=0,1%) pour rendre les IOC “marketables”.
@@ -137,15 +137,15 @@ Où trouver les IDs Core
 
 ### Annexes – Fonctions clés (référence)
 
-- Handler
-  - `executeDeposit(uint64 usdc1e6, bool forceRebalance)`
-  - `pullFromCoreToEvm(uint64 usdc1e6)`
-  - `sweepToVault(uint64 amount1e6)`
+-- Handler
+  - `executeDeposit(uint256 usdc1e8, bool forceRebalance)`
+  - `pullFromCoreToEvm(uint256 usdc1e8)`
+  - `sweepToVault(uint256 amount1e8)`
   - `rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype)`
   - Admin: `setVault`, `setUsdcCoreLink`, `setSpotIds`, `setSpotTokenIds`, `setLimits`, `setParams`, `setMaxOracleDeviationBps`, `setFeeConfig`, `setRebalancer`
 
-- Vault
-  - `deposit(uint64 amount1e6)`
+-- Vault
+  - `deposit(uint256 amount1e8)`
   - `withdraw(uint256 shares)` / `settleWithdraw(...)` / `cancelWithdrawRequest(...)`
   - Admin: `setHandler`, `setFees`, `setWithdrawFeeTiers`, `pause`/`unpause`, `recallFromCoreAndSweep`
 

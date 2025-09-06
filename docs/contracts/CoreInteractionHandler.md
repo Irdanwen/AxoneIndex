@@ -6,7 +6,7 @@
 ## API Clés
 - `setRebalancer(address rebalancer)` (onlyOwner): définit l’adresse autorisée à appeler `rebalancePortfolio`.
 - `rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype)` (onlyRebalancer): calcule les deltas via l’oracle et place des ordres IOC pour revenir vers 50/50 (avec deadband).
-- `executeDeposit(uint64 usdc1e6, bool forceRebalance)` (onlyVault): envoie l’USDC vers Core, achète BTC/HYPE, peut déclencher un `_rebalance` interne si `forceRebalance=true`.
+- `executeDeposit(uint256 usdc1e8, bool forceRebalance)` (onlyVault): envoie l’USDC (1e8) vers Core, achète BTC/HYPE, peut déclencher un `_rebalance` interne si `forceRebalance=true`.
 
 ## Événements
 - `Rebalanced(int256 dBtc1e18, int256 dHype1e18)`

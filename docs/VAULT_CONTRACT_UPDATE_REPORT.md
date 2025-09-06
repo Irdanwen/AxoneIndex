@@ -43,7 +43,7 @@ Mise à jour complète de la documentation technique pour refléter les évoluti
 
 ### VaultContract.sol
 - Introduction de paliers de frais de retrait: `WithdrawFeeTier[] withdrawFeeTiers` et setter `setWithdrawFeeTiers(WithdrawFeeTier[])`.
-- Les frais de retrait sont désormais calculés sur le montant brut retiré (USDC 1e6) via `getWithdrawFeeBpsForAmount(amount1e6)`.
+- Les frais de retrait sont désormais calculés sur le montant brut retiré (USDC 1e8) via `getWithdrawFeeBpsForAmount(amount1e8)`.
 - Dans `withdraw`, le BPS applicable est déterminé à la demande; si retrait différé, ce BPS est figé dans `feeBpsSnapshot` de la file.
 - Dans `settleWithdraw`, le paiement net requis est calculé à partir du montant brut (PPS courant) et du BPS figé.
 
@@ -57,10 +57,10 @@ Mise à jour complète de la documentation technique pour refléter les évoluti
 // Rebalancer
 handler.setRebalancer(0x1234...);
 
-// Paliers
+// Paliers (USDC 1e8)
 VaultContract.WithdrawFeeTier[] memory tiers = new VaultContract.WithdrawFeeTier[](2);
-tiers[0] = VaultContract.WithdrawFeeTier({amount1e6: 5_000_000, feeBps: 40}); // 5 USDC → 0.40%
-tiers[1] = VaultContract.WithdrawFeeTier({amount1e6: 50_000_000, feeBps: 20}); // 50 USDC → 0.20%
+tiers[0] = VaultContract.WithdrawFeeTier({amount1e8: 500_000_000, feeBps: 40}); // 5 USDC → 0.40%
+tiers[1] = VaultContract.WithdrawFeeTier({amount1e8: 5_000_000_000, feeBps: 20}); // 50 USDC → 0.20%
 vault.setWithdrawFeeTiers(tiers);
 ```
 

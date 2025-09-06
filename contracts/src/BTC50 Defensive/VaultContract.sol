@@ -7,9 +7,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface IHandler {
     function equitySpotUsd1e18() external view returns (uint256);
-    function executeDeposit(uint64 usdc1e6, bool forceRebalance) external;
-    function pullFromCoreToEvm(uint64 usdc1e6) external returns (uint64);
-    function sweepToVault(uint64 amount1e6) external;
+    function executeDeposit(uint256 usdc1e8, bool forceRebalance) external;
+    function pullFromCoreToEvm(uint256 usdc1e8) external returns (uint256);
+    function sweepToVault(uint256 amount1e8) external;
 }
 
 contract VaultContract is ReentrancyGuard {
@@ -28,14 +28,14 @@ contract VaultContract is ReentrancyGuard {
     uint16 public withdrawFeeBps; // applied on payout
     uint16 public autoDeployBps; // fraction of deposit auto deployed to Core
 
-    struct WithdrawFeeTier { uint64 amount1e6; uint16 feeBps; }
+    struct WithdrawFeeTier { uint256 amount1e8; uint16 feeBps; }
     WithdrawFeeTier[] public withdrawFeeTiers; // trié par amount1e6 croissant
 
     uint256 public totalSupply;
     mapping(address => uint256) public balanceOf;
     // AJOUTER CETTE MAPPING POUR LES AUTORISATIONS
     mapping(address => mapping(address => uint256)) public allowance;
-    // Suivi des dépôts cumulés utilisateur en USDC (1e6)
+    // Suivi des dépôts cumulés utilisateur en USDC (1e8)
     mapping(address => uint256) public deposits;
 
     struct WithdrawRequest {
@@ -46,14 +46,14 @@ contract VaultContract is ReentrancyGuard {
     }
     WithdrawRequest[] public withdrawQueue;
 
-    event Deposit(address indexed user, uint256 amount1e6, uint256 sharesMinted);
+    event Deposit(address indexed user, uint256 amount1e8, uint256 sharesMinted);
     event WithdrawRequested(uint256 indexed id, address indexed user, uint256 shares);
-    event WithdrawPaid(uint256 indexed id, address indexed to, uint256 amount1e6);
+    event WithdrawPaid(uint256 indexed id, address indexed to, uint256 amount1e8);
     event WithdrawCancelled(uint256 indexed id, address indexed user, uint256 shares);
     event HandlerSet(address handler);
     event FeesSet(uint16 depositFeeBps, uint16 withdrawFeeBps, uint16 autoDeployBps);
     event PausedSet(bool paused);
-    event RecallAndSweep(uint64 amount1e6);
+    event RecallAndSweep(uint256 amount1e8);
     event NavUpdated(uint256 nav1e18);
     // AJOUTER CES ÉVÉNEMENTS
     event Transfer(address indexed from, address indexed to, uint256 value);
@@ -90,8 +90,6 @@ contract VaultContract is ReentrancyGuard {
         emit FeesSet(_depositFeeBps, _withdrawFeeBps, _autoDeployBps);
     }
 
-    event WithdrawFeeTiersSet();
-
     function setWithdrawFeeTiers(WithdrawFeeTier[] memory tiers) external onlyOwner {
         delete withdrawFeeTiers;
         // copie dans le storage
@@ -102,11 +100,11 @@ contract VaultContract is ReentrancyGuard {
         emit WithdrawFeeTiersSet();
     }
 
-    function getWithdrawFeeBpsForAmount(uint64 amount1e6) public view returns (uint16) {
+    function getWithdrawFeeBpsForAmount(uint256 amount1e8) public view returns (uint16) {
         uint16 bps = withdrawFeeBps;
         uint256 n = withdrawFeeTiers.length;
         for (uint256 i = 0; i < n; i++) {
-            if (amount1e6 <= withdrawFeeTiers[i].amount1e6) {
+            if (amount1e8 <= withdrawFeeTiers[i].amount1e8) {
                 bps = withdrawFeeTiers[i].feeBps;
                 break;
             }
@@ -119,7 +117,8 @@ contract VaultContract is ReentrancyGuard {
 
     // NAV/PPS
     function nav1e18() public view returns (uint256) {
-        uint256 evm1e18 = usdc.balanceOf(address(this)) * 1e12;
+        // USDC en 8 décimales: pour passer en 1e18, multiplier par 1e10
+        uint256 evm1e18 = usdc.balanceOf(address(this)) * 1e10;
         uint256 coreEq1e18 = address(handler) == address(0) ? 0 : handler.equitySpotUsd1e18();
         return evm1e18 + coreEq1e18;
     }
@@ -146,29 +145,30 @@ contract VaultContract is ReentrancyGuard {
         emit Transfer(from, address(0), amount);
     }
 
-    // Deposit in USDC (1e6)
-    function deposit(uint64 amount1e6) external notPaused nonReentrant {
-        require(amount1e6 > 0, "amount=0");
+    // Deposit in USDC (1e8)
+    function deposit(uint256 amount1e8) external notPaused nonReentrant {
+        require(amount1e8 > 0, "amount=0");
         uint256 navPre = nav1e18();
-        usdc.safeTransferFrom(msg.sender, address(this), amount1e6);
-        // Enregistre le dépôt utilisateur (USDC 1e6)
-        deposits[msg.sender] += amount1e6;
+        usdc.safeTransferFrom(msg.sender, address(this), amount1e8);
+        // Enregistre le dépôt utilisateur (USDC 1e8)
+        deposits[msg.sender] += amount1e8;
         uint256 sharesMint;
         if (totalSupply == 0) {
-            sharesMint = uint256(amount1e6) * 1e12; // 1:1 PPS = 1e18
+            // 8 -> 18 décimales: facteur 1e10
+            sharesMint = uint256(amount1e8) * 1e10; // 1:1 PPS = 1e18
         } else {
-            sharesMint = (uint256(amount1e6) * 1e12 * totalSupply) / navPre;
+            sharesMint = (uint256(amount1e8) * 1e10 * totalSupply) / navPre;
         }
         if (depositFeeBps > 0) {
             uint256 fee = (sharesMint * depositFeeBps) / 10000;
             sharesMint -= fee;
         }
         _mint(msg.sender, sharesMint);
-        emit Deposit(msg.sender, amount1e6, sharesMint);
+        emit Deposit(msg.sender, amount1e8, sharesMint);
 
         // Auto-deploy a portion to Core via handler
         if (address(handler) != address(0) && autoDeployBps > 0) {
-            uint64 deployAmt = uint64((uint256(amount1e6) * uint256(autoDeployBps)) / 10000);
+            uint256 deployAmt = (uint256(amount1e8) * uint256(autoDeployBps)) / 10000;
             if (deployAmt > 0) {
                 // Optimisation gas: reset à 0 puis approve si nécessaire
                 uint256 currentAllowance = usdc.allowance(address(this), address(handler));
@@ -188,16 +188,16 @@ contract VaultContract is ReentrancyGuard {
         _burn(msg.sender, shares);
         // Payout brut et frais basés sur le montant (gross)
         uint256 target1e18 = (shares * pps) / 1e18;                 // brut 1e18
-        uint64 gross1e6 = uint64(target1e18 / 1e12);                // brut 1e6
-        uint16 feeBpsApplied = getWithdrawFeeBpsForAmount(gross1e6);
-        uint256 fee1e6 = (feeBpsApplied > 0 && gross1e6 > 0)
-            ? (uint256(gross1e6) * uint256(feeBpsApplied)) / 10000
+        uint256 gross1e8 = target1e18 / 1e10;                        // brut 1e8
+        uint16 feeBpsApplied = getWithdrawFeeBpsForAmount(gross1e8);
+        uint256 fee1e8 = (feeBpsApplied > 0 && gross1e8 > 0)
+            ? (uint256(gross1e8) * uint256(feeBpsApplied)) / 10000
             : 0;
-        uint64 net1e6 = uint64(uint256(gross1e6) - fee1e6);         // net 1e6
+        uint256 net1e8 = uint256(gross1e8) - fee1e8;                 // net 1e8
         uint256 cash = usdc.balanceOf(address(this));
-        if (cash >= net1e6) {
-            usdc.safeTransfer(msg.sender, net1e6);
-            emit WithdrawPaid(type(uint256).max, msg.sender, net1e6);
+        if (cash >= net1e8) {
+            usdc.safeTransfer(msg.sender, net1e8);
+            emit WithdrawPaid(type(uint256).max, msg.sender, net1e8);
             emit NavUpdated(nav1e18());
         } else {
             // enqueue
@@ -209,25 +209,25 @@ contract VaultContract is ReentrancyGuard {
     }
 
     // Owner/handler settles a queued withdrawal, bounded by current PPS
-    function settleWithdraw(uint256 id, uint64 pay1e6, address to) external nonReentrant {
+    function settleWithdraw(uint256 id, uint256 pay1e8, address to) external nonReentrant {
         require(msg.sender == owner || msg.sender == address(handler), "auth");
         require(id < withdrawQueue.length, "bad id");
         WithdrawRequest storage r = withdrawQueue[id];
         require(!r.settled, "settled");
-        require(pay1e6 > 0, "zero");
+        require(pay1e8 > 0, "zero");
         uint256 pps = pps1e18();
         uint256 due1e18 = (r.shares * pps) / 1e18;                   // brut 1e18
-        uint64 gross1e6 = uint64(due1e18 / 1e12);                    // brut 1e6
+        uint256 gross1e8 = due1e18 / 1e10;                           // brut 1e8
         // Calcul des frais avec BPS figé et basé sur le montant brut
-        uint256 fee1e6_settle = (r.feeBpsSnapshot > 0 && gross1e6 > 0)
-            ? (uint256(gross1e6) * uint256(r.feeBpsSnapshot)) / 10000
+        uint256 fee1e8_settle = (r.feeBpsSnapshot > 0 && gross1e8 > 0)
+            ? (uint256(gross1e8) * uint256(r.feeBpsSnapshot)) / 10000
             : 0;
-        uint64 maxPay = uint64(uint256(gross1e6) - fee1e6_settle);   // net 1e6
+        uint256 maxPay = uint256(gross1e8) - fee1e8_settle;          // net 1e8
         // Le règlement doit être exact pour éviter un sous-paiement silencieux
-        require(pay1e6 == maxPay, "pay!=due");
+        require(pay1e8 == maxPay, "pay!=due");
         r.settled = true;
-        usdc.safeTransfer(to, pay1e6);
-        emit WithdrawPaid(id, to, pay1e6);
+        usdc.safeTransfer(to, pay1e8);
+        emit WithdrawPaid(id, to, pay1e8);
         emit NavUpdated(nav1e18());
     }
 
@@ -242,10 +242,10 @@ contract VaultContract is ReentrancyGuard {
         emit WithdrawCancelled(id, r.user, r.shares);
     }
 
-    function recallFromCoreAndSweep(uint64 amount1e6) external onlyOwner nonReentrant {
-        handler.pullFromCoreToEvm(amount1e6);
-        handler.sweepToVault(amount1e6);
-        emit RecallAndSweep(amount1e6);
+    function recallFromCoreAndSweep(uint256 amount1e8) external onlyOwner nonReentrant {
+        handler.pullFromCoreToEvm(amount1e8);
+        handler.sweepToVault(amount1e8);
+        emit RecallAndSweep(amount1e8);
         emit NavUpdated(nav1e18());
     }
 
@@ -278,9 +278,9 @@ contract VaultContract is ReentrancyGuard {
         emit Transfer(from, to, value);
     }
 
-    // Utilitaire gas: retourne min(gross1e6, deposit)
-    function _getBaseAmount(uint64 gross1e6, uint256 depositRecorded) internal pure returns (uint256) {
-        uint256 gross = uint256(gross1e6);
+    // Utilitaire gas: retourne min(gross1e8, deposit)
+    function _getBaseAmount(uint256 gross1e8, uint256 depositRecorded) internal pure returns (uint256) {
+        uint256 gross = uint256(gross1e8);
         return gross > depositRecorded ? depositRecorded : gross;
     }
 }
