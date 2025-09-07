@@ -205,10 +205,11 @@ contract CoreInteractionHandler {
     function executeDeposit(uint64 usdc1e6, bool forceRebalance) external onlyVault {
         if (usdcCoreSystemAddress == address(0) || usdcCoreTokenId == 0) revert("USDC_CORE_NOT_SET");
         _rateLimit(usdc1e6);
-        // Pull USDC from vault to handler
-        usdc.safeTransferFrom(msg.sender, address(this), usdc1e6);
+        // Pull USDC from vault to handler (EVM token has 8 decimals => scale x100)
+        uint256 evmAmt = uint256(usdc1e6) * 100;
+        usdc.safeTransferFrom(msg.sender, address(this), evmAmt);
         // EVM->Core spot: send to system address to credit Core spot balance
-        usdc.safeTransfer(usdcCoreSystemAddress, usdc1e6);
+        usdc.safeTransfer(usdcCoreSystemAddress, evmAmt);
         // After crediting USDC spot, place two IOC buys ~50/50 into BTC and HYPE
         uint256 halfUsd1e18 = (uint256(usdc1e6) * 1e12) / 2;
         uint64 pxB = _validatedOraclePx1e8(true);
@@ -257,11 +258,13 @@ contract CoreInteractionHandler {
             require(feeVault != address(0), "FEE_VAULT");
             feeAmt1e6 = uint64((uint256(amount1e6) * uint256(feeBps)) / 10_000);
             if (feeAmt1e6 > 0) {
-                require(usdc.transfer(feeVault, feeAmt1e6), "fee sweep fail");
+                // EVM token has 8 decimals => scale x100
+                require(usdc.transfer(feeVault, uint256(feeAmt1e6) * 100), "fee sweep fail");
             }
         }
         uint64 net1e6 = amount1e6 - feeAmt1e6;
-        require(usdc.transfer(vault, net1e6), "sweep fail");
+        // EVM token has 8 decimals => scale x100
+        require(usdc.transfer(vault, uint256(net1e6) * 100), "sweep fail");
         emit SweepWithFee(amount1e6, feeAmt1e6, net1e6);
     }
 

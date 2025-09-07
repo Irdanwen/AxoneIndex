@@ -12,8 +12,8 @@ contract AxoneSale is Pausable, Ownable, ReentrancyGuard {
 
     address public treasury;
     uint256 public constant AXN_DECIMALS = 1e18;
-    uint256 public constant USDC_DECIMALS = 1e6;
-    uint256 public constant PRICE_PER_AXN_IN_USDC = USDC_DECIMALS / 10; // 0.1 USDC (exprimé en 6 décimales)
+    uint256 public constant USDC_DECIMALS = 1e8;
+    uint256 public constant PRICE_PER_AXN_IN_USDC = USDC_DECIMALS / 10; // 0.1 USDC (exprimé en 8 décimales)
     uint256 public constant MIN_PURCHASE = 1000 * 1e18; // 1000 AXN minimum
 
     uint256 public totalSold;

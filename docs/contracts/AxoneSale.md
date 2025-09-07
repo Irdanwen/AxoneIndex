@@ -4,26 +4,26 @@
 `AxoneSale` permet l'achat de tokens AXN contre USDC avec un prix fixe et un plafond de vente. Le contrat supporte la pause d'urgence, la fin manuelle de la vente et le retrait des AXN non vendus après la fin de la vente.
 
 - Token vendu: `AXN` (18 décimales)
-- Token de paiement: `USDC` (6 décimales)
+- Token de paiement: `USDC` (8 décimales sur HyperEVM)
 - Modèle: paiement USDC via `transferFrom`, envoi d'AXN en retour
 
 ## Paramètres et constantes principales
 - `AXN_DECIMALS = 1e18`
-- `USDC_DECIMALS = 1e6`
+- `USDC_DECIMALS = 1e8`
 - `PRICE_PER_AXN_IN_USDC = USDC_DECIMALS / 10` → 0,1 USDC par 1 AXN
 - `MIN_PURCHASE = 1000 * 1e18` → achat minimal 1000 AXN
 - `saleCap = 50_000_000 * AXN_DECIMALS` → plafond global des ventes
 
 ## Calcul des montants (décimales corrigées)
-Pour un achat de `axnAmount` (18 décimales), le montant en USDC est calculé en 6 décimales:
+Pour un achat de `axnAmount` (18 décimales), le montant en USDC est calculé en 8 décimales:
 
 ```
 usdcAmount = (axnAmount * PRICE_PER_AXN_IN_USDC) / AXN_DECIMALS
 ```
 
 Exemple: pour `axnAmount = 1e18` (1 AXN)
-- `PRICE_PER_AXN_IN_USDC = 100_000` (0,1 USDC en 6 décimales)
-- `usdcAmount = (1e18 * 100_000) / 1e18 = 100_000` (soit 0,1 USDC)
+- `PRICE_PER_AXN_IN_USDC = 10_000_000` (0,1 USDC en 8 décimales)
+- `usdcAmount = (1e18 * 10_000_000) / 1e18 = 10_000_000` (soit 0,1 USDC)
 
 Cette formulation évite la surcharge due au mélange des décimales 18 (AXN) vs 6 (USDC).
 
@@ -65,5 +65,5 @@ Cette formulation évite la surcharge due au mélange des décimales 18 (AXN) vs
 - Appeler ensuite `buyWithUSDC(axnAmount)`
 
 ## Changements récents
-- Correction critique des décimales USDC: introduction de `USDC_DECIMALS` et normalisation du prix en 6 décimales
+- Correction critique des décimales USDC: `USDC_DECIMALS` passe à 1e8 et normalisation du prix en 8 décimales
 - Mise à jour de `PRICE_PER_AXN_IN_USDC` pour représenter 0,1 USDC correctement

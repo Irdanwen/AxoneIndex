@@ -7,7 +7,7 @@ contract MockUSDC is ERC20 {
     constructor() ERC20("Mock USDC", "USDC") {}
 
     function decimals() public pure override returns (uint8) {
-        return 6;
+        return 8;
     }
 
     function mint(address to, uint256 amount) external {

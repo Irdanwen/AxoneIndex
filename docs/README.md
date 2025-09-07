@@ -78,7 +78,7 @@ AxoneIndex est une plateforme DeFi construite sur HyperEVM (Hyperliquid). Elle c
 
 1) Déployer les contrats
 - Déployer `CoreInteractionHandler` (avec ses paramètres init: `l1read`, `coreWriter`, `usdc`, limites, frais).
-- Déployer `VaultContract` avec l’adresse `usdc` (ERC20 à 6 décimales).
+- Déployer `VaultContract` avec l’adresse `usdc` (ERC20 à 8 décimales sur HyperEVM).
 
 2) Lier le vault au handler et configurer l’approval USDC
 - Appeler `vault.setHandler(address(handler))` depuis l’owner du vault.
@@ -95,12 +95,12 @@ AxoneIndex est une plateforme DeFi construite sur HyperEVM (Hyperliquid). Elle c
 - Définir les paliers via `setWithdrawFeeTiers(WithdrawFeeTier[])` (en USDC 1e8).
 
 5) Dépôts et conversions d’unités
-- Les utilisateurs appellent `vault.deposit(amount1e8)` (USDC en 1e8 côté vault).
-- Si `autoDeployBps > 0`, le vault convertit automatiquement en 1e6 et appelle `handler.executeDeposit(usdc1e6, true)`.
-- La NAV inclut: USDC EVM (solde * 1e12) + equity Core renvoyée par le handler.
+- Les utilisateurs appellent `vault.deposit(amount1e8)` (USDC en 1e8 côté vault). Sur HyperEVM, le token EVM a 8 décimales.
+- Si `autoDeployBps > 0`, le vault convertit automatiquement en 1e6 (division par 100) et appelle `handler.executeDeposit(usdc1e6, true)`.
+- La NAV inclut: USDC EVM (solde * 1e10) + equity Core renvoyée par le handler.
 
 6) Rappel de liquidités
-- `vault.recallFromCoreAndSweep(amount1e8)` convertit en 1e6 et appelle `handler.pullFromCoreToEvm(...)` puis `handler.sweepToVault(...)`.
+- `vault.recallFromCoreAndSweep(amount1e8)` convertit en 1e6 et appelle `handler.pullFromCoreToEvm(...)` puis `handler.sweepToVault(...)`. Le handler retransforme vers 1e8 (×100) lors du transfert EVM.
 
 7) Vérifications rapides
 - Après `setHandler`, vérifier `USDC.allowance(vault, handler) == type(uint256).max`.

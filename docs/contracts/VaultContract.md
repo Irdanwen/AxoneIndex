@@ -1,7 +1,7 @@
 # VaultContract — Frais de Retrait par Paliers et Flux
 
 ## Résumé
-`VaultContract.sol` émet des parts (18 décimales) contre des dépôts en USDC (1e8), gère la NAV/PPS, des retraits immédiats ou différés, et l’auto-déploiement partiel vers Core. Les frais de retrait dépendent du montant retiré (brut), via des paliers configurables. Le vault gère désormais automatiquement l’approval USDC pour l’`CoreInteractionHandler` et convertit les unités 1e8 ↔ 1e6 pour les appels Handler.
+`VaultContract.sol` émet des parts (18 décimales) contre des dépôts en USDC (1e8 sur HyperEVM), gère la NAV/PPS, des retraits immédiats ou différés, et l’auto-déploiement partiel vers Core. Les frais de retrait dépendent du montant retiré (brut), via des paliers configurables. Le vault gère désormais automatiquement l’approval USDC pour l’`CoreInteractionHandler` et convertit les unités 1e8 ↔ 1e6 pour les appels Handler.
 
 ## Frais de Retrait
 - `setFees(depositFeeBps, withdrawFeeBps, autoDeployBps)` fixe les valeurs par défaut.
@@ -46,8 +46,8 @@ vault.setWithdrawFeeTiers(tiers);
 
 - À l’appel de `setHandler(address handler)`, le vault accorde une approval USDC illimitée (`forceApprove`) à l’`handler` pour permettre l’appel interne `safeTransferFrom(vault, handler, ...)` lors des dépôts vers Core.
 - Lors d’un dépôt, si `autoDeployBps > 0`, le vault calcule la part à déployer (`deployAmt` en 1e8), la convertit en 1e6 pour l’`handler`, et appelle `handler.executeDeposit(deployAmt1e6, true)`.
-- `recallFromCoreAndSweep(amount1e8)` convertit également le montant en 1e6 avant d’appeler `handler.pullFromCoreToEvm(...)` puis `handler.sweepToVault(...)`.
-- NAV: comme USDC a 6 décimales on multiplie le solde EVM par 1e12 dans `nav1e18()`.
+- `recallFromCoreAndSweep(amount1e8)` convertit également le montant en 1e6 avant d’appeler `handler.pullFromCoreToEvm(...)` puis `handler.sweepToVault(...)`. Le handler retransforme vers 1e8 (×100) pour le transfert vers le vault.
+- NAV: comme USDC a 8 décimales sur HyperEVM, on multiplie le solde EVM par 1e10 dans `nav1e18()`.
 
 ### Checklist d’Intégration
 

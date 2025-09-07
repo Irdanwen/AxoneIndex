@@ -29,7 +29,7 @@ contract VaultContract is ReentrancyGuard {
     uint16 public autoDeployBps; // fraction of deposit auto deployed to Core
 
     struct WithdrawFeeTier { uint256 amount1e8; uint16 feeBps; }
-    WithdrawFeeTier[] public withdrawFeeTiers; // trié par amount1e6 croissant
+    WithdrawFeeTier[] public withdrawFeeTiers; // trié par amount1e8 croissant
 
     uint256 public totalSupply;
     mapping(address => uint256) public balanceOf;
@@ -121,8 +121,8 @@ contract VaultContract is ReentrancyGuard {
 
     // NAV/PPS
     function nav1e18() public view returns (uint256) {
-        // USDC a 6 décimales: pour passer en 1e18, multiplier par 1e12
-        uint256 evm1e18 = usdc.balanceOf(address(this)) * 1e12;
+        // USDC a 8 décimales: pour passer en 1e18, multiplier par 1e10
+        uint256 evm1e18 = usdc.balanceOf(address(this)) * 1e10;
         uint256 coreEq1e18 = address(handler) == address(0) ? 0 : handler.equitySpotUsd1e18();
         return evm1e18 + coreEq1e18;
     }
