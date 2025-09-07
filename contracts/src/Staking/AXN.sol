@@ -7,7 +7,11 @@ import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-
+/// @title AXN Token avec inflation continue et exclusions de supply circulante
+/// @notice ERC20 supportant une inflation proportionnelle au temps écoulé et la possibilité
+/// de retirer certaines adresses du calcul de la supply circulante (trésorerie, vesting, etc.).
+/// @dev Formule d'inflation continue:
+/// amount = circulating * ANNUAL_INFLATION_BASIS_POINTS * timeElapsed / (SECONDS_IN_YEAR * 10000)
 contract AxoneToken is ERC20Burnable, ERC20Permit, Pausable, Ownable, ReentrancyGuard {
     uint256 public constant INITIAL_SUPPLY = 100_000_000 * 1e18;
     uint256 public constant ANNUAL_INFLATION_BASIS_POINTS = 300; // 3% annual
@@ -45,6 +49,10 @@ contract AxoneToken is ERC20Burnable, ERC20Permit, Pausable, Ownable, Reentrancy
         _setExcludedFromCirculating(address(0), true);
     }
 
+    /// @notice Frappe l'inflation accumulée depuis la dernière frappe vers `inflationRecipient`.
+    /// @dev Utilise une approximation linéaire continue:
+    /// amount = circulating * annualRateBps * dt / (SECONDS_IN_YEAR * 10000).
+    /// Revert si aucun montant n'est dû pour éviter des frappes nulles.
     function mintInflation() external whenNotPaused nonReentrant {
         require(block.timestamp >= lastMintTimestamp + inflationInterval, "Too early");
 
@@ -63,6 +71,14 @@ contract AxoneToken is ERC20Burnable, ERC20Permit, Pausable, Ownable, Reentrancy
         emit DailyInflationMinted(amountToMint, block.timestamp, timeElapsed);
     }
 
+    /// @notice Frappe directe conforme à IMintable pour compatibilité avec EmissionController
+    /// @dev Restreinte au propriétaire du contrat (protection anti-frappe arbitraire)
+    /// @param to Adresse bénéficiaire de la frappe
+    /// @param amount Montant à frapper
+    function mint(address to, uint256 amount) external onlyOwner {
+        _mint(to, amount);
+    }
+
     function setInflationRecipient(address newRecipient) external onlyOwner {
         require(newRecipient != address(0), "Zero address");
         emit InflationRecipientChanged(inflationRecipient, newRecipient);
@@ -75,11 +91,14 @@ contract AxoneToken is ERC20Burnable, ERC20Permit, Pausable, Ownable, Reentrancy
         inflationInterval = newInterval;
     }
 
+    /// @notice Retourne le prochain timestamp autorisant un nouvel appel à `mintInflation`.
     function nextMintTimestamp() external view returns (uint256) {
         return lastMintTimestamp + inflationInterval;
     }
 
-    // Calcul de la supply circulante = totalSupply - somme soldes des adresses exclues
+    /// @notice Supply circulante = totalSupply - somme des soldes des adresses exclues.
+    /// @dev Itère sur `excludedAddresses`; coût potentiellement élevé si la liste est longue.
+    /// À privilégier pour les lectures off-chain (call).
     function circulatingSupply() public view returns (uint256) {
         uint256 supply = totalSupply();
         uint256 len = excludedAddresses.length;
@@ -95,6 +114,9 @@ contract AxoneToken is ERC20Burnable, ERC20Permit, Pausable, Ownable, Reentrancy
         return supply;
     }
 
+    /// @notice Marque une adresse comme exclue/incluse du calcul de la supply circulante.
+    /// @param account Adresse à mettre à jour.
+    /// @param excluded True pour exclure, False pour inclure.
     function setExcludedFromCirculating(address account, bool excluded) external onlyOwner {
         _setExcludedFromCirculating(account, excluded);
     }
@@ -103,6 +125,7 @@ contract AxoneToken is ERC20Burnable, ERC20Permit, Pausable, Ownable, Reentrancy
         return isExcludedFromCirculating[account];
     }
 
+    /// @notice Retourne la liste actuelle des adresses exclues.
     function getExcludedAddresses() external view returns (address[] memory) {
         return excludedAddresses;
     }

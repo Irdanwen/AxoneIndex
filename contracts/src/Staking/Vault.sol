@@ -12,6 +12,12 @@ interface IHandler {
     function sweepToVault(uint64 amount1e6) external;
 }
 
+/// @title Vault ERC20 shares adossé à des dépôts USDC et un handler Core
+/// @notice Permet les dépôts USDC contre des parts, le retrait immédiat si liquidité suffisante
+/// ou la mise en file sinon, avec auto-déploiement configurable vers le Core.
+/// @dev `autoDeployBps` représente le pourcentage (base 10000) du dépôt à déployer via le handler
+/// immédiatement après mint des parts. 9000 = 90%. Les paliers de frais de retrait doivent être
+/// fournis triés par `amount1e8` croissant. Les conversions 1e8 <-> 1e6 sont explicitées.
 contract VaultContract is ReentrancyGuard {
     using SafeERC20 for IERC20;
     // ERC20 share
@@ -26,9 +32,12 @@ contract VaultContract is ReentrancyGuard {
 
     uint16 public depositFeeBps; // applied on shares minted
     uint16 public withdrawFeeBps; // applied on payout
+    /// @notice Pourcentage (base 10000) du dépôt auto-déployé sur le Core via le handler.
+    /// @dev Exemple: 9000 = 90%. Si 0, aucun auto-déploiement n'est tenté.
     uint16 public autoDeployBps; // fraction of deposit auto deployed to Core
 
     struct WithdrawFeeTier { uint256 amount1e8; uint16 feeBps; }
+    /// @notice Paliers de frais de retrait, triés par `amount1e8` croissant (USDC 1e8).
     WithdrawFeeTier[] public withdrawFeeTiers; // trié par amount1e8 croissant
 
     uint256 public totalSupply;
@@ -96,14 +105,21 @@ contract VaultContract is ReentrancyGuard {
 
     function setWithdrawFeeTiers(WithdrawFeeTier[] memory tiers) external onlyOwner {
         delete withdrawFeeTiers;
-        // copie dans le storage
-        for (uint256 i = 0; i < tiers.length; i++) {
+        uint256 n = tiers.length;
+        uint256 lastAmount = 0;
+        for (uint256 i = 0; i < n; i++) {
             require(tiers[i].feeBps <= 10000, "fee range");
+            if (i > 0) {
+                require(tiers[i].amount1e8 >= lastAmount, "tiers not sorted");
+            }
+            lastAmount = tiers[i].amount1e8;
             withdrawFeeTiers.push(tiers[i]);
         }
         emit WithdrawFeeTiersSet();
     }
 
+    /// @notice Retourne les BPS de frais de retrait pour un montant brut donné (USDC 1e8).
+    /// @dev Parcourt `withdrawFeeTiers` supposés triés croissant; fallback sur `withdrawFeeBps`.
     function getWithdrawFeeBpsForAmount(uint256 amount1e8) public view returns (uint16) {
         uint16 bps = withdrawFeeBps;
         uint256 n = withdrawFeeTiers.length;
@@ -150,6 +166,8 @@ contract VaultContract is ReentrancyGuard {
     }
 
     // Deposit in USDC (1e8)
+    /// @notice Dépose des USDC (1e8) et reçoit des parts au PPS courant (mint après frais d'entrée).
+    /// @dev Après mint, une fraction `autoDeployBps` peut être envoyée au Core via le handler.
     function deposit(uint256 amount1e8) external notPaused nonReentrant {
         require(amount1e8 > 0, "amount=0");
         uint256 navPre = nav1e18();
@@ -186,6 +204,8 @@ contract VaultContract is ReentrancyGuard {
         emit NavUpdated(nav1e18());
     }
 
+    /// @notice Retire des USDC contre des parts. Si la trésorerie est insuffisante, crée une demande en file.
+    /// @dev Les frais sont évalués sur le montant brut au PPS courant; si file, les frais sont figés.
     function withdraw(uint256 shares) external notPaused nonReentrant {
         require(shares > 0, "shares=0");
         require(balanceOf[msg.sender] >= shares, "balance");
@@ -214,6 +234,8 @@ contract VaultContract is ReentrancyGuard {
     }
 
     // Owner/handler settles a queued withdrawal, bounded by current PPS
+    /// @notice Règle une demande de retrait en file par le owner ou le handler.
+    /// @dev Le paiement doit correspondre exactement au net dû (brut - frais gelés) pour éviter sous/over-pay.
     function settleWithdraw(uint256 id, uint256 pay1e8, address to) external nonReentrant {
         require(msg.sender == owner || msg.sender == address(handler), "auth");
         require(id < withdrawQueue.length, "bad id");
@@ -237,11 +259,12 @@ contract VaultContract is ReentrancyGuard {
     }
 
     // Allow user to cancel their queued withdrawal and restore shares
+    /// @notice Annule une demande de retrait en file (uniquement par l'initiateur), et restaure les parts.
     function cancelWithdrawRequest(uint256 id) external nonReentrant {
         require(id < withdrawQueue.length, "bad id");
         WithdrawRequest storage r = withdrawQueue[id];
         require(!r.settled, "settled");
-        require(balanceOf[msg.sender] >= r.shares, "invalid balance");
+        require(msg.sender == r.user, "only requester");
         r.settled = true;
         _mint(r.user, r.shares);
         emit WithdrawCancelled(id, r.user, r.shares);
