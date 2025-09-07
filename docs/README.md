@@ -73,3 +73,35 @@ AxoneIndex est une plateforme DeFi construite sur HyperEVM (Hyperliquid). Elle c
   - [CoreInteractionHandler — rôle rebalancer](./contracts/CoreInteractionHandler.md)
   - [VaultContract — frais de retrait par paliers](./contracts/VaultContract.md)
   - [AxoneSale — vente publique USDC](./contracts/AxoneSale.md)
+
+## Guide d’intégration rapide Vault + Handler
+
+1) Déployer les contrats
+- Déployer `CoreInteractionHandler` (avec ses paramètres init: `l1read`, `coreWriter`, `usdc`, limites, frais).
+- Déployer `VaultContract` avec l’adresse `usdc` (ERC20 à 6 décimales).
+
+2) Lier le vault au handler et configurer l’approval USDC
+- Appeler `vault.setHandler(address(handler))` depuis l’owner du vault.
+- Cet appel accorde une approval USDC illimitée du vault vers le handler (nécessaire pour `safeTransferFrom` côté handler).
+
+3) Configurer Core (handler)
+- `handler.setVault(address(vault))`.
+- `handler.setUsdcCoreLink(systemAddress, usdcTokenId)` et `handler.setSpotIds(btcSpot, hypeSpot)`.
+- `handler.setSpotTokenIds(usdcTokenId, btcTokenId, hypeTokenId)` si requis.
+- Facultatif: `handler.setRebalancer(address)` et ajuster `setParams`, `setLimits`.
+
+4) Paramétrer le vault
+- Définir `setFees(depositFeeBps, withdrawFeeBps, autoDeployBps)`.
+- Définir les paliers via `setWithdrawFeeTiers(WithdrawFeeTier[])` (en USDC 1e8).
+
+5) Dépôts et conversions d’unités
+- Les utilisateurs appellent `vault.deposit(amount1e8)` (USDC en 1e8 côté vault).
+- Si `autoDeployBps > 0`, le vault convertit automatiquement en 1e6 et appelle `handler.executeDeposit(usdc1e6, true)`.
+- La NAV inclut: USDC EVM (solde * 1e12) + equity Core renvoyée par le handler.
+
+6) Rappel de liquidités
+- `vault.recallFromCoreAndSweep(amount1e8)` convertit en 1e6 et appelle `handler.pullFromCoreToEvm(...)` puis `handler.sweepToVault(...)`.
+
+7) Vérifications rapides
+- Après `setHandler`, vérifier `USDC.allowance(vault, handler) == type(uint256).max`.
+- Tester un petit `deposit` et confirmer l’absence de revert d’allowance.

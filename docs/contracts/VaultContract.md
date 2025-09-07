@@ -1,7 +1,7 @@
 # VaultContract — Frais de Retrait par Paliers et Flux
 
 ## Résumé
-`VaultContract.sol` émet des parts (18 décimales) contre des dépôts en USDC (1e8), gère la NAV/PPS, des retraits immédiats ou différés, et l’auto-déploiement partiel vers Core. Les frais de retrait dépendent désormais du montant retiré (brut), via des paliers configurables.
+`VaultContract.sol` émet des parts (18 décimales) contre des dépôts en USDC (1e8), gère la NAV/PPS, des retraits immédiats ou différés, et l’auto-déploiement partiel vers Core. Les frais de retrait dépendent du montant retiré (brut), via des paliers configurables. Le vault gère désormais automatiquement l’approval USDC pour l’`CoreInteractionHandler` et convertit les unités 1e8 ↔ 1e6 pour les appels Handler.
 
 ## Frais de Retrait
 - `setFees(depositFeeBps, withdrawFeeBps, autoDeployBps)` fixe les valeurs par défaut.
@@ -41,3 +41,16 @@ vault.setWithdrawFeeTiers(tiers);
 ## Notes
 - Les dépôts utilisateurs précédemment utilisés pour calculer des frais “sur base de dépôt” ne sont plus pris en compte pour la détermination des frais; la logique est désormais strictement basée sur le montant brut.
 - Les paliers doivent être définis en USDC 1e8 (8 décimales).
+
+## Approvals USDC et Unités (1e8 ↔ 1e6)
+
+- À l’appel de `setHandler(address handler)`, le vault accorde une approval USDC illimitée (`forceApprove`) à l’`handler` pour permettre l’appel interne `safeTransferFrom(vault, handler, ...)` lors des dépôts vers Core.
+- Lors d’un dépôt, si `autoDeployBps > 0`, le vault calcule la part à déployer (`deployAmt` en 1e8), la convertit en 1e6 pour l’`handler`, et appelle `handler.executeDeposit(deployAmt1e6, true)`.
+- `recallFromCoreAndSweep(amount1e8)` convertit également le montant en 1e6 avant d’appeler `handler.pullFromCoreToEvm(...)` puis `handler.sweepToVault(...)`.
+- NAV: comme USDC a 6 décimales on multiplie le solde EVM par 1e12 dans `nav1e18()`.
+
+### Checklist d’Intégration
+
+- Déployer `CoreInteractionHandler` puis `VaultContract`.
+- Appeler `vault.setHandler(handler)` pour initialiser l’approval illimitée.
+- Configurer les IDs Core (via l’handler) et, si besoin, les paliers de frais côté vault.

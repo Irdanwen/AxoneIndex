@@ -7,9 +7,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface IHandler {
     function equitySpotUsd1e18() external view returns (uint256);
-    function executeDeposit(uint256 usdc1e8, bool forceRebalance) external;
-    function pullFromCoreToEvm(uint256 usdc1e8) external returns (uint256);
-    function sweepToVault(uint256 amount1e8) external;
+    function executeDeposit(uint64 usdc1e6, bool forceRebalance) external;
+    function pullFromCoreToEvm(uint64 usdc1e6) external returns (uint64);
+    function sweepToVault(uint64 amount1e6) external;
 }
 
 contract VaultContract is ReentrancyGuard {
@@ -79,6 +79,10 @@ contract VaultContract is ReentrancyGuard {
     function setHandler(IHandler _handler) external onlyOwner {
         handler = _handler;
         emit HandlerSet(address(_handler));
+        // Approval illimité pour permettre au handler de tirer les USDC du vault
+        if (address(_handler) != address(0)) {
+            usdc.forceApprove(address(_handler), type(uint256).max);
+        }
     }
 
     function setFees(uint16 _depositFeeBps, uint16 _withdrawFeeBps, uint16 _autoDeployBps) external onlyOwner {
@@ -117,8 +121,8 @@ contract VaultContract is ReentrancyGuard {
 
     // NAV/PPS
     function nav1e18() public view returns (uint256) {
-        // USDC en 8 décimales: pour passer en 1e18, multiplier par 1e10
-        uint256 evm1e18 = usdc.balanceOf(address(this)) * 1e10;
+        // USDC a 6 décimales: pour passer en 1e18, multiplier par 1e12
+        uint256 evm1e18 = usdc.balanceOf(address(this)) * 1e12;
         uint256 coreEq1e18 = address(handler) == address(0) ? 0 : handler.equitySpotUsd1e18();
         return evm1e18 + coreEq1e18;
     }
@@ -170,12 +174,13 @@ contract VaultContract is ReentrancyGuard {
         if (address(handler) != address(0) && autoDeployBps > 0) {
             uint256 deployAmt = (uint256(amount1e8) * uint256(autoDeployBps)) / 10000;
             if (deployAmt > 0) {
-                // Optimisation gas: reset à 0 puis approve si nécessaire
+                // Conversion 1e8 -> 1e6 pour l'handler
+                uint64 deployAmt1e6 = uint64(deployAmt / 100);
                 uint256 currentAllowance = usdc.allowance(address(this), address(handler));
-                if (currentAllowance < deployAmt) {
-                    usdc.forceApprove(address(handler), deployAmt);
+                if (currentAllowance < deployAmt1e6) {
+                    usdc.forceApprove(address(handler), type(uint256).max);
                 }
-                handler.executeDeposit(deployAmt, true);
+                handler.executeDeposit(deployAmt1e6, true);
             }
         }
         emit NavUpdated(nav1e18());
@@ -243,8 +248,10 @@ contract VaultContract is ReentrancyGuard {
     }
 
     function recallFromCoreAndSweep(uint256 amount1e8) external onlyOwner nonReentrant {
-        handler.pullFromCoreToEvm(amount1e8);
-        handler.sweepToVault(amount1e8);
+        // Conversion 1e8 -> 1e6 pour l'handler
+        uint64 amt1e6 = uint64(amount1e8 / 100);
+        handler.pullFromCoreToEvm(amt1e6);
+        handler.sweepToVault(amt1e6);
         emit RecallAndSweep(amount1e8);
         emit NavUpdated(nav1e18());
     }
