@@ -45,6 +45,12 @@ contract AxoneToken is ERC20Burnable, ERC20Permit, Pausable, Ownable, Reentrancy
         _setExcludedFromCirculating(address(0), true);
     }
 
+    /// @notice Fonction mint publique pour l'EmissionController
+    function mint(address to, uint256 amount) external onlyOwner {
+        require(to != address(0), "Zero address");
+        _mint(to, amount);
+    }
+
     function mintInflation() external whenNotPaused nonReentrant {
         require(block.timestamp >= lastMintTimestamp + inflationInterval, "Too early");
 

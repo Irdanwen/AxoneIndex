@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.26;
+pragma solidity ^0.8.24;
 
 /// @title Interface EmissionController
 /// @notice Interface minimale pour piloter l'émission du token de récompense

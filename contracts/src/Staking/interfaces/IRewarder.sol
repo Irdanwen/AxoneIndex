@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.26;
+pragma solidity ^0.8.24;
 
 /// @title Interface Rewarder secondaire (bonus token)
 /// @notice Hooks optionnels invoqués par le RewardsHub
