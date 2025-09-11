@@ -29,13 +29,13 @@ contract VaultContract is ReentrancyGuard {
     uint16 public autoDeployBps; // fraction of deposit auto deployed to Core
 
     struct WithdrawFeeTier { uint256 amount1e8; uint16 feeBps; }
-    WithdrawFeeTier[] public withdrawFeeTiers; // trié par amount1e8 croissant
+    WithdrawFeeTier[] public withdrawFeeTiers; // trie par amount1e8 croissant
 
     uint256 public totalSupply;
     mapping(address => uint256) public balanceOf;
     // AJOUTER CETTE MAPPING POUR LES AUTORISATIONS
     mapping(address => mapping(address => uint256)) public allowance;
-    // Suivi des dépôts cumulés utilisateur en USDC (1e8)
+    // Suivi des depots cumules utilisateur en USDC (1e8)
     mapping(address => uint256) public deposits;
 
     struct WithdrawRequest {
@@ -77,10 +77,10 @@ contract VaultContract is ReentrancyGuard {
     }
 
     function setHandler(IHandler _handler) external onlyOwner {
-        require(address(_handler) != address(0), "Handler zéro");
+        require(address(_handler) != address(0), "Handler zero");
         handler = _handler;
         emit HandlerSet(address(_handler));
-        // Approval illimité pour permettre au handler de tirer les USDC du vault
+        // Approval illimite pour permettre au handler de tirer les USDC du vault
         if (usdc.allowance(address(this), address(_handler)) != type(uint256).max) {
             usdc.approve(address(_handler), 0);
             usdc.approve(address(_handler), type(uint256).max);
@@ -102,7 +102,7 @@ contract VaultContract is ReentrancyGuard {
         // copie dans le storage
         for (uint256 i = 0; i < tiers.length; i++) {
             require(tiers[i].feeBps <= 10000, "fee range");
-            require(i == 0 || tiers[i].amount1e8 > tiers[i-1].amount1e8, "Tranches non triées");
+            require(i == 0 || tiers[i].amount1e8 > tiers[i-1].amount1e8, "Tranches non triees");
             withdrawFeeTiers.push(tiers[i]);
         }
         emit WithdrawFeeTiersSet();
@@ -125,7 +125,7 @@ contract VaultContract is ReentrancyGuard {
 
     // NAV/PPS
     function nav1e18() public view returns (uint256) {
-        // USDC a 8 décimales: pour passer en 1e18, multiplier par 1e10
+        // USDC a 8 decimales: pour passer en 1e18, multiplier par 1e10
         uint256 evm1e18 = usdc.balanceOf(address(this)) * 1e10;
         uint256 coreEq1e18 = address(handler) == address(0) ? 0 : handler.equitySpotUsd1e18();
         return evm1e18 + coreEq1e18;
@@ -157,12 +157,12 @@ contract VaultContract is ReentrancyGuard {
     function deposit(uint256 amount1e8) external notPaused nonReentrant {
         require(amount1e8 > 0, "amount=0");
         uint256 navPre = nav1e18();
-        // Enregistre le dépôt utilisateur (USDC 1e8) avant l'interaction externe
+        // Enregistre le depot utilisateur (USDC 1e8) avant l'interaction externe
         deposits[msg.sender] += amount1e8;
         usdc.safeTransferFrom(msg.sender, address(this), amount1e8);
         uint256 sharesMint;
         if (totalSupply == 0) {
-            // 8 -> 18 décimales: facteur 1e10
+            // 8 -> 18 decimales: facteur 1e10
             sharesMint = uint256(amount1e8) * 1e10; // 1:1 PPS = 1e18
         } else {
             sharesMint = (uint256(amount1e8) * 1e10 * totalSupply) / navPre;
@@ -195,12 +195,12 @@ contract VaultContract is ReentrancyGuard {
         require(shares > 0, "shares=0");
         require(balanceOf[msg.sender] >= shares, "balance");
         
-        // Optimisation : calculer nav une seule fois et le réutiliser
+        // Optimisation : calculer nav une seule fois et le reutiliser
         uint256 nav = nav1e18();
         require(nav > 0, "Empty vault");
         uint256 pps = (nav * 1e18) / totalSupply;
         
-        // Payout brut et frais basés sur le montant (gross)
+        // Payout brut et frais bases sur le montant (gross)
         uint256 target1e18 = (shares * pps) / 1e18;                 // brut 1e18
         uint256 gross1e8 = target1e18 / 1e10;                        // brut 1e8
         uint16 feeBpsApplied = getWithdrawFeeBpsForAmount(gross1e8);
@@ -210,15 +210,15 @@ contract VaultContract is ReentrancyGuard {
         uint256 net1e8 = uint256(gross1e8) - fee1e8;                 // net 1e8
         uint256 cash = usdc.balanceOf(address(this));
         if (cash >= net1e8) {
-            // Paiement immédiat : brûler les parts maintenant
+            // Paiement immediat : bruler les parts maintenant
             _burn(msg.sender, shares);
             usdc.safeTransfer(msg.sender, net1e8);
             emit WithdrawPaid(type(uint256).max, msg.sender, net1e8);
-            emit NavUpdated(nav); // Réutiliser la valeur calculée
+            emit NavUpdated(nav); // Reutiliser la valeur calculee
         } else {
-            // enqueue - NE PAS brûler les parts ici, seulement au règlement
+            // enqueue - NE PAS bruler les parts ici, seulement au reglement
             uint256 id = withdrawQueue.length;
-            // fige le BPS utilisé pour le retrait différé
+            // fige le BPS utilise pour le retrait differe
             withdrawQueue.push(WithdrawRequest({user: msg.sender, shares: shares, feeBpsSnapshot: feeBpsApplied, settled: false}));
             emit WithdrawRequested(id, msg.sender, shares);
         }
@@ -232,22 +232,22 @@ contract VaultContract is ReentrancyGuard {
         require(!r.settled, "settled");
         require(pay1e8 > 0, "zero");
         
-        // Optimisation : calculer nav une seule fois et le réutiliser
+        // Optimisation : calculer nav une seule fois et le reutiliser
         uint256 nav = nav1e18();
         require(nav > 0, "Empty vault");
         uint256 pps = (nav * 1e18) / totalSupply;
         
         uint256 due1e18 = (r.shares * pps) / 1e18;                   // brut 1e18
         uint256 gross1e8 = due1e18 / 1e10;                           // brut 1e8
-        // Calcul des frais avec BPS figé et basé sur le montant brut
+        // Calcul des frais avec BPS fige et base sur le montant brut
         uint256 fee1e8_settle = (r.feeBpsSnapshot > 0 && gross1e8 > 0)
             ? (uint256(gross1e8) * uint256(r.feeBpsSnapshot)) / 10000
             : 0;
         uint256 maxPay = uint256(gross1e8) - fee1e8_settle;          // net 1e8
-        // Le règlement doit être exact pour éviter un sous-paiement silencieux
+        // Le reglement doit etre exact pour eviter un sous-paiement silencieux
         require(pay1e8 == maxPay, "pay!=due");
         r.settled = true;
-        // Brûler les parts au moment du règlement final
+        // Bruler les parts au moment du reglement final
         _burn(r.user, r.shares);
         usdc.safeTransfer(to, pay1e8);
         emit WithdrawPaid(id, to, pay1e8);
@@ -261,7 +261,7 @@ contract VaultContract is ReentrancyGuard {
         require(!r.settled, "settled");
         require(msg.sender == r.user, "not your request");
         r.settled = true;
-        // Les parts n'ont pas encore été brûlées, donc pas besoin de les restaurer
+        // Les parts n'ont pas encore ete brulees, donc pas besoin de les restaurer
         emit WithdrawCancelled(id, r.user, r.shares);
     }
 

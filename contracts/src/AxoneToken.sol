@@ -3,10 +3,10 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 contract AxoneToken is ERC20Burnable, ERC20Permit, Pausable, Ownable, ReentrancyGuard {
     uint256 public constant INITIAL_SUPPLY = 100_000_000 * 1e18;
@@ -162,26 +162,22 @@ contract AxoneToken is ERC20Burnable, ERC20Permit, Pausable, Ownable, Reentrancy
         _unpause();
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 amount)
+    function _update(address from, address to, uint256 value)
         internal override
     {
-        super._beforeTokenTransfer(from, to, amount);
         require(!paused(), "Token paused");
         
         // Mettre à jour les soldes exclus lors des transferts
-        _updateExcludedBalances(from, to, amount);
-    }
-    
-    function _afterTokenTransfer(address from, address to, uint256 amount)
-        internal override
-    {
-        super._afterTokenTransfer(from, to, amount);
+        _updateExcludedBalances(from, to, value);
+        
+        // Appeler la fonction parent pour effectuer le transfert
+        super._update(from, to, value);
         
         // Gérer le cas du burn (to == address(0))
         if (to == address(0) && isExcludedFromCirculating[from]) {
             // Le burn réduit le solde exclus
-            excludedBalances[from] -= amount;
-            totalExcludedBalance -= amount;
+            excludedBalances[from] -= value;
+            totalExcludedBalance -= value;
         }
     }
     
