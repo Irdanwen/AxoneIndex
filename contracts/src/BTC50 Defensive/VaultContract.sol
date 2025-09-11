@@ -81,9 +81,16 @@ contract VaultContract is ReentrancyGuard {
         handler = _handler;
         emit HandlerSet(address(_handler));
         // Approval illimite pour permettre au handler de tirer les USDC du vault
-        if (usdc.allowance(address(this), address(_handler)) != type(uint256).max) {
-            usdc.approve(address(_handler), 0);
-            usdc.approve(address(_handler), type(uint256).max);
+        try usdc.approve(address(_handler), type(uint256).max) {
+            // Succès
+        } catch {
+            // Si l'approbation échoue, on essaie de reset d'abord
+            try usdc.approve(address(_handler), 0) {
+                usdc.approve(address(_handler), type(uint256).max);
+            } catch {
+                // Si même le reset échoue, on continue sans l'approbation
+                // L'utilisateur devra appeler setHandler une seconde fois
+            }
         }
     }
 
@@ -307,6 +314,17 @@ contract VaultContract is ReentrancyGuard {
     function _getBaseAmount(uint256 gross1e8, uint256 depositRecorded) internal pure returns (uint256) {
         uint256 gross = uint256(gross1e8);
         return gross > depositRecorded ? depositRecorded : gross;
+    }
+
+    // Fonction de diagnostic pour setHandler
+    function canSetHandler(address _handler) external view returns (bool, string memory) {
+        if (msg.sender != owner) {
+            return (false, "Not owner");
+        }
+        if (_handler == address(0)) {
+            return (false, "Handler zero address");
+        }
+        return (true, "OK");
     }
 }
 
