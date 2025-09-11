@@ -34,7 +34,7 @@ contract EmissionController is Ownable2Step, Pausable {
     event Pulled(address indexed to, uint256 amount, uint64 fromTs, uint64 toTs);
     event MintModeToggled(bool isMint);
 
-    constructor(address rewardToken_, uint256 rewardPerSecond_, bool isMintMode_) {
+    constructor(address rewardToken_, uint256 rewardPerSecond_, bool isMintMode_) Ownable2Step(msg.sender) {
         require(rewardToken_ != address(0), "token=0");
         rewardToken = rewardToken_;
         rewardPerSecond = rewardPerSecond_;
