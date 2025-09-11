@@ -34,12 +34,13 @@ contract EmissionController is Ownable2Step, Pausable {
     event Pulled(address indexed to, uint256 amount, uint64 fromTs, uint64 toTs);
     event MintModeToggled(bool isMint);
 
-    constructor(address rewardToken_, uint256 rewardPerSecond_, bool isMintMode_) Ownable2Step(msg.sender) {
+    constructor(address rewardToken_, uint256 rewardPerSecond_, bool isMintMode_) {
         require(rewardToken_ != address(0), "token=0");
         rewardToken = rewardToken_;
         rewardPerSecond = rewardPerSecond_;
         isMintMode = isMintMode_;
         lastPullTime = uint64(block.timestamp);
+        _transferOwnership(msg.sender);
     }
 
     /// @notice Configure le hub une seule fois
