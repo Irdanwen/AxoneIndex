@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { createPublicClient, http, getAddress } from "viem";
+import { createPublicClient, http } from "viem";
 
 // Hyperliquid testnet RPC
 const RPC_URL = process.env.HL_TESTNET_RPC || "https://rpc.hyperliquid-testnet.xyz/evm";
@@ -58,8 +58,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       matches,
       hint: "USDC_CORE_TOKEN_ID = tokens[1] du marché BTC/USDC (quote).",
     });
-  } catch (e: any) {
-    res.status(500).json({ error: String(e?.message || e) });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ error: errorMessage });
   }
 }
 

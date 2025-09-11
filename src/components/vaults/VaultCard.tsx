@@ -37,12 +37,13 @@ export function VaultCard({ vault, onDeposit, onWithdraw, onInfo }: VaultCardPro
   const vaultAddress = vault.contractAddress as `0x${string}` | undefined
   const usdcAddress = vault.usdcAddress as `0x${string}` | undefined
 
-  const { data: pps } = useReadContract({
-    abi: vaultContractAbi,
-    address: vaultAddress,
-    functionName: 'pps1e18',
-    query: { enabled: Boolean(vaultAddress) }
-  })
+  // Prix par share - pour usage futur
+  // const { data: pps } = useReadContract({
+  //   abi: vaultContractAbi,
+  //   address: vaultAddress,
+  //   functionName: 'pps1e18',
+  //   query: { enabled: Boolean(vaultAddress) }
+  // })
 
   const { data: userShares } = useReadContract({
     abi: vaultContractAbi,
@@ -80,7 +81,7 @@ export function VaultCard({ vault, onDeposit, onWithdraw, onInfo }: VaultCardPro
         args: [amount1e6]
       })
       setDepositAmount('')
-    } catch (e) {
+    } catch {
       // noop: erreurs visibles dans wallet/console
     }
   }
@@ -100,7 +101,7 @@ export function VaultCard({ vault, onDeposit, onWithdraw, onInfo }: VaultCardPro
         args: [sharesToBurn]
       })
       setWithdrawAmount('')
-    } catch (e) {
+    } catch {
       // noop
     }
   }
