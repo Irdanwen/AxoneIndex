@@ -14,13 +14,13 @@ contract ReferralRegistry is Ownable, Pausable, ReentrancyGuard {
     constructor(address initialOwner) Ownable(initialOwner) {
         // Initialisations spécifiques au contrat (si nécessaire)
     }
-    // WARNING: block.timestamp peut être manipulé par les validateurs. Préférer block.number pour les délais critiques.
+    // WARNING: block.timestamp peut être manipulé par les validateurs. Utilisation de block.number pour les délais critiques.
     /// @notice Whitelist status of addresses
     mapping(address => bool) public isWhitelisted;
     /// @notice Referrer of each whitelisted address
     mapping(address => address) public referrerOf;
-    /// @notice Code struct: creator, usage status, and expiration timestamp
-    struct Code { address creator; bool used; uint256 expiresAt; }
+    /// @notice Code struct: creator, usage status, and expiration block number
+    struct Code { address creator; bool used; uint256 expiresAtBlock; }
     /// @notice Mapping from codeHash to Code
     mapping(bytes32 => Code) public codes;
     /// @notice Number of codes created by each address
@@ -33,6 +33,8 @@ contract ReferralRegistry is Ownable, Pausable, ReentrancyGuard {
     uint256 public codesQuota = 5;
     /// @notice Pause-only for code generation
     bool public codeGenerationPaused = false;
+    /// @notice Blocks per day (assuming 12s per block)
+    uint256 public constant BLOCKS_PER_DAY = 24 * 60 * 60 / 12; // 7200 blocks
 
     /// @notice Emitted when a code is created
     event CodeCreated(bytes32 indexed codeHash, address indexed creator, uint256 creatorCount, uint256 quota);
@@ -119,9 +121,13 @@ contract ReferralRegistry is Ownable, Pausable, ReentrancyGuard {
         }
         uint256 created = codesCreated[msg.sender];
         if (created >= codesQuota) revert MaxCodesExceeded();
-        codes[codeHash] = Code({creator: msg.sender, used: false, expiresAt: block.timestamp + 30 days});
+        
+        // Toutes les vérifications passées, procéder à la création
+        codes[codeHash] = Code({creator: msg.sender, used: false, expiresAtBlock: block.number + 30 * BLOCKS_PER_DAY}); // 30 days in blocks
         codesCreated[msg.sender] = created + 1;
         creatorCodes[msg.sender].push(codeHash);
+        
+        // Émettre l'événement seulement après la création réussie
         emit CodeCreated(codeHash, msg.sender, created + 1, codesQuota);
     }
 
@@ -152,11 +158,13 @@ contract ReferralRegistry is Ownable, Pausable, ReentrancyGuard {
             if (attempt == 4) revert InvalidCode();
         }
 
-        codes[codeHash] = Code({creator: msg.sender, used: false, expiresAt: block.timestamp + 30 days});
+        // Toutes les vérifications passées, procéder à la création
+        codes[codeHash] = Code({creator: msg.sender, used: false, expiresAtBlock: block.number + 30 * BLOCKS_PER_DAY}); // 30 days in blocks
         rawCodeOfHash[codeHash] = raw;
         creatorCodes[msg.sender].push(codeHash);
         codesCreated[msg.sender] = created + 1;
 
+        // Émettre l'événement seulement après la création réussie
         emit CodeCreated(codeHash, msg.sender, created + 1, codesQuota);
         return raw;
     }
@@ -176,7 +184,7 @@ contract ReferralRegistry is Ownable, Pausable, ReentrancyGuard {
         if (creator == address(0)) revert InvalidCode();
         if (code.used) revert CodeAlreadyUsed();
         if (creator == msg.sender) revert SelfReferral();
-        if (block.timestamp > code.expiresAt) revert CodeExpired();
+        if (block.number > code.expiresAtBlock) revert CodeExpired();
         // Effects
         code.used = true;
         isWhitelisted[msg.sender] = true;
@@ -192,7 +200,7 @@ contract ReferralRegistry is Ownable, Pausable, ReentrancyGuard {
         uint256 count;
         for (uint256 i = 0; i < list.length; i++) {
             Code storage c = codes[list[i]];
-            if (c.creator == creator && !c.used && block.timestamp <= c.expiresAt) {
+            if (c.creator == creator && !c.used && block.number <= c.expiresAtBlock) {
                 // only include if we know the raw code string
                 if (bytes(rawCodeOfHash[list[i]]).length > 0) {
                     count++;
@@ -204,7 +212,7 @@ contract ReferralRegistry is Ownable, Pausable, ReentrancyGuard {
         uint256 j;
         for (uint256 i = 0; i < list.length; i++) {
             Code storage c = codes[list[i]];
-            if (c.creator == creator && !c.used && block.timestamp <= c.expiresAt) {
+            if (c.creator == creator && !c.used && block.number <= c.expiresAtBlock) {
                 string memory raw = rawCodeOfHash[list[i]];
                 if (bytes(raw).length > 0) {
                     out[j++] = raw;

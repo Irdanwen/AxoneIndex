@@ -79,8 +79,10 @@ export default function NouvellePage() {
   - Les autorisations (`approve`) doivent être réinitialisées à `0` avant modification.
 
 ### Annulation des demandes de retrait
-- Les demandes de retrait en file d'attente peuvent être annulées si le solde courant de l'appelant couvre la quantité de parts en attente d'annulation.
-- Cette logique n'est plus limitée à l'adresse d'origine de la demande.
+- **🚨 CORRECTION CRITIQUE** : Les demandes de retrait en file d'attente peuvent maintenant être annulées correctement
+- **Problème résolu** : Les parts ne sont plus brûlées immédiatement lors de la demande de retrait
+- **Nouvelle logique** : Les parts sont conservées jusqu'au règlement final, permettant l'annulation
+- **Fonction** : `cancelWithdrawRequest(uint256 id)` fonctionne maintenant correctement
 
 <div class="MB-[20rem]"></div>
 
@@ -153,6 +155,9 @@ console.log(hash)
 - Hashage sécurisé des codes avec Keccak256
 - Gestion des erreurs de transaction
 - Validation côté client et contrat
+- **🔒 SÉCURITÉ RENFORCÉE** : Utilisation de `block.number` au lieu de `block.timestamp` pour les expirations (résistance à la manipulation temporelle)
+- **⏰ PRÉCISION** : Codes de parrainage expirés après 30 jours en blocs (environ 216,000 blocs)
+- **🛡️ PROTECTION** : Résistance à la manipulation des validateurs sur les délais critiques
 
 ### Navigation
 

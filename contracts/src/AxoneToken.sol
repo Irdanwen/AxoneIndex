@@ -23,6 +23,10 @@ contract AxoneToken is ERC20Burnable, ERC20Permit, Pausable, Ownable, Reentrancy
     // Addresses à exclure du calcul de la supply circulante (ex: trésorerie, vesting, burn)
     mapping(address => bool) private isExcludedFromCirculating;
     address[] private excludedAddresses;
+    
+    // Optimisation gaz : tracking des soldes exclus
+    mapping(address => uint256) public excludedBalances;
+    uint256 public totalExcludedBalance;
 
     event DailyInflationMinted(uint256 amountMinted, uint256 timestamp, uint256 timeElapsed);
     event InflationRecipientChanged(address indexed oldRecipient, address indexed newRecipient);
@@ -49,6 +53,12 @@ contract AxoneToken is ERC20Burnable, ERC20Permit, Pausable, Ownable, Reentrancy
     function mint(address to, uint256 amount) external onlyOwner {
         require(to != address(0), "Zero address");
         _mint(to, amount);
+        
+        // Mettre à jour le solde exclus si l'adresse est exclue
+        if (isExcludedFromCirculating[to]) {
+            excludedBalances[to] += amount;
+            totalExcludedBalance += amount;
+        }
     }
 
     function mintInflation() external whenNotPaused nonReentrant {
@@ -64,6 +74,13 @@ contract AxoneToken is ERC20Burnable, ERC20Permit, Pausable, Ownable, Reentrancy
         require(amountToMint > 0, "Nothing to mint");
 
         _mint(inflationRecipient, amountToMint);
+        
+        // Mettre à jour le solde exclus si l'adresse est exclue
+        if (isExcludedFromCirculating[inflationRecipient]) {
+            excludedBalances[inflationRecipient] += amountToMint;
+            totalExcludedBalance += amountToMint;
+        }
+        
         lastMintTimestamp = block.timestamp;
 
         emit DailyInflationMinted(amountToMint, block.timestamp, timeElapsed);
@@ -85,20 +102,9 @@ contract AxoneToken is ERC20Burnable, ERC20Permit, Pausable, Ownable, Reentrancy
         return lastMintTimestamp + inflationInterval;
     }
 
-    // Calcul de la supply circulante = totalSupply - somme soldes des adresses exclues
+    // Calcul de la supply circulante = totalSupply - totalExcludedBalance (optimisé)
     function circulatingSupply() public view returns (uint256) {
-        uint256 supply = totalSupply();
-        uint256 len = excludedAddresses.length;
-        for (uint256 i = 0; i < len; i++) {
-            address account = excludedAddresses[i];
-            if (isExcludedFromCirculating[account]) {
-                uint256 bal = balanceOf(account);
-                if (bal > 0) {
-                    supply -= bal;
-                }
-            }
-        }
-        return supply;
+        return totalSupply() - totalExcludedBalance;
     }
 
     function setExcludedFromCirculating(address account, bool excluded) external onlyOwner {
@@ -120,6 +126,19 @@ contract AxoneToken is ERC20Burnable, ERC20Permit, Pausable, Ownable, Reentrancy
             emit ExcludedFromCirculating(account, excluded);
             return;
         }
+        
+        // Mettre à jour le tracking des soldes exclus
+        uint256 currentBalance = balanceOf(account);
+        if (current) {
+            // Retirer de l'exclusion : soustraire du total
+            totalExcludedBalance -= excludedBalances[account];
+            excludedBalances[account] = 0;
+        } else {
+            // Ajouter à l'exclusion : ajouter au total
+            excludedBalances[account] = currentBalance;
+            totalExcludedBalance += currentBalance;
+        }
+        
         isExcludedFromCirculating[account] = excluded;
         if (excluded) {
             // Ajouter à la liste si nouvellement exclu et pas déjà présent
@@ -148,6 +167,41 @@ contract AxoneToken is ERC20Burnable, ERC20Permit, Pausable, Ownable, Reentrancy
     {
         super._beforeTokenTransfer(from, to, amount);
         require(!paused(), "Token paused");
+        
+        // Mettre à jour les soldes exclus lors des transferts
+        _updateExcludedBalances(from, to, amount);
+    }
+    
+    function _afterTokenTransfer(address from, address to, uint256 amount)
+        internal override
+    {
+        super._afterTokenTransfer(from, to, amount);
+        
+        // Gérer le cas du burn (to == address(0))
+        if (to == address(0) && isExcludedFromCirculating[from]) {
+            // Le burn réduit le solde exclus
+            excludedBalances[from] -= amount;
+            totalExcludedBalance -= amount;
+        }
+    }
+    
+    // Fonction interne pour mettre à jour les soldes exclus lors des transferts
+    function _updateExcludedBalances(address from, address to, uint256 amount) internal {
+        // Mettre à jour le solde de l'expéditeur si exclu
+        if (isExcludedFromCirculating[from]) {
+            uint256 oldBalance = excludedBalances[from];
+            uint256 newBalance = balanceOf(from) - amount; // balanceOf(from) est le solde AVANT le transfert
+            excludedBalances[from] = newBalance;
+            totalExcludedBalance = totalExcludedBalance - oldBalance + newBalance;
+        }
+        
+        // Mettre à jour le solde du destinataire si exclu
+        if (isExcludedFromCirculating[to]) {
+            uint256 oldBalance = excludedBalances[to];
+            uint256 newBalance = balanceOf(to) + amount; // balanceOf(to) est le solde AVANT le transfert
+            excludedBalances[to] = newBalance;
+            totalExcludedBalance = totalExcludedBalance - oldBalance + newBalance;
+        }
     }
 
     function rescueTokens(address token, uint256 amount, address to) external onlyOwner {

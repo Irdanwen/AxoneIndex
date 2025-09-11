@@ -102,8 +102,9 @@ La page de gestion des referrals (`/referral-management`) permet aux utilisateur
 
 #### Limitations
 - La suppression de codes nécessite les droits d'admin
-- Les codes expirent après 30 jours
+- Les codes expirent après 30 jours (environ 216,000 blocs)
 - Quota limité à 5 codes par utilisateur
+- **NOUVEAU** : Utilisation de `block.number` pour les expirations (résistance à la manipulation temporelle)
 
 ### Navigation
 

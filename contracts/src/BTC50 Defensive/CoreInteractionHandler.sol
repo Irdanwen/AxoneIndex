@@ -7,6 +7,7 @@ import {L1Read} from "./interfaces/L1Read.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 interface ICoreWriter {
     function sendRawAction(bytes calldata data) external;
@@ -14,7 +15,7 @@ interface ICoreWriter {
 
 // IERC20 importé via OpenZeppelin ci-dessus
 
-contract CoreInteractionHandler {
+contract CoreInteractionHandler is Pausable {
     using SafeERC20 for IERC20;
     
 
@@ -39,6 +40,8 @@ contract CoreInteractionHandler {
     uint64 public epochLength;
     uint64 public lastEpochStart;
     uint64 public sentThisEpoch;
+    // Blocks per epoch (assuming 12s per block)
+    uint64 public constant BLOCKS_PER_EPOCH = 1; // 1 block = 12 seconds
     uint64 public maxSlippageBps; // for IOC limit price
     uint64 public marketEpsilonBps; // widen limit to mimic marketable IOC
     uint64 public deadbandBps;
@@ -94,7 +97,7 @@ contract CoreInteractionHandler {
         l1read = _l1read;
         coreWriter = _coreWriter;
         usdc = _usdc;
-        lastEpochStart = uint64(block.timestamp);
+        lastEpochStart = uint64(block.number);
         owner = msg.sender;
         // Defaults
         require(_epochLength > 0, "EPOCH_0");
@@ -173,6 +176,21 @@ contract CoreInteractionHandler {
         emit RebalancerSet(_rebalancer);
     }
 
+    /// @notice Pause all critical operations in case of emergency
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /// @notice Unpause all operations
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    /// @notice Emergency pause function for critical situations
+    function emergencyPause() external onlyOwner {
+        _pause();
+    }
+
     // Views (spot)
     function spotBalance(address coreUser, uint64 tokenId) public view returns (uint64) {
         L1Read.SpotBalance memory b = l1read.spotBalance(coreUser, tokenId);
@@ -202,7 +220,7 @@ contract CoreInteractionHandler {
     }
 
     // Core flows
-    function executeDeposit(uint64 usdc1e6, bool forceRebalance) external onlyVault {
+    function executeDeposit(uint64 usdc1e6, bool forceRebalance) external onlyVault whenNotPaused {
         if (usdcCoreSystemAddress == address(0) || usdcCoreTokenId == 0) revert("USDC_CORE_NOT_SET");
         _rateLimit(usdc1e6);
         // Pull USDC from vault to handler (EVM token has 8 decimals => scale x100)
@@ -229,7 +247,7 @@ contract CoreInteractionHandler {
         }
     }
 
-    function pullFromCoreToEvm(uint64 usdc1e6) external onlyVault returns (uint64) {
+    function pullFromCoreToEvm(uint64 usdc1e6) external onlyVault whenNotPaused returns (uint64) {
         if (usdcCoreSystemAddress == address(0) || usdcCoreTokenId == 0) revert("USDC_CORE_NOT_SET");
         // Ensure enough USDC spot by selling BTC/HYPE via IOC if needed
         uint256 usdcBal = spotBalance(address(this), usdcCoreTokenId);
@@ -249,7 +267,7 @@ contract CoreInteractionHandler {
         return usdc1e6;
     }
 
-    function sweepToVault(uint64 amount1e6) external onlyVault {
+    function sweepToVault(uint64 amount1e6) external onlyVault whenNotPaused {
         if (amount1e6 == 0) {
             return;
         }
@@ -268,7 +286,7 @@ contract CoreInteractionHandler {
         emit SweepWithFee(amount1e6, feeAmt1e6, net1e6);
     }
 
-    function rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype) public onlyRebalancer {
+    function rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype) public onlyRebalancer whenNotPaused {
         _rebalance(cloidBtc, cloidHype);
     }
 
@@ -359,9 +377,10 @@ contract CoreInteractionHandler {
     }
 
     function _rateLimit(uint64 amount1e6) internal {
-        uint64 nowTs = uint64(block.timestamp);
-        if (nowTs - lastEpochStart >= epochLength) {
-            lastEpochStart = nowTs;
+        if (amount1e6 == 0) return;
+        uint64 currentBlock = uint64(block.number);
+        if (currentBlock - lastEpochStart >= epochLength) {
+            lastEpochStart = currentBlock;
             sentThisEpoch = 0;
         }
         if (sentThisEpoch + amount1e6 > maxOutboundPerEpoch) revert RateLimited();
@@ -373,11 +392,15 @@ contract CoreInteractionHandler {
         uint64 px = spotOraclePx1e8(asset);
         uint64 lastPx = isBtc ? lastPxBtc1e8 : lastPxHype1e8;
         bool init = isBtc ? pxInitB : pxInitH;
+        
+        // Période de grâce : validation seulement si déjà initialisé et prix précédent valide
         if (init && lastPx != 0) {
             uint256 up = uint256(lastPx) * (10_000 + maxOracleDeviationBps) / 10_000;
             uint256 down = uint256(lastPx) * (10_000 - maxOracleDeviationBps) / 10_000;
             require(uint256(px) <= up && uint256(px) >= down, "ORACLE_DEV");
         }
+        
+        // Mise à jour des prix même si pas encore initialisé (période de grâce)
         if (isBtc) {
             lastPxBtc1e8 = px;
             pxInitB = true;

@@ -19,16 +19,25 @@ contract AxoneSale is Pausable, Ownable, ReentrancyGuard {
     uint256 public totalSold;
     uint256 public saleCap = 50_000_000 * AXN_DECIMALS;
     bool public saleEnded;
+    
+    // Slippage protection
+    uint256 public maxSlippageBps = 100; // 1% max slippage by default
+    uint256 public lastPriceUpdateBlock;
+    uint256 public lastPricePerAxn;
 
     event TokensPurchased(address indexed buyer, uint256 axnAmount, uint256 usdcAmount);
     event TreasuryUpdated(address indexed newTreasury);
     event SaleEnded();
     event UnsoldTokensWithdrawn(uint256 amount);
+    event SlippageToleranceUpdated(uint256 newMaxSlippageBps);
+    event PriceUpdated(uint256 newPrice, uint256 blockNumber);
 
     constructor(address _axnToken, address _usdcToken) Ownable(msg.sender) {
         require(_axnToken != address(0) && _usdcToken != address(0), "Invalid token address");
         axnToken = IERC20(_axnToken);
         usdcToken = IERC20(_usdcToken);
+        lastPricePerAxn = PRICE_PER_AXN_IN_USDC;
+        lastPriceUpdateBlock = block.number;
     }
 
     function buyWithUSDC(uint256 axnAmount) external whenNotPaused nonReentrant {
@@ -38,7 +47,9 @@ contract AxoneSale is Pausable, Ownable, ReentrancyGuard {
         require(totalSold + axnAmount <= saleCap, "Exceeds cap");
         require(axnToken.balanceOf(address(this)) >= axnAmount, "Not enough AXN in contract");
 
-        uint256 usdcAmount = (axnAmount * PRICE_PER_AXN_IN_USDC) / AXN_DECIMALS;
+        // Calculate current price with slippage protection
+        uint256 currentPrice = _getCurrentPrice();
+        uint256 usdcAmount = (axnAmount * currentPrice) / AXN_DECIMALS;
         require(usdcAmount > 0, "Invalid USDC amount");
 
         // Transfer USDC first (pull pattern)
@@ -70,6 +81,21 @@ contract AxoneSale is Pausable, Ownable, ReentrancyGuard {
         emit TreasuryUpdated(_treasury);
     }
 
+    /// @notice Update the price per AXN (owner only)
+    function updatePrice(uint256 newPricePerAxn) external onlyOwner {
+        require(newPricePerAxn > 0, "Invalid price");
+        lastPricePerAxn = newPricePerAxn;
+        lastPriceUpdateBlock = block.number;
+        emit PriceUpdated(newPricePerAxn, block.number);
+    }
+
+    /// @notice Set maximum slippage tolerance in basis points
+    function setMaxSlippageBps(uint256 _maxSlippageBps) external onlyOwner {
+        require(_maxSlippageBps <= 1000, "Slippage too high"); // Max 10%
+        maxSlippageBps = _maxSlippageBps;
+        emit SlippageToleranceUpdated(_maxSlippageBps);
+    }
+
     function withdrawUnsoldTokens(address to) external onlyOwner {
         require(saleEnded, "Sale not ended");
         require(to != address(0), "Invalid address");
@@ -85,6 +111,36 @@ contract AxoneSale is Pausable, Ownable, ReentrancyGuard {
 
     function isSaleActive() public view returns (bool) {
         return !saleEnded && axnToken.balanceOf(address(this)) > 0 && !paused();
+    }
+
+    /// @notice Get current price with slippage protection
+    function _getCurrentPrice() internal view returns (uint256) {
+        // If price was updated recently (within same block), use the updated price
+        if (block.number == lastPriceUpdateBlock) {
+            return lastPricePerAxn;
+        }
+        
+        // Otherwise, apply slippage protection based on time elapsed
+        uint256 blocksElapsed = block.number - lastPriceUpdateBlock;
+        uint256 maxPriceIncrease = (lastPricePerAxn * maxSlippageBps) / 10000;
+        
+        // Allow gradual price increase based on blocks elapsed (max 1 block = 1 BPS increase)
+        uint256 allowedIncrease = (lastPricePerAxn * maxSlippageBps * blocksElapsed) / (10000 * 100); // 100 blocks = full slippage
+        if (allowedIncrease > maxPriceIncrease) {
+            allowedIncrease = maxPriceIncrease;
+        }
+        
+        return lastPricePerAxn + allowedIncrease;
+    }
+
+    /// @notice Get current price for external queries
+    function getCurrentPrice() external view returns (uint256) {
+        return _getCurrentPrice();
+    }
+
+    /// @notice Get price information
+    function getPriceInfo() external view returns (uint256 currentPrice, uint256 lastPrice, uint256 lastUpdateBlock, uint256 maxSlippage) {
+        return (_getCurrentPrice(), lastPricePerAxn, lastPriceUpdateBlock, maxSlippageBps);
     }
 
     // Emergency pause function

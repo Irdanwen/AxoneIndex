@@ -1,25 +1,44 @@
 # VaultContract — Frais de Retrait par Paliers et Flux
 
 ## Résumé
-`VaultContract.sol` émet des parts (18 décimales) contre des dépôts en USDC (1e8 sur HyperEVM), gère la NAV/PPS, des retraits immédiats ou différés, et l’auto-déploiement partiel vers Core. Les frais de retrait dépendent du montant retiré (brut), via des paliers configurables. Le vault gère désormais automatiquement l’approval USDC pour l’`CoreInteractionHandler` et convertit les unités 1e8 ↔ 1e6 pour les appels Handler.
+`VaultContract.sol` émet des parts (18 décimales) contre des dépôts en USDC (1e8 sur HyperEVM), gère la NAV/PPS, des retraits immédiats ou différés, et l'auto-déploiement partiel vers Core. Les frais de retrait dépendent du montant retiré (brut), via des paliers configurables. Le vault gère désormais automatiquement l'approval USDC pour l'`CoreInteractionHandler` et convertit les unités 1e8 ↔ 1e6 pour les appels Handler.
+
+## 🔒 Améliorations de Sécurité
+
+### Corrections Critiques Implémentées
+- **Validation de l'adresse zéro** : `setHandler()` vérifie que l'handler n'est pas `address(0)`
+- **Approval sécurisé** : Remplacement de `forceApprove` par le pattern standard `approve(0)` + `approve(max)`
+- **Respect du modèle CEI** : Mise à jour d'état avant les interactions externes dans `deposit()`
+- **Validation des tranches** : Vérification que les paliers de frais sont triés par montant croissant
+- **Limitation des paliers** : Maximum 10 paliers pour éviter les coûts de gas excessifs
+- **🚨 CORRECTION CRITIQUE** : **Destruction des parts corrigée** - Les parts ne sont plus brûlées immédiatement dans `withdraw()`, permettant l'annulation des retraits
+- **⚡ OPTIMISATION GAZ** : **Calculs redondants éliminés** - `nav1e18()` n'est plus appelé deux fois par transaction
 
 ## Frais de Retrait
 - `setFees(depositFeeBps, withdrawFeeBps, autoDeployBps)` fixe les valeurs par défaut.
-- `setWithdrawFeeTiers(WithdrawFeeTier[])` permet d’ajouter des paliers:
+- `setWithdrawFeeTiers(WithdrawFeeTier[])` permet d'ajouter des paliers:
   - `WithdrawFeeTier { uint256 amount1e8; uint16 feeBps; }`
-  - Les paliers sont interprétés dans l’ordre: le premier `amount1e8` supérieur ou égal au montant brut détermine `feeBps`.
+  - Les paliers sont interprétés dans l'ordre: le premier `amount1e8` supérieur ou égal au montant brut détermine `feeBps`.
   - Si aucun palier ne correspond, fallback sur `withdrawFeeBps`.
+  - **Sécurité** : Maximum 10 paliers, validation de l'ordre croissant des montants
 - `getWithdrawFeeBpsForAmount(uint256 amount1e8)` retourne le BPS applicable.
 
 ## Retraits
 - `withdraw(uint256 shares)`:
+  - **🚨 CORRECTION** : Calcule le NAV une seule fois et le réutilise pour optimiser le gaz
   - Calcule le montant brut en USDC à partir du PPS courant.
   - Applique `feeBps` déterminé par `getWithdrawFeeBpsForAmount(gross1e8)`.
+  - **🚨 CORRECTION** : Si paiement immédiat → brûle les parts maintenant, sinon les garde pour l'annulation
   - Si la trésorerie EVM couvre le montant net → paiement immédiat et événement `WithdrawPaid`.
   - Sinon → mise en file avec snapshot du `feeBps` calculé à la demande.
 - `settleWithdraw(uint256 id, uint256 pay1e8, address to)`:
-  - Recalcule le montant brut d’après le PPS courant.
+  - **🚨 CORRECTION** : Calcule le NAV une seule fois et le réutilise pour optimiser le gaz
+  - Recalcule le montant brut d'après le PPS courant.
+  - **🚨 CORRECTION** : Brûle les parts au moment du règlement final
   - Utilise le `feeBpsSnapshot` stocké dans la file pour exiger un paiement net exact.
+- `cancelWithdrawRequest(uint256 id)`:
+  - **🚨 CORRECTION** : Fonctionne maintenant correctement car les parts ne sont plus brûlées prématurément
+  - Permet d'annuler une demande de retrait en file d'attente
 
 ## Événements
 - `WithdrawRequested(id, user, shares)`
@@ -44,7 +63,8 @@ vault.setWithdrawFeeTiers(tiers);
 
 ## Approvals USDC et Unités (1e8 ↔ 1e6)
 
-- À l’appel de `setHandler(address handler)`, le vault accorde une approval USDC illimitée (`forceApprove`) à l’`handler` pour permettre l’appel interne `safeTransferFrom(vault, handler, ...)` lors des dépôts vers Core.
+- À l'appel de `setHandler(address handler)`, le vault accorde une approval USDC illimitée (pattern standard `approve(0)` + `approve(max)`) à l'`handler` pour permettre l'appel interne `safeTransferFrom(vault, handler, ...)` lors des dépôts vers Core.
+- **Sécurité** : Validation que l'handler n'est pas `address(0)` avant l'approval
 - Lors d’un dépôt, si `autoDeployBps > 0`, le vault calcule la part à déployer (`deployAmt` en 1e8), la convertit en 1e6 pour l’`handler`, et appelle `handler.executeDeposit(deployAmt1e6, true)`.
 - `recallFromCoreAndSweep(amount1e8)` convertit également le montant en 1e6 avant d’appeler `handler.pullFromCoreToEvm(...)` puis `handler.sweepToVault(...)`. Le handler retransforme vers 1e8 (×100) pour le transfert vers le vault.
 - NAV: comme USDC a 8 décimales sur HyperEVM, on multiplie le solde EVM par 1e10 dans `nav1e18()`.

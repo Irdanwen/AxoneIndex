@@ -77,11 +77,13 @@ contract VaultContract is ReentrancyGuard {
     }
 
     function setHandler(IHandler _handler) external onlyOwner {
+        require(address(_handler) != address(0), "Handler zéro");
         handler = _handler;
         emit HandlerSet(address(_handler));
         // Approval illimité pour permettre au handler de tirer les USDC du vault
-        if (address(_handler) != address(0)) {
-            usdc.forceApprove(address(_handler), type(uint256).max);
+        if (usdc.allowance(address(this), address(_handler)) != type(uint256).max) {
+            usdc.approve(address(_handler), 0);
+            usdc.approve(address(_handler), type(uint256).max);
         }
     }
 
@@ -95,10 +97,12 @@ contract VaultContract is ReentrancyGuard {
     }
 
     function setWithdrawFeeTiers(WithdrawFeeTier[] memory tiers) external onlyOwner {
+        require(tiers.length <= 10, "too many tiers");
         delete withdrawFeeTiers;
         // copie dans le storage
         for (uint256 i = 0; i < tiers.length; i++) {
             require(tiers[i].feeBps <= 10000, "fee range");
+            require(i == 0 || tiers[i].amount1e8 > tiers[i-1].amount1e8, "Tranches non triées");
             withdrawFeeTiers.push(tiers[i]);
         }
         emit WithdrawFeeTiersSet();
@@ -153,9 +157,9 @@ contract VaultContract is ReentrancyGuard {
     function deposit(uint256 amount1e8) external notPaused nonReentrant {
         require(amount1e8 > 0, "amount=0");
         uint256 navPre = nav1e18();
-        usdc.safeTransferFrom(msg.sender, address(this), amount1e8);
-        // Enregistre le dépôt utilisateur (USDC 1e8)
+        // Enregistre le dépôt utilisateur (USDC 1e8) avant l'interaction externe
         deposits[msg.sender] += amount1e8;
+        usdc.safeTransferFrom(msg.sender, address(this), amount1e8);
         uint256 sharesMint;
         if (totalSupply == 0) {
             // 8 -> 18 décimales: facteur 1e10
@@ -178,7 +182,8 @@ contract VaultContract is ReentrancyGuard {
                 uint64 deployAmt1e6 = uint64(deployAmt / 100);
                 uint256 currentAllowance = usdc.allowance(address(this), address(handler));
                 if (currentAllowance < deployAmt1e6) {
-                    usdc.forceApprove(address(handler), type(uint256).max);
+                    usdc.approve(address(handler), 0);
+                    usdc.approve(address(handler), type(uint256).max);
                 }
                 handler.executeDeposit(deployAmt1e6, true);
             }
@@ -189,8 +194,12 @@ contract VaultContract is ReentrancyGuard {
     function withdraw(uint256 shares) external notPaused nonReentrant {
         require(shares > 0, "shares=0");
         require(balanceOf[msg.sender] >= shares, "balance");
-        uint256 pps = pps1e18();
-        _burn(msg.sender, shares);
+        
+        // Optimisation : calculer nav une seule fois et le réutiliser
+        uint256 nav = nav1e18();
+        require(nav > 0, "Empty vault");
+        uint256 pps = (nav * 1e18) / totalSupply;
+        
         // Payout brut et frais basés sur le montant (gross)
         uint256 target1e18 = (shares * pps) / 1e18;                 // brut 1e18
         uint256 gross1e8 = target1e18 / 1e10;                        // brut 1e8
@@ -201,11 +210,13 @@ contract VaultContract is ReentrancyGuard {
         uint256 net1e8 = uint256(gross1e8) - fee1e8;                 // net 1e8
         uint256 cash = usdc.balanceOf(address(this));
         if (cash >= net1e8) {
+            // Paiement immédiat : brûler les parts maintenant
+            _burn(msg.sender, shares);
             usdc.safeTransfer(msg.sender, net1e8);
             emit WithdrawPaid(type(uint256).max, msg.sender, net1e8);
-            emit NavUpdated(nav1e18());
+            emit NavUpdated(nav); // Réutiliser la valeur calculée
         } else {
-            // enqueue
+            // enqueue - NE PAS brûler les parts ici, seulement au règlement
             uint256 id = withdrawQueue.length;
             // fige le BPS utilisé pour le retrait différé
             withdrawQueue.push(WithdrawRequest({user: msg.sender, shares: shares, feeBpsSnapshot: feeBpsApplied, settled: false}));
@@ -220,7 +231,12 @@ contract VaultContract is ReentrancyGuard {
         WithdrawRequest storage r = withdrawQueue[id];
         require(!r.settled, "settled");
         require(pay1e8 > 0, "zero");
-        uint256 pps = pps1e18();
+        
+        // Optimisation : calculer nav une seule fois et le réutiliser
+        uint256 nav = nav1e18();
+        require(nav > 0, "Empty vault");
+        uint256 pps = (nav * 1e18) / totalSupply;
+        
         uint256 due1e18 = (r.shares * pps) / 1e18;                   // brut 1e18
         uint256 gross1e8 = due1e18 / 1e10;                           // brut 1e8
         // Calcul des frais avec BPS figé et basé sur le montant brut
@@ -231,9 +247,11 @@ contract VaultContract is ReentrancyGuard {
         // Le règlement doit être exact pour éviter un sous-paiement silencieux
         require(pay1e8 == maxPay, "pay!=due");
         r.settled = true;
+        // Brûler les parts au moment du règlement final
+        _burn(r.user, r.shares);
         usdc.safeTransfer(to, pay1e8);
         emit WithdrawPaid(id, to, pay1e8);
-        emit NavUpdated(nav1e18());
+        emit NavUpdated(nav); // Réutiliser la valeur calculée
     }
 
     // Allow user to cancel their queued withdrawal and restore shares
@@ -241,9 +259,9 @@ contract VaultContract is ReentrancyGuard {
         require(id < withdrawQueue.length, "bad id");
         WithdrawRequest storage r = withdrawQueue[id];
         require(!r.settled, "settled");
-        require(balanceOf[msg.sender] >= r.shares, "invalid balance");
+        require(msg.sender == r.user, "not your request");
         r.settled = true;
-        _mint(r.user, r.shares);
+        // Les parts n'ont pas encore été brûlées, donc pas besoin de les restaurer
         emit WithdrawCancelled(id, r.user, r.shares);
     }
 
