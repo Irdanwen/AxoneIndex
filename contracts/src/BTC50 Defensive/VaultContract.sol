@@ -7,9 +7,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface IHandler {
     function equitySpotUsd1e18() external view returns (uint256);
-    function executeDeposit(uint64 usdc1e6, bool forceRebalance) external;
-    function pullFromCoreToEvm(uint64 usdc1e6) external returns (uint64);
-    function sweepToVault(uint64 amount1e6) external;
+    function executeDeposit(uint64 usdc1e8, bool forceRebalance) external;
+    function pullFromCoreToEvm(uint64 usdc1e8) external returns (uint64);
+    function sweepToVault(uint64 amount1e8) external;
 }
 
 contract VaultContract is ReentrancyGuard {
@@ -185,14 +185,14 @@ contract VaultContract is ReentrancyGuard {
         if (address(handler) != address(0) && autoDeployBps > 0) {
             uint256 deployAmt = (uint256(amount1e8) * uint256(autoDeployBps)) / 10000;
             if (deployAmt > 0) {
-                // Conversion 1e8 -> 1e6 pour l'handler
-                uint64 deployAmt1e6 = uint64(deployAmt / 100);
+                // Plus de conversion: Core utilise 1e8 comme l'EVM
+                uint64 deployAmt1e8 = uint64(deployAmt);
                 uint256 currentAllowance = usdc.allowance(address(this), address(handler));
-                if (currentAllowance < deployAmt1e6) {
+                if (currentAllowance < deployAmt1e8) {
                     usdc.approve(address(handler), 0);
                     usdc.approve(address(handler), type(uint256).max);
                 }
-                handler.executeDeposit(deployAmt1e6, true);
+                handler.executeDeposit(deployAmt1e8, true);
             }
         }
         emit NavUpdated(nav1e18());
@@ -220,6 +220,11 @@ contract VaultContract is ReentrancyGuard {
             // Paiement immediat : bruler les parts maintenant
             _burn(msg.sender, shares);
             usdc.safeTransfer(msg.sender, net1e8);
+            // Consommer la base de depot jusqu'a gross
+            uint256 base = _getBaseAmount(gross1e8, deposits[msg.sender]);
+            if (base > 0) {
+                deposits[msg.sender] -= base;
+            }
             emit WithdrawPaid(type(uint256).max, msg.sender, net1e8);
             emit NavUpdated(nav); // Reutiliser la valeur calculee
         } else {
@@ -257,6 +262,11 @@ contract VaultContract is ReentrancyGuard {
         // Bruler les parts au moment du reglement final
         _burn(r.user, r.shares);
         usdc.safeTransfer(to, pay1e8);
+        // Consommer la base de depot jusqu'a gross au reglement
+        uint256 base = _getBaseAmount(gross1e8, deposits[r.user]);
+        if (base > 0) {
+            deposits[r.user] -= base;
+        }
         emit WithdrawPaid(id, to, pay1e8);
         emit NavUpdated(nav); // Réutiliser la valeur calculée
     }
@@ -273,10 +283,9 @@ contract VaultContract is ReentrancyGuard {
     }
 
     function recallFromCoreAndSweep(uint256 amount1e8) external onlyOwner nonReentrant {
-        // Conversion 1e8 -> 1e6 pour l'handler
-        uint64 amt1e6 = uint64(amount1e8 / 100);
-        handler.pullFromCoreToEvm(amt1e6);
-        handler.sweepToVault(amt1e6);
+        uint64 amt1e8 = uint64(amount1e8);
+        handler.pullFromCoreToEvm(amt1e8);
+        handler.sweepToVault(amt1e8);
         emit RecallAndSweep(amount1e8);
         emit NavUpdated(nav1e18());
     }

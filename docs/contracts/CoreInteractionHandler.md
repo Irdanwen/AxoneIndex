@@ -21,9 +21,9 @@
 ## API Clés
 - `setRebalancer(address rebalancer)` (onlyOwner): définit l'adresse autorisée à appeler `rebalancePortfolio`.
 - `rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype)` (onlyRebalancer, whenNotPaused): calcule les deltas via l'oracle et place des ordres IOC pour revenir vers 50/50 (avec deadband).
-- `executeDeposit(uint64 usdc1e6, bool forceRebalance)` (onlyVault, whenNotPaused): le handler attend des montants USDC en 1e6 (unités Core). Il convertit en 1e8 (×100) pour le token EVM (HyperEVM à 8 décimales) avant de transférer.
-- `pullFromCoreToEvm(uint64 usdc1e6)` (onlyVault, whenNotPaused): orchestre les ventes si nécessaire et crédite l'EVM; les montants 1e6 sont reconvertis en 1e8 (×100) pour les transferts ERC20.
-- `sweepToVault(uint64 amount1e6)` (onlyVault, whenNotPaused): calcule les frais en 1e6, puis transfère en EVM en 1e8 (×100) vers le vault.
+- `executeDeposit(uint64 usdc1e8, bool forceRebalance)` (onlyVault, whenNotPaused): le handler attend des montants USDC en 1e8 (unités Core, alignées HyperCore/HyperEVM). Pas de conversion nécessaire pour les transferts ERC20.
+- `pullFromCoreToEvm(uint64 usdc1e8)` (onlyVault, whenNotPaused): orchestre les ventes si nécessaire et crédite l'EVM; les montants restent en 1e8 pour les transferts ERC20.
+- `sweepToVault(uint64 amount1e8)` (onlyVault, whenNotPaused): calcule les frais en 1e8, puis transfère en EVM en 1e8 vers le vault.
 - `pause()` (onlyOwner): **NOUVEAU** - Met en pause toutes les opérations critiques
 - `unpause()` (onlyOwner): **NOUVEAU** - Reprend toutes les opérations
 - `emergencyPause()` (onlyOwner): **🚨 NOUVEAU** - Fonction d'urgence pour les situations critiques
@@ -36,6 +36,9 @@
 - `deadbandBps ≤ 50`.
 - Garde oracle: `maxOracleDeviationBps` borne l’écart relatif par rapport au dernier prix.
 - Limitation de débit par epoch via `maxOutboundPerEpoch` et `epochLength`.
+
+### Lien USDC Core
+- `setUsdcCoreLink(systemAddress, tokenId)`: `systemAddress` doit être non nul (`address(0)` interdit). `tokenId` peut valoir `0` et est accepté sans revert.
 
 ## Exemple de Configuration
 ```solidity
@@ -58,4 +61,4 @@ handler.rebalancePortfolio(0, 0);
 ## Intégration avec `VaultContract`
 
 - Le `VaultContract` doit appeler `setHandler(handler)` après déploiement pour que l’approval USDC illimitée soit configurée côté vault.
-- Le `VaultContract` convertit automatiquement ses montants internes en 1e6 (division par 100) lors des appels au handler (`executeDeposit`, `pullFromCoreToEvm`, `sweepToVault`). Le handler reconvertit en 1e8 (×100) pour les transferts EVM.
+- Le `VaultContract` transmet désormais directement les montants en 1e8 au handler (`executeDeposit`, `pullFromCoreToEvm`, `sweepToVault`). Plus aucune conversion 1e8↔1e6 n’est nécessaire.

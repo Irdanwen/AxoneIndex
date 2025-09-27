@@ -36,11 +36,11 @@ Toutes les unités sont précisées entre parenthèses.
   - **FEE_VAULT_ADDRESS**: adresse (multisig) recevant les frais de sweep.
   - **FEE_BPS (uint64)**: frais en bps (0–10000), appliqués dans `sweepToVault`.
 
-- CoreInteractionHandler (post-déploiement, owner)
+-- CoreInteractionHandler (post-déploiement, owner)
   - `setVault(VAULT_ADDRESS)`: définir l’adresse du coffre (`VaultContract`).
   - `setUsdcCoreLink(USDC_CORE_SYSTEM_ADDRESS, USDC_CORE_TOKEN_ID)`:
     - `USDC_CORE_SYSTEM_ADDRESS`: adresse système Core pour créditer l’USDC spot.
-    - `USDC_CORE_TOKEN_ID (uint64)`: ID du token USDC côté Core.
+    - `USDC_CORE_TOKEN_ID (uint64)`: ID du token USDC côté Core. `0` est désormais accepté.
   - `setSpotIds(SPOT_BTC_ID, SPOT_HYPE_ID)` (uint32/uint32): IDs marchés spot BTC/USDC et HYPE/USDC.
   - `setSpotTokenIds(USDC_TOKEN_ID, BTC_TOKEN_ID, HYPE_TOKEN_ID)` (uint64/uint64/uint64): IDs des tokens spot correspondants. `USDC_TOKEN_ID` doit égaler `usdcCoreTokenId`.
   - `setLimits(MAX_OUTBOUND_PER_EPOCH_1e8, EPOCH_LENGTH_SECONDS)`: ajuste la rate limit.
@@ -58,7 +58,7 @@ Toutes les unités sont précisées entre parenthèses.
     - `DEPOSIT_FEE_BPS` (0–10000): frais sur parts mintées.
     - `WITHDRAW_FEE_BPS` (0–10000): frais par défaut sur retraits (si pas remplacé par palier).
     - `AUTO_DEPLOY_BPS` (0–10000): fraction auto-déployée des dépôts vers Core, ex. `9000` = 90%.
-  - `setWithdrawFeeTiers([{amount1e6, feeBps}, ...])`: paliers de frais selon montant brut (USDC 1e6), triés par `amount1e6` croissant.
+  - `setWithdrawFeeTiers([{amount1e8, feeBps}, ...])`: paliers de frais selon montant brut (USDC 1e8), triés par `amount1e8` croissant.
   - `pause()` / `unpause()`: gel/dégel des opérations.
 
 Où trouver les IDs Core
@@ -105,14 +105,14 @@ Où trouver les IDs Core
 7. Vérifications rapides
    - `handler.vault()` == adresse du vault.
    - `vault.handler()` == adresse du handler.
-   - `handler.usdcCoreSystemAddress`, `usdcCoreTokenId`, `spotBTC`, `spotHYPE`, `spotTokenBTC`, `spotTokenHYPE` sont définis.
+  - `handler.usdcCoreSystemAddress` est défini (non `address(0)`). `usdcCoreTokenId` peut valoir `0` selon le réseau. `spotBTC`, `spotHYPE`, `spotTokenBTC`, `spotTokenHYPE` sont définis.
    - `vault.pps1e18()` == `1e18` quand `totalSupply==0`.
 
 ---
 
 ### Recommandations de valeurs initiales (exemples)
 
-- `MAX_OUTBOUND_PER_EPOCH_1e6`: 100k USDC ⇒ `100000 * 1e6`.
+- `MAX_OUTBOUND_PER_EPOCH_1e8`: 100k USDC ⇒ `100000 * 1e8`.
 - `EPOCH_LENGTH_SECONDS`: `86400` (1 jour) ou `3600` (1 heure).
 - `MAX_SLIPPAGE_BPS`: `50` (0,5%).
 - `MARKET_EPSILON_BPS`: `10` (0,1%).

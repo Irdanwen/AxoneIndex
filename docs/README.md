@@ -95,12 +95,12 @@ AxoneIndex est une plateforme DeFi construite sur HyperEVM (Hyperliquid). Elle c
 - Définir les paliers via `setWithdrawFeeTiers(WithdrawFeeTier[])` (en USDC 1e8).
 
 5) Dépôts et conversions d’unités
-- Les utilisateurs appellent `vault.deposit(amount1e8)` (USDC en 1e8 côté vault). Sur HyperEVM, le token EVM a 8 décimales.
-- Si `autoDeployBps > 0`, le vault convertit automatiquement en 1e6 (division par 100) et appelle `handler.executeDeposit(usdc1e6, true)`.
-- La NAV inclut: USDC EVM (solde * 1e10) + equity Core renvoyée par le handler.
+- Les utilisateurs appellent `vault.deposit(amount1e8)` (USDC en 1e8 côté vault). Sur HyperEVM et HyperCore, USDC a 8 décimales.
+- Si `autoDeployBps > 0`, le vault appelle directement `handler.executeDeposit(amount1e8, true)` sans conversion.
+  - La NAV inclut: USDC EVM (solde * 1e10) + equity Core renvoyée par le handler.
 
 6) Rappel de liquidités
-- `vault.recallFromCoreAndSweep(amount1e8)` convertit en 1e6 et appelle `handler.pullFromCoreToEvm(...)` puis `handler.sweepToVault(...)`. Le handler retransforme vers 1e8 (×100) lors du transfert EVM.
+- `vault.recallFromCoreAndSweep(amount1e8)` appelle `handler.pullFromCoreToEvm(amount1e8)` puis `handler.sweepToVault(amount1e8)`.
 
 7) Vérifications rapides
 - Après `setHandler`, vérifier `USDC.allowance(vault, handler) == type(uint256).max`.

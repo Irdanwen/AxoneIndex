@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -34,13 +35,12 @@ contract EmissionController is Ownable2Step, Pausable {
     event Pulled(address indexed to, uint256 amount, uint64 fromTs, uint64 toTs);
     event MintModeToggled(bool isMint);
 
-    constructor(address rewardToken_, uint256 rewardPerSecond_, bool isMintMode_) {
+    constructor(address rewardToken_, uint256 rewardPerSecond_, bool isMintMode_) Ownable(msg.sender) {
         require(rewardToken_ != address(0), "token=0");
         rewardToken = rewardToken_;
         rewardPerSecond = rewardPerSecond_;
         isMintMode = isMintMode_;
         lastPullTime = uint64(block.timestamp);
-        _transferOwnership(msg.sender);
     }
 
     /// @notice Configure le hub une seule fois

@@ -37,19 +37,19 @@ library HLConstants {
     function encodeSpotSend(
         address destination,
         uint64 tokenId,
-        uint64 amount1e6
+        uint64 amount1e8
     ) internal pure returns (bytes memory) {
-        return abi.encodePacked(_header(6), abi.encode(destination, tokenId, amount1e6));
+        return abi.encodePacked(_header(6), abi.encode(destination, tokenId, amount1e8));
     }
 
     // Action 7: USD class transfer between spot and perp
     // toPerp=true moves USD from spot to perp; false moves from perp to spot
-    function encodeUsdClassTransfer(uint64 amount1e6, bool toPerp)
+    function encodeUsdClassTransfer(uint64 amount1e8, bool toPerp)
         internal
         pure
         returns (bytes memory)
     {
-        return abi.encodePacked(_header(7), abi.encode(amount1e6, toPerp));
+        return abi.encodePacked(_header(7), abi.encode(amount1e8, toPerp));
     }
 }
 

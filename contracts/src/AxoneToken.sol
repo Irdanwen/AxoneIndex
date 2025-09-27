@@ -183,16 +183,16 @@ contract AxoneToken is ERC20Burnable, ERC20Permit, Pausable, Ownable, Reentrancy
     
     // Fonction interne pour mettre à jour les soldes exclus lors des transferts
     function _updateExcludedBalances(address from, address to, uint256 amount) internal {
-        // Mettre à jour le solde de l'expéditeur si exclu
-        if (isExcludedFromCirculating[from]) {
+        // Mettre à jour le solde de l'expéditeur si exclu (ignorer address(0) pour les mint)
+        if (from != address(0) && isExcludedFromCirculating[from]) {
             uint256 oldBalance = excludedBalances[from];
             uint256 newBalance = balanceOf(from) - amount; // balanceOf(from) est le solde AVANT le transfert
             excludedBalances[from] = newBalance;
             totalExcludedBalance = totalExcludedBalance - oldBalance + newBalance;
         }
         
-        // Mettre à jour le solde du destinataire si exclu
-        if (isExcludedFromCirculating[to]) {
+        // Mettre à jour le solde du destinataire si exclu (ignorer address(0) pour les burn)
+        if (to != address(0) && isExcludedFromCirculating[to]) {
             uint256 oldBalance = excludedBalances[to];
             uint256 newBalance = balanceOf(to) + amount; // balanceOf(to) est le solde AVANT le transfert
             excludedBalances[to] = newBalance;

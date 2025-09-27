@@ -69,10 +69,10 @@ contract CoreInteractionHandler is Pausable {
     event SpotIdsSet(uint32 btcSpot, uint32 hypeSpot);
     event SpotTokenIdsSet(uint64 usdcToken, uint64 btcToken, uint64 hypeToken);
     event OutboundToCore(bytes data);
-    event InboundFromCore(uint64 amount1e6);
+    event InboundFromCore(uint64 amount1e8);
     event Rebalanced(int256 dBtc1e18, int256 dHype1e18);
     event FeeConfigSet(address feeVault, uint64 feeBps);
-    event SweepWithFee(uint64 gross1e6, uint64 fee1e6, uint64 net1e6);
+    event SweepWithFee(uint64 gross1e8, uint64 fee1e8, uint64 net1e8);
     event RebalancerSet(address rebalancer);
 
     address public owner;
@@ -205,31 +205,31 @@ contract CoreInteractionHandler is Pausable {
 
     function equitySpotUsd1e18() public view returns (uint256) {
         // Core spot equity only. EVM USDC est compté dans le Vault.
-        uint256 usdcBal1e6 = spotBalance(address(this), usdcCoreTokenId);
+        uint256 usdcBal1e8 = spotBalance(address(this), usdcCoreTokenId);
         uint256 btcBal1e0 = spotBalance(address(this), spotTokenBTC);
         uint256 hypeBal1e0 = spotBalance(address(this), spotTokenHYPE);
 
         uint256 pxB1e8 = spotOraclePx1e8(spotBTC);
         uint256 pxH1e8 = spotOraclePx1e8(spotHYPE);
 
-        // USDC 1e6 -> 1e18, assets: balance 1e0 * px1e8 * 1e10
-        uint256 usdc1e18 = usdcBal1e6 * 1e12;
+        // USDC 1e8 -> 1e18, assets: balance 1e0 * px1e8 * 1e10
+        uint256 usdc1e18 = usdcBal1e8 * 1e10;
         uint256 btcUsd1e18 = btcBal1e0 * pxB1e8 * 1e10;
         uint256 hypeUsd1e18 = hypeBal1e0 * pxH1e8 * 1e10;
         return usdc1e18 + btcUsd1e18 + hypeUsd1e18;
     }
 
     // Core flows
-    function executeDeposit(uint64 usdc1e6, bool forceRebalance) external onlyVault whenNotPaused {
-        if (usdcCoreSystemAddress == address(0) || usdcCoreTokenId == 0) revert("USDC_CORE_NOT_SET");
-        _rateLimit(usdc1e6);
-        // Pull USDC from vault to handler (EVM token has 8 decimals => scale x100)
-        uint256 evmAmt = uint256(usdc1e6) * 100;
+    function executeDeposit(uint64 usdc1e8, bool forceRebalance) external onlyVault whenNotPaused {
+        if (usdcCoreSystemAddress == address(0)) revert("USDC_CORE_NOT_SET");
+        _rateLimit(usdc1e8);
+        // Pull USDC from vault to handler (EVM token has 8 decimals => 1:1)
+        uint256 evmAmt = uint256(usdc1e8);
         usdc.safeTransferFrom(msg.sender, address(this), evmAmt);
         // EVM->Core spot: send to system address to credit Core spot balance
         usdc.safeTransfer(usdcCoreSystemAddress, evmAmt);
         // After crediting USDC spot, place two IOC buys ~50/50 into BTC and HYPE
-        uint256 halfUsd1e18 = (uint256(usdc1e6) * 1e12) / 2;
+        uint256 halfUsd1e18 = (uint256(usdc1e8) * 1e10) / 2;
         uint64 pxB = _validatedOraclePx1e8(true);
         uint64 pxH = _validatedOraclePx1e8(false);
         uint64 szB1e8 = _toSz1e8(int256(halfUsd1e18), pxB);
@@ -247,43 +247,41 @@ contract CoreInteractionHandler is Pausable {
         }
     }
 
-    function pullFromCoreToEvm(uint64 usdc1e6) external onlyVault whenNotPaused returns (uint64) {
-        if (usdcCoreSystemAddress == address(0) || usdcCoreTokenId == 0) revert("USDC_CORE_NOT_SET");
+    function pullFromCoreToEvm(uint64 usdc1e8) external onlyVault whenNotPaused returns (uint64) {
+        if (usdcCoreSystemAddress == address(0)) revert("USDC_CORE_NOT_SET");
         // Ensure enough USDC spot by selling BTC/HYPE via IOC if needed
         uint256 usdcBal = spotBalance(address(this), usdcCoreTokenId);
-        if (usdcBal < usdc1e6) {
-            uint256 shortfall1e6 = usdc1e6 - usdcBal;
+        if (usdcBal < usdc1e8) {
+            uint256 shortfall1e8 = usdc1e8 - usdcBal;
             // Try to sell BTC first, then HYPE
-            _sellAssetForUsd(spotBTC, spotTokenBTC, shortfall1e6);
+            _sellAssetForUsd(spotBTC, spotTokenBTC, shortfall1e8);
             // Refresh balance and compute remaining
             usdcBal = spotBalance(address(this), usdcCoreTokenId);
-            if (usdcBal < usdc1e6) {
-                _sellAssetForUsd(spotHYPE, spotTokenHYPE, usdc1e6 - usdcBal);
+            if (usdcBal < usdc1e8) {
+                _sellAssetForUsd(spotHYPE, spotTokenHYPE, usdc1e8 - usdcBal);
             }
         }
         // Spot send to credit EVM
-        _send(coreWriter, HLConstants.encodeSpotSend(usdcCoreSystemAddress, usdcCoreTokenId, usdc1e6));
-        emit InboundFromCore(usdc1e6);
-        return usdc1e6;
+        _send(coreWriter, HLConstants.encodeSpotSend(usdcCoreSystemAddress, usdcCoreTokenId, usdc1e8));
+        emit InboundFromCore(usdc1e8);
+        return usdc1e8;
     }
 
-    function sweepToVault(uint64 amount1e6) external onlyVault whenNotPaused {
-        if (amount1e6 == 0) {
+    function sweepToVault(uint64 amount1e8) external onlyVault whenNotPaused {
+        if (amount1e8 == 0) {
             return;
         }
-        uint64 feeAmt1e6 = 0;
+        uint64 feeAmt1e8 = 0;
         if (feeBps > 0) {
             require(feeVault != address(0), "FEE_VAULT");
-            feeAmt1e6 = uint64((uint256(amount1e6) * uint256(feeBps)) / 10_000);
-            if (feeAmt1e6 > 0) {
-                // EVM token has 8 decimals => scale x100
-                require(usdc.transfer(feeVault, uint256(feeAmt1e6) * 100), "fee sweep fail");
+            feeAmt1e8 = uint64((uint256(amount1e8) * uint256(feeBps)) / 10_000);
+            if (feeAmt1e8 > 0) {
+                require(usdc.transfer(feeVault, uint256(feeAmt1e8)), "fee sweep fail");
             }
         }
-        uint64 net1e6 = amount1e6 - feeAmt1e6;
-        // EVM token has 8 decimals => scale x100
-        require(usdc.transfer(vault, uint256(net1e6) * 100), "sweep fail");
-        emit SweepWithFee(amount1e6, feeAmt1e6, net1e6);
+        uint64 net1e8 = amount1e8 - feeAmt1e8;
+        require(usdc.transfer(vault, uint256(net1e8)), "sweep fail");
+        emit SweepWithFee(amount1e8, feeAmt1e8, net1e8);
     }
 
     function rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype) public onlyRebalancer whenNotPaused {
@@ -297,7 +295,7 @@ contract CoreInteractionHandler is Pausable {
     }
 
     function _computeRebalanceDeltas() internal returns (int256 dB, int256 dH, uint64 pxB, uint64 pxH) {
-        uint256 usdcBal1e6 = spotBalance(address(this), usdcCoreTokenId);
+        uint256 usdcBal1e8 = spotBalance(address(this), usdcCoreTokenId);
         uint256 btcBal1e0 = spotBalance(address(this), spotTokenBTC);
         uint256 hypeBal1e0 = spotBalance(address(this), spotTokenHYPE);
         pxB = _validatedOraclePx1e8(true);
@@ -305,7 +303,7 @@ contract CoreInteractionHandler is Pausable {
 
         int256 posB1e18 = int256(btcBal1e0 * uint256(pxB) * 1e10);
         int256 posH1e18 = int256(hypeBal1e0 * uint256(pxH) * 1e10);
-        uint256 equity1e18 = (usdcBal1e6 * 1e12) + uint256(posB1e18) + uint256(posH1e18);
+        uint256 equity1e18 = (usdcBal1e8 * 1e10) + uint256(posB1e18) + uint256(posH1e18);
 
         (dB, dH) = Rebalancer50Lib.computeDeltas(equity1e18, posB1e18, posH1e18, deadbandBps);
     }
@@ -359,11 +357,11 @@ contract CoreInteractionHandler is Pausable {
         return SafeCast.toUint64(s);
     }
 
-    function _sellAssetForUsd(uint32 spotAsset, uint64 /*tokenId*/, uint256 targetUsd1e6) internal {
-        if (targetUsd1e6 == 0) return;
+    function _sellAssetForUsd(uint32 spotAsset, uint64 /*tokenId*/, uint256 targetUsd1e8) internal {
+        if (targetUsd1e8 == 0) return;
         uint64 px = spotOraclePx1e8(spotAsset);
         // Convert target USD to base size 1e8
-        uint256 targetUsd1e18 = targetUsd1e6 * 1e12;
+        uint256 targetUsd1e18 = targetUsd1e8 * 1e10;
         uint64 sz1e8 = _toSz1e8(int256(targetUsd1e18), px);
         if (sz1e8 == 0) return;
         // Sell with lower bound price
@@ -376,15 +374,15 @@ contract CoreInteractionHandler is Pausable {
         emit OutboundToCore(data);
     }
 
-    function _rateLimit(uint64 amount1e6) internal {
-        if (amount1e6 == 0) return;
+    function _rateLimit(uint64 amount1e8) internal {
+        if (amount1e8 == 0) return;
         uint64 currentBlock = uint64(block.number);
         if (currentBlock - lastEpochStart >= epochLength) {
             lastEpochStart = currentBlock;
             sentThisEpoch = 0;
         }
-        if (sentThisEpoch + amount1e6 > maxOutboundPerEpoch) revert RateLimited();
-        sentThisEpoch += amount1e6;
+        if (sentThisEpoch + amount1e8 > maxOutboundPerEpoch) revert RateLimited();
+        sentThisEpoch += amount1e8;
     }
 
     function _validatedOraclePx1e8(bool isBtc) internal returns (uint64) {
@@ -422,7 +420,7 @@ contract CoreInteractionHandler is Pausable {
     }
 
     struct RebalanceVars {
-        uint256 usdcBal1e6;
+        uint256 usdcBal1e8;
         uint256 btcBal1e0;
         uint256 hypeBal1e0;
         uint64 pxB;

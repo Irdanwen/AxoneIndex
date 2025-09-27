@@ -1,7 +1,7 @@
 # VaultContract — Frais de Retrait par Paliers et Flux
 
 ## Résumé
-`VaultContract.sol` émet des parts (18 décimales) contre des dépôts en USDC (1e8 sur HyperEVM), gère la NAV/PPS, des retraits immédiats ou différés, et l'auto-déploiement partiel vers Core. Les frais de retrait dépendent du montant retiré (brut), via des paliers configurables. Le vault gère désormais automatiquement l'approval USDC pour l'`CoreInteractionHandler` et convertit les unités 1e8 ↔ 1e6 pour les appels Handler.
+`VaultContract.sol` émet des parts (18 décimales) contre des dépôts en USDC (1e8 sur HyperEVM), gère la NAV/PPS, des retraits immédiats ou différés, et l'auto-déploiement partiel vers Core. Les frais de retrait dépendent du montant retiré (brut), via des paliers configurables. Le vault gère désormais automatiquement l'approval USDC pour l'`CoreInteractionHandler` et transmet directement les montants en 1e8 au Handler (plus de conversion 1e8 ↔ 1e6).
 
 ## 🔒 Améliorations de Sécurité
 
@@ -65,8 +65,8 @@ vault.setWithdrawFeeTiers(tiers);
 
 - À l'appel de `setHandler(address handler)`, le vault accorde une approval USDC illimitée (pattern standard `approve(0)` + `approve(max)`) à l'`handler` pour permettre l'appel interne `safeTransferFrom(vault, handler, ...)` lors des dépôts vers Core.
 - **Sécurité** : Validation que l'handler n'est pas `address(0)` avant l'approval
-- Lors d’un dépôt, si `autoDeployBps > 0`, le vault calcule la part à déployer (`deployAmt` en 1e8), la convertit en 1e6 pour l’`handler`, et appelle `handler.executeDeposit(deployAmt1e6, true)`.
-- `recallFromCoreAndSweep(amount1e8)` convertit également le montant en 1e6 avant d’appeler `handler.pullFromCoreToEvm(...)` puis `handler.sweepToVault(...)`. Le handler retransforme vers 1e8 (×100) pour le transfert vers le vault.
+- Lors d’un dépôt, si `autoDeployBps > 0`, le vault calcule la part à déployer (`deployAmt` en 1e8) et appelle `handler.executeDeposit(deployAmt, true)` directement en 1e8.
+- `recallFromCoreAndSweep(amount1e8)` appelle `handler.pullFromCoreToEvm(amount1e8)` puis `handler.sweepToVault(amount1e8)`. Plus aucune conversion 1e8↔1e6.
 - NAV: comme USDC a 8 décimales sur HyperEVM, on multiplie le solde EVM par 1e10 dans `nav1e18()`.
 
 ### Checklist d’Intégration

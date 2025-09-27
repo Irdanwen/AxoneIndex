@@ -93,7 +93,7 @@ function settleWithdraw(uint256 id, uint256 pay1e8, address to) external nonReen
 
 #### Problèmes Corrigés
 - **Absence de mécanisme de pause d'urgence** : Aucun moyen d'arrêter les opérations
-- **Mises à jour d'état redondantes** : Opérations inutiles avec `amount1e6 == 0`
+- **Mises à jour d'état redondantes** : Opérations inutiles avec `amount1e8 == 0`
 - **Oracle non initialisé** : Blocage possible au premier appel
 - **🚨 CRITIQUE** : **Manipulation temporelle** : Utilisation de `block.timestamp` manipulable par les validateurs
 - **⚡ OPTIMISATION** : **Rate limiting inefficace** : Calculs redondants dans `_rateLimit()`
@@ -106,14 +106,14 @@ contract CoreInteractionHandler is Pausable {
 }
 
 // 2. Protection des fonctions critiques
-function executeDeposit(uint64 usdc1e6, bool forceRebalance) 
+function executeDeposit(uint64 usdc1e8, bool forceRebalance) 
     external onlyVault whenNotPaused {
     // ...
 }
 
 // 3. Optimisation du rate limiting
-function _rateLimit(uint64 amount1e6) internal {
-    if (amount1e6 == 0) return; // Sortie précoce
+function _rateLimit(uint64 amount1e8) internal {
+    if (amount1e8 == 0) return; // Sortie précoce
     // ...
 }
 
@@ -133,8 +133,8 @@ constructor(...) {
     // ...
 }
 
-function _rateLimit(uint64 amount1e6) internal {
-    if (amount1e6 == 0) return;
+function _rateLimit(uint64 amount1e8) internal {
+    if (amount1e8 == 0) return;
     uint64 currentBlock = uint64(block.number); // Au lieu de block.timestamp
     if (currentBlock - lastEpochStart >= epochLength) {
         lastEpochStart = currentBlock;

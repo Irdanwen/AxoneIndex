@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -62,10 +63,9 @@ contract RewardsHub is Ownable2Step, Pausable, ReentrancyGuard {
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event ControllerSet(address indexed oldC, address indexed newC);
     event PoolRewarderSet(uint256 indexed pid, address indexed rewarder);
-    event Paused(address indexed by);
-    event Unpaused(address indexed by);
+    // Paused/Unpaused fournis par Pausable d'OpenZeppelin
 
-    constructor(address controller_) {
+    constructor(address controller_) Ownable(msg.sender) {
         require(controller_ != address(0), "controller=0");
         controller = IEmissionController(controller_);
         rewardToken = controller.rewardToken();
@@ -181,15 +181,15 @@ contract RewardsHub is Ownable2Step, Pausable, ReentrancyGuard {
         require(pid < poolInfo.length, "pid invalid");
         
         PoolInfo memory pool = poolInfo[pid];
-        UserInfo memory user = userInfo[pid][user];
+        UserInfo memory u = userInfo[pid][user];
         
         if (block.timestamp > pool.lastRewardTime && pool.totalStaked > 0) {
             uint256 elapsed = block.timestamp - pool.lastRewardTime;
             uint256 poolReward = (elapsed * controller.rewardPerSecond() * pool.allocPoint) / totalAllocPoint;
             uint256 accRewardPerShare = pool.accRewardPerShare + (poolReward * ACC_PRECISION) / pool.totalStaked;
-            pending = (user.amount * accRewardPerShare) / ACC_PRECISION - uint256(user.rewardDebt);
+            pending = (u.amount * accRewardPerShare) / ACC_PRECISION - uint256(u.rewardDebt);
         } else {
-            pending = (user.amount * pool.accRewardPerShare) / ACC_PRECISION - uint256(user.rewardDebt);
+            pending = (u.amount * pool.accRewardPerShare) / ACC_PRECISION - uint256(u.rewardDebt);
         }
     }
 
@@ -327,16 +327,10 @@ contract RewardsHub is Ownable2Step, Pausable, ReentrancyGuard {
     }
 
     /// @notice Pause du contrat (arrêt d'urgence)
-    function pause() external onlyOwner {
-        _pause();
-        emit Paused(msg.sender);
-    }
+    function pause() external onlyOwner { _pause(); }
 
     /// @notice Reprise du contrat
-    function unpause() external onlyOwner {
-        _unpause();
-        emit Unpaused(msg.sender);
-    }
+    function unpause() external onlyOwner { _unpause(); }
 
     /// @notice Récupération d'urgence de tokens (sauf rewardToken)
     /// @param token Adresse du token à récupérer

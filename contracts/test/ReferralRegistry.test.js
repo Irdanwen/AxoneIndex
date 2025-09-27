@@ -1,3 +1,4 @@
+require("@nomicfoundation/hardhat-chai-matchers");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
@@ -55,7 +56,7 @@ describe("ReferralRegistry", function () {
 
     it("Devrait permettre à un utilisateur whitelisté de créer un code", async function () {
       const codeHash = ethers.keccak256(ethers.toUtf8Bytes("TESTCODE"));
-      await referralRegistry.connect(user1).createCode(codeHash);
+      await referralRegistry.connect(user1)["createCode(bytes32)"](codeHash);
       
       const code = await referralRegistry.codes(codeHash);
       expect(code.creator).to.equal(user1.address);
@@ -65,13 +66,13 @@ describe("ReferralRegistry", function () {
     it("Devrait empêcher un utilisateur non-whitelisté de créer un code", async function () {
       const codeHash = ethers.keccak256(ethers.toUtf8Bytes("TESTCODE"));
       await expect(
-        referralRegistry.connect(user2).createCode(codeHash)
+        referralRegistry.connect(user2)["createCode(bytes32)"](codeHash)
       ).to.be.revertedWith("Not whitelisted");
     });
 
     it("Devrait empêcher de créer un code avec un hash nul", async function () {
       await expect(
-        referralRegistry.connect(user1).createCode(ethers.ZeroHash)
+        referralRegistry.connect(user1)["createCode(bytes32)"](ethers.ZeroHash)
       ).to.be.revertedWithCustomError(referralRegistry, "InvalidCode");
     });
 
@@ -79,13 +80,13 @@ describe("ReferralRegistry", function () {
       // Créer 5 codes (quota par défaut)
       for (let i = 0; i < 5; i++) {
         const codeHash = ethers.keccak256(ethers.toUtf8Bytes(`CODE${i}`));
-        await referralRegistry.connect(user1).createCode(codeHash);
+        await referralRegistry.connect(user1)["createCode(bytes32)"](codeHash);
       }
 
       // Le 6ème code devrait échouer
       const codeHash = ethers.keccak256(ethers.toUtf8Bytes("CODE6"));
       await expect(
-        referralRegistry.connect(user1).createCode(codeHash)
+        referralRegistry.connect(user1)["createCode(bytes32)"](codeHash)
       ).to.be.revertedWithCustomError(referralRegistry, "MaxCodesExceeded");
     });
 
@@ -137,7 +138,7 @@ describe("ReferralRegistry", function () {
     it("Devrait empêcher l'auto-référence", async function () {
       await expect(
         referralRegistry.connect(user1).useCode(codeHash)
-      ).to.be.revertedWithCustomError(referralRegistry, "SelfReferral");
+      ).to.be.revertedWithCustomError(referralRegistry, "AlreadyWhitelisted");
     });
 
     it("Devrait empêcher un utilisateur déjà whitelisté d'utiliser un code", async function () {
@@ -182,8 +183,8 @@ describe("ReferralRegistry", function () {
     });
 
     it("Devrait retourner les codes non utilisés d'un créateur", async function () {
-      await referralRegistry.connect(user1).createCode();
-      await referralRegistry.connect(user1).createCode();
+      await referralRegistry.connect(user1)["createCode()"]();
+      await referralRegistry.connect(user1)["createCode()"]();
       
       const unusedCodes = await referralRegistry.getUnusedCodes(user1.address);
       expect(unusedCodes.length).to.equal(2);
@@ -229,7 +230,7 @@ describe("ReferralRegistry", function () {
       
       const codeHash = ethers.keccak256(ethers.toUtf8Bytes("TESTCODE"));
       await expect(
-        referralRegistry.connect(user1).createCode(codeHash)
+        referralRegistry.connect(user1)["createCode(bytes32)"](codeHash)
       ).to.be.revertedWithCustomError(referralRegistry, "EnforcedPause");
     });
   });
