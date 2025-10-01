@@ -197,6 +197,29 @@ contract CoreInteractionHandler is Pausable {
         return b.total;
     }
 
+    /// @notice Get spot balance converted to wei decimals
+    /// @dev Converts SpotBalance.total from szDecimals to weiDecimals format
+    /// @param coreUser The user address
+    /// @param tokenId The token ID
+    /// @return balanceInWei The balance converted to wei decimals (uint256 for precision)
+    function spotBalanceInWei(address coreUser, uint64 tokenId) internal view returns (uint256) {
+        L1Read.SpotBalance memory b = l1read.spotBalance(coreUser, tokenId);
+        L1Read.TokenInfo memory info = l1read.tokenInfo(uint32(tokenId));
+        
+        uint256 total = uint256(b.total);
+        
+        // Convert from szDecimals to weiDecimals
+        // Formula: balanceInWei = total × 10^(weiDecimals - szDecimals)
+        if (info.weiDecimals > info.szDecimals) {
+            uint8 diff = info.weiDecimals - info.szDecimals;
+            return total * (10 ** diff);
+        } else if (info.weiDecimals < info.szDecimals) {
+            uint8 diff = info.szDecimals - info.weiDecimals;
+            return total / (10 ** diff);
+        }
+        return total;
+    }
+
     function spotOraclePx1e8(uint32 spotAsset) public view returns (uint64) {
         uint64 px = l1read.spotPx(spotAsset);
         if (px == 0) revert OracleZero();
@@ -205,17 +228,39 @@ contract CoreInteractionHandler is Pausable {
 
     function equitySpotUsd1e18() public view returns (uint256) {
         // Core spot equity only. EVM USDC est compté dans le Vault.
-        uint256 usdcBal1e8 = spotBalance(address(this), usdcCoreTokenId);
-        uint256 btcBal1e0 = spotBalance(address(this), spotTokenBTC);
-        uint256 hypeBal1e0 = spotBalance(address(this), spotTokenHYPE);
+        // CORRECTION AUDIT: Utilisation de spotBalanceInWei pour conversion correcte szDecimals -> weiDecimals
+        uint256 usdcBalWei = spotBalanceInWei(address(this), usdcCoreTokenId);
+        uint256 btcBalWei = spotBalanceInWei(address(this), spotTokenBTC);
+        uint256 hypeBalWei = spotBalanceInWei(address(this), spotTokenHYPE);
 
         uint256 pxB1e8 = spotOraclePx1e8(spotBTC);
         uint256 pxH1e8 = spotOraclePx1e8(spotHYPE);
 
-        // USDC 1e8 -> 1e18, assets: balance 1e0 * px1e8 * 1e10
-        uint256 usdc1e18 = usdcBal1e8 * 1e10;
-        uint256 btcUsd1e18 = btcBal1e0 * pxB1e8 * 1e10;
-        uint256 hypeUsd1e18 = hypeBal1e0 * pxH1e8 * 1e10;
+        // Récupération des infos de décimales pour chaque token
+        L1Read.TokenInfo memory usdcInfo = l1read.tokenInfo(uint32(usdcCoreTokenId));
+        L1Read.TokenInfo memory btcInfo = l1read.tokenInfo(uint32(spotTokenBTC));
+        L1Read.TokenInfo memory hypeInfo = l1read.tokenInfo(uint32(spotTokenHYPE));
+
+        // Conversion USDC: balanceWei * 10^(18 - weiDecimals)
+        uint256 usdc1e18 = usdcBalWei * (10 ** (18 - usdcInfo.weiDecimals));
+        
+        // Conversion assets: valueUsd1e18 = (balanceWei / 10^weiDecimals) * (price1e8 / 10^8) * 10^18
+        // Simplifié: balanceWei * price1e8 * 10^(18 - weiDecimals - 8)
+        uint256 btcUsd1e18;
+        uint256 hypeUsd1e18;
+        
+        if (btcInfo.weiDecimals + 8 <= 18) {
+            btcUsd1e18 = btcBalWei * pxB1e8 * (10 ** (18 - btcInfo.weiDecimals - 8));
+        } else {
+            btcUsd1e18 = (btcBalWei * pxB1e8) / (10 ** (btcInfo.weiDecimals + 8 - 18));
+        }
+        
+        if (hypeInfo.weiDecimals + 8 <= 18) {
+            hypeUsd1e18 = hypeBalWei * pxH1e8 * (10 ** (18 - hypeInfo.weiDecimals - 8));
+        } else {
+            hypeUsd1e18 = (hypeBalWei * pxH1e8) / (10 ** (hypeInfo.weiDecimals + 8 - 18));
+        }
+        
         return usdc1e18 + btcUsd1e18 + hypeUsd1e18;
     }
 
@@ -295,15 +340,38 @@ contract CoreInteractionHandler is Pausable {
     }
 
     function _computeRebalanceDeltas() internal returns (int256 dB, int256 dH, uint64 pxB, uint64 pxH) {
-        uint256 usdcBal1e8 = spotBalance(address(this), usdcCoreTokenId);
-        uint256 btcBal1e0 = spotBalance(address(this), spotTokenBTC);
-        uint256 hypeBal1e0 = spotBalance(address(this), spotTokenHYPE);
+        // CORRECTION AUDIT: Utilisation de spotBalanceInWei pour conversion correcte szDecimals -> weiDecimals
+        uint256 usdcBalWei = spotBalanceInWei(address(this), usdcCoreTokenId);
+        uint256 btcBalWei = spotBalanceInWei(address(this), spotTokenBTC);
+        uint256 hypeBalWei = spotBalanceInWei(address(this), spotTokenHYPE);
         pxB = _validatedOraclePx1e8(true);
         pxH = _validatedOraclePx1e8(false);
 
-        int256 posB1e18 = int256(btcBal1e0 * uint256(pxB) * 1e10);
-        int256 posH1e18 = int256(hypeBal1e0 * uint256(pxH) * 1e10);
-        uint256 equity1e18 = (usdcBal1e8 * 1e10) + uint256(posB1e18) + uint256(posH1e18);
+        // Récupération des infos de décimales pour chaque token
+        L1Read.TokenInfo memory usdcInfo = l1read.tokenInfo(uint32(usdcCoreTokenId));
+        L1Read.TokenInfo memory btcInfo = l1read.tokenInfo(uint32(spotTokenBTC));
+        L1Read.TokenInfo memory hypeInfo = l1read.tokenInfo(uint32(spotTokenHYPE));
+        
+        // Conversion USDC: balanceWei * 10^(18 - weiDecimals)
+        uint256 usdc1e18 = usdcBalWei * (10 ** (18 - usdcInfo.weiDecimals));
+        
+        // Conversion assets: valueUsd1e18 = balanceWei * price1e8 * 10^(18 - weiDecimals - 8)
+        int256 posB1e18;
+        int256 posH1e18;
+        
+        if (btcInfo.weiDecimals + 8 <= 18) {
+            posB1e18 = int256(btcBalWei * uint256(pxB) * (10 ** (18 - btcInfo.weiDecimals - 8)));
+        } else {
+            posB1e18 = int256((btcBalWei * uint256(pxB)) / (10 ** (btcInfo.weiDecimals + 8 - 18)));
+        }
+        
+        if (hypeInfo.weiDecimals + 8 <= 18) {
+            posH1e18 = int256(hypeBalWei * uint256(pxH) * (10 ** (18 - hypeInfo.weiDecimals - 8)));
+        } else {
+            posH1e18 = int256((hypeBalWei * uint256(pxH)) / (10 ** (hypeInfo.weiDecimals + 8 - 18)));
+        }
+        
+        uint256 equity1e18 = usdc1e18 + uint256(posB1e18) + uint256(posH1e18);
 
         (dB, dH) = Rebalancer50Lib.computeDeltas(equity1e18, posB1e18, posH1e18, deadbandBps);
     }
@@ -351,8 +419,9 @@ contract CoreInteractionHandler is Pausable {
     function _toSz1e8(int256 deltaUsd1e18, uint64 price1e8) internal pure returns (uint64) {
         if (deltaUsd1e18 == 0 || price1e8 == 0) return 0;
         uint256 absUsd = uint256(deltaUsd1e18 > 0 ? deltaUsd1e18 : -deltaUsd1e18);
-        // size1e8 = (absUsd1e18 / price1e8) / 1e10
-        uint256 s = absUsd / uint256(price1e8) / 1e10;
+        // size1e8 = (absUsd1e18 / price1e8) / 100
+        // Formule correcte: usd1e18 / price1e8 = 1e10, puis / 100 = 1e8
+        uint256 s = absUsd / uint256(price1e8) / 100;
         if (s > type(uint64).max) return type(uint64).max;
         return SafeCast.toUint64(s);
     }

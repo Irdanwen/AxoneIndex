@@ -347,57 +347,93 @@ handler.setUsdcCoreLink(coreSystemAddress, 12345);
 handler.setSpotIds(1, 2);
 ```
 
-#### `executeDeposit(uint64 usdc1e6, bool forceRebalance)`
-**Description**: Exécute un dépôt USDC et place des ordres de trading.
+#### `executeDeposit(uint64 usdc1e8, bool forceRebalance)`
+**Description**: Exécute un dépôt USDC et place des ordres de trading (50% BTC, 50% HYPE).
 **Paramètres**:
-- `usdc1e6`: Montant USDC à déposer (6 décimales)
+- `usdc1e8`: Montant USDC à déposer (8 décimales - format HyperCore)
 - `forceRebalance`: Forcer le rééquilibrage
+
+**Note**: La fonction utilise `_toSz1e8` pour convertir les montants USD en quantités d'actifs avec la formule `size1e8 = usd1e18 / price1e8 / 100`.
 
 **Exemple d'utilisation**:
 ```solidity
 // Dépôt de 1000 USDC avec rééquilibrage forcé
-handler.executeDeposit(1000 * 1e6, true);
+handler.executeDeposit(1000 * 1e8, true);
 ```
 
-#### `pullFromCoreToEvm(uint64 usdc1e6)`
-**Description**: Retire des USDC du système Core vers l'EVM.
+#### `pullFromCoreToEvm(uint64 usdc1e8)`
+**Description**: Retire des USDC du système Core vers l'EVM. Vend automatiquement des actifs (BTC/HYPE) si nécessaire pour couvrir le montant demandé.
 **Paramètres**:
-- `usdc1e6`: Montant à retirer
+- `usdc1e8`: Montant à retirer (8 décimales)
 **Retour**: `uint64` - Montant effectivement retiré
 
+**Note**: Utilise `_toSz1e8` via `_sellAssetForUsd` pour déterminer les quantités à vendre.
+
 **Exemple d'utilisation**:
 ```solidity
-uint64 withdrawn = handler.pullFromCoreToEvm(500 * 1e6);
+uint64 withdrawn = handler.pullFromCoreToEvm(500 * 1e8);
 ```
 
-#### `sweepToVault(uint64 amount1e6)`
+#### `sweepToVault(uint64 amount1e8)`
 **Description**: Transfère des USDC vers le vault avec frais.
 **Paramètres**:
-- `amount1e6`: Montant à transférer
+- `amount1e8`: Montant à transférer (8 décimales)
 
 **Exemple d'utilisation**:
 ```solidity
-handler.sweepToVault(1000 * 1e6);
+handler.sweepToVault(1000 * 1e8);
 ```
 
 #### `rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype)`
-**Description**: Rééquilibre le portefeuille entre BTC et HYPE.
+**Description**: Rééquilibre le portefeuille entre BTC et HYPE (50/50) avec deadband pour éviter les rebalancement excessifs.
 **Paramètres**:
 - `cloidBtc`: ID d'ordre BTC
 - `cloidHype`: ID d'ordre HYPE
+
+**Note**: Utilise `_toSz1e8` via `_placeRebalanceOrders` pour calculer les quantités à acheter/vendre.
 
 **Exemple d'utilisation**:
 ```solidity
 handler.rebalancePortfolio(12345, 67890);
 ```
 
-#### `equitySpotUsd1e18()`
-**Description**: Calcule l'équité totale en USD du portefeuille spot.
-**Retour**: `uint256` - Équité en USD (18 décimales)
+#### `spotBalanceInWei(address coreUser, uint64 tokenId)` 🆕
+**Description**: Convertit un solde spot de szDecimals vers weiDecimals.
+**Paramètres**:
+- `coreUser`: Adresse de l'utilisateur
+- `tokenId`: ID du token
+**Retour**: `uint256` - Balance convertie en weiDecimals
+
+**📝 NOTE IMPORTANTE**: Cette fonction est critique pour la valorisation correcte des actifs. Les balances spot sont retournées en `szDecimals` par le precompile, mais les calculs de valeur USD nécessitent `weiDecimals`.
+
+**Formule de conversion**:
+```solidity
+balanceInWei = balanceSz × 10^(weiDecimals - szDecimals)
+```
 
 **Exemple d'utilisation**:
 ```solidity
+// Obtenir la balance BTC en weiDecimals pour valorisation
+uint256 btcBalWei = handler.spotBalanceInWei(address(this), spotTokenBTC);
+```
+
+#### `equitySpotUsd1e18()` ✅ CORRIGÉ
+**Description**: Calcule l'équité totale en USD du portefeuille spot avec conversion correcte des décimales.
+**Retour**: `uint256` - Équité en USD (18 décimales)
+
+**⚠️ CORRECTION AUDIT**: Cette fonction utilise désormais `spotBalanceInWei()` pour convertir correctement les balances de szDecimals vers weiDecimals avant calcul de la valeur USD. Sans cette correction, les actifs étaient mal valorisés si `weiDecimals ≠ szDecimals`.
+
+**Fonctionnement**:
+1. Récupère les balances en weiDecimals via `spotBalanceInWei()`
+2. Récupère les infos de décimales via `tokenInfo()`
+3. Convertit chaque balance en USD en utilisant les weiDecimals corrects
+4. Retourne la somme totale en format 1e18
+
+**Exemple d'utilisation**:
+```solidity
+// Obtenir l'équité totale valorisée correctement
 uint256 equity = handler.equitySpotUsd1e18();
+// Résultat : équité en USD × 10^18
 ```
 
 #### `setLimits(uint64 _maxOutboundPerEpoch, uint64 _epochLength)`
@@ -886,10 +922,53 @@ uint256 newEquity = handler.equitySpotUsd1e18();
 
 ## Notes Importantes
 
+### 🔢 Gestion des Décimales (CoreInteractionHandler) 🆕
+
+#### Distinction Critique : szDecimals vs weiDecimals
+
+Le système HyperLiquid utilise deux types de décimales pour chaque token :
+
+1. **szDecimals** : Format pour les opérations de trading
+   - Utilisé pour les ordres de trading (`encodeLimitOrder`)
+   - Utilisé pour les transfers spot (`encodeSpotSend`)
+   - Retourné par `spotBalance()`
+   - ✅ Utilisé dans : `executeDeposit()`, `pullFromCoreToEvm()`
+
+2. **weiDecimals** : Format pour la valorisation on-chain
+   - Nécessaire pour les calculs de valeur USD corrects
+   - Retourné par `spotBalanceInWei()`
+   - ✅ Utilisé dans : `equitySpotUsd1e18()`, `_computeRebalanceDeltas()`
+
+#### ⚠️ Règle Importante
+
+```
+Pour TRADING/TRANSFERS → utiliser spotBalance() (szDecimals)
+Pour VALORISATION/NAV   → utiliser spotBalanceInWei() (weiDecimals)
+```
+
+#### Formule de Conversion
+
+```solidity
+balanceInWei = balanceSz × 10^(weiDecimals - szDecimals)
+```
+
+#### Impact d'une Mauvaise Utilisation
+
+Sans la conversion correcte :
+- ❌ NAV (Net Asset Value) incorrect
+- ❌ Prix par share (PPS) faussé
+- ❌ Rebalancement dysfonctionnel
+- ❌ Pertes financières pour les utilisateurs
+
+**Référence** : Voir `docs/AUDIT_CORRECTION_DECIMALS.md` pour détails complets
+
+---
+
 ### Sécurité
 - Tous les contrats utilisent des modificateurs de sécurité (ReentrancyGuard, Pausable)
 - Les transferts utilisent SafeERC20 pour éviter les tokens malveillants
 - Les calculs de prix incluent des protections contre le slippage
+- ✅ **NOUVEAU** : Conversion correcte des décimales pour éviter les erreurs de valorisation
 
 ### Gas Optimization
 - Les calculs sont optimisés pour minimiser la consommation de gas

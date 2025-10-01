@@ -31,22 +31,26 @@ Toutes les unités sont précisées entre parenthèses.
   - **L1READ_ADDRESS**: adresse du contrat `L1Read` sur votre EVM (wrapper de lectures Core precompile).
   - **CORE_WRITER_ADDRESS**: adresse du contrat writer officiel pour envoyer des actions vers Core. À défaut, utiliser le stub `CoreWriter` pour tests.
   - **USDC_ADDRESS**: adresse ERC20 USDC (8 décimales) sur votre EVM.
-  - **MAX_OUTBOUND_PER_EPOCH_1e8 (uint64)**: plafond d’USDC émis EVM→Core par epoch, en unités 1e8. Ex: 100k USDC → `100000 * 1e8`.
-  - **EPOCH_LENGTH_SECONDS (uint64)**: durée d’une epoch en secondes (ex: `86400`).
+  - **MAX_OUTBOUND_PER_EPOCH_1e8 (uint64)**: plafond d'USDC émis EVM→Core par epoch, en unités 1e8. Ex: 100k USDC → `100000 * 1e8`.
+  - **EPOCH_LENGTH_BLOCKS (uint64)**: ⚠️ **IMPORTANT** : durée d'une epoch **EN NOMBRE DE BLOCS** (pas en secondes). Le contrat utilise `block.number` pour éviter la manipulation des timestamps par les validateurs. Exemples de calcul :
+    - Sur HyperEVM (~2 sec/bloc) : 1 jour = 43200 blocs (86400 sec ÷ 2)
+    - Sur Ethereum mainnet (~12 sec/bloc) : 1 jour = 7200 blocs (86400 sec ÷ 12)
+    - Sur Polygon (~2 sec/bloc) : 1 jour = 43200 blocs
+    - ⚠️ **Erreur courante** : Ne PAS utiliser `86400` directement (valeur en secondes), cela créerait une epoch de 86400 blocs ≈ 12-20 jours selon la chaîne !
   - **FEE_VAULT_ADDRESS**: adresse (multisig) recevant les frais de sweep.
   - **FEE_BPS (uint64)**: frais en bps (0–10000), appliqués dans `sweepToVault`.
 
 -- CoreInteractionHandler (post-déploiement, owner)
-  - `setVault(VAULT_ADDRESS)`: définir l’adresse du coffre (`VaultContract`).
+  - `setVault(VAULT_ADDRESS)`: définir l'adresse du coffre (`VaultContract`).
   - `setUsdcCoreLink(USDC_CORE_SYSTEM_ADDRESS, USDC_CORE_TOKEN_ID)`:
-    - `USDC_CORE_SYSTEM_ADDRESS`: adresse système Core pour créditer l’USDC spot.
+    - `USDC_CORE_SYSTEM_ADDRESS`: adresse système Core pour créditer l'USDC spot.
     - `USDC_CORE_TOKEN_ID (uint64)`: ID du token USDC côté Core. `0` est désormais accepté.
   - `setSpotIds(SPOT_BTC_ID, SPOT_HYPE_ID)` (uint32/uint32): IDs marchés spot BTC/USDC et HYPE/USDC.
   - `setSpotTokenIds(USDC_TOKEN_ID, BTC_TOKEN_ID, HYPE_TOKEN_ID)` (uint64/uint64/uint64): IDs des tokens spot correspondants. `USDC_TOKEN_ID` doit égaler `usdcCoreTokenId`.
-  - `setLimits(MAX_OUTBOUND_PER_EPOCH_1e8, EPOCH_LENGTH_SECONDS)`: ajuste la rate limit.
+  - `setLimits(MAX_OUTBOUND_PER_EPOCH_1e8, EPOCH_LENGTH_BLOCKS)`: ajuste la rate limit. ⚠️ `EPOCH_LENGTH_BLOCKS` est exprimé **en nombre de blocs**, pas en secondes.
   - `setParams(MAX_SLIPPAGE_BPS, MARKET_EPSILON_BPS, DEADBAND_BPS)`:
     - `MAX_SLIPPAGE_BPS`: par ex. 50 (=0,5%).
-    - `MARKET_EPSILON_BPS`: par ex. 10 (=0,1%) pour rendre les IOC “marketables”.
+    - `MARKET_EPSILON_BPS`: par ex. 10 (=0,1%) pour rendre les IOC "marketables".
     - `DEADBAND_BPS`: bande morte allocation (max 50 = 0,5%).
   - `setMaxOracleDeviationBps(MAX_ORACLE_DEV_BPS)`: ex. 500 (=5%).
   - `setFeeConfig(FEE_VAULT_ADDRESS, FEE_BPS)`: reconfigurer les frais au besoin.
@@ -83,8 +87,8 @@ Où trouver les IDs Core
      - `l1read = L1READ_ADDRESS`
      - `coreWriter = CORE_WRITER_ADDRESS`
      - `usdc = USDC_ADDRESS`
-     - `maxOutboundPerEpoch = MAX_OUTBOUND_PER_EPOCH_1e6`
-     - `epochLength = EPOCH_LENGTH_SECONDS`
+     - `maxOutboundPerEpoch = MAX_OUTBOUND_PER_EPOCH_1e8`
+     - `epochLength = EPOCH_LENGTH_BLOCKS` ⚠️ **EN BLOCS, PAS EN SECONDES**
      - `feeVault = FEE_VAULT_ADDRESS`
      - `feeBps = FEE_BPS`
 5. `VaultContract`
@@ -113,7 +117,18 @@ Où trouver les IDs Core
 ### Recommandations de valeurs initiales (exemples)
 
 - `MAX_OUTBOUND_PER_EPOCH_1e8`: 100k USDC ⇒ `100000 * 1e8`.
-- `EPOCH_LENGTH_SECONDS`: `86400` (1 jour) ou `3600` (1 heure).
+- `EPOCH_LENGTH_BLOCKS`: ⚠️ **EXPRIMÉ EN BLOCS** :
+  - **HyperEVM (≈2 sec/bloc)** :
+    - 1 heure = `1800` blocs (3600 sec ÷ 2)
+    - 1 jour = `43200` blocs (86400 sec ÷ 2)
+    - 1 semaine = `302400` blocs
+  - **Ethereum mainnet (≈12 sec/bloc)** :
+    - 1 heure = `300` blocs (3600 sec ÷ 12)
+    - 1 jour = `7200` blocs (86400 sec ÷ 12)
+  - **Polygon (≈2 sec/bloc)** :
+    - 1 heure = `1800` blocs
+    - 1 jour = `43200` blocs
+  - ⚠️ **NE JAMAIS utiliser des valeurs en secondes** (ex: 86400) directement !
 - `MAX_SLIPPAGE_BPS`: `50` (0,5%).
 - `MARKET_EPSILON_BPS`: `10` (0,1%).
 - `DEADBAND_BPS`: `50` (0,5%).
