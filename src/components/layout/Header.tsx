@@ -101,8 +101,28 @@ const Header: React.FC = () => {
               asChild
               className="text-axone-dark dark:text-white-pure hover:text-axone-accent hover:bg-white-10 dark:hover:bg-axone-dark-light transition-all duration-200 font-medium"
             >
-              <Link href="/referral-management">
-                <span>Gestion</span>
+              <Link href="/dashboard">
+                <span>Dashboard</span>
+              </Link>
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              asChild
+              className="text-axone-dark dark:text-white-pure hover:text-axone-accent hover:bg-white-10 dark:hover:bg-axone-dark-light transition-all duration-200 font-medium"
+            >
+              <Link href="/vault">
+                <span>Vault</span>
+              </Link>
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              asChild
+              className="text-axone-dark dark:text-white-pure hover:text-axone-accent hover:bg-white-10 dark:hover:bg-axone-dark-light transition-all duration-200 font-medium"
+            >
+              <Link href="/admin/vaults">
+                <span>Admin</span>
               </Link>
             </Button>
             <Button 
