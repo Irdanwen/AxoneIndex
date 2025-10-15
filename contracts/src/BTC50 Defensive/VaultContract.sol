@@ -216,7 +216,11 @@ contract VaultContract is ReentrancyGuard {
             : 0;
         uint256 net1e8 = uint256(gross1e8) - fee1e8;                 // net 1e8
         uint256 cash = usdc.balanceOf(address(this));
-        if (cash >= net1e8) {
+        
+        // AMÉLIORATION: Vérifier si on a besoin de fonds du handler
+        bool needsHandlerFunds = gross1e8 > cash;
+        
+        if (cash >= net1e8 && !needsHandlerFunds) {
             // Paiement immediat : bruler les parts maintenant
             _burn(msg.sender, shares);
             usdc.safeTransfer(msg.sender, net1e8);
@@ -233,6 +237,24 @@ contract VaultContract is ReentrancyGuard {
             // fige le BPS utilise pour le retrait differe
             withdrawQueue.push(WithdrawRequest({user: msg.sender, shares: shares, feeBpsSnapshot: feeBpsApplied, settled: false}));
             emit WithdrawRequested(id, msg.sender, shares);
+            
+            // AMÉLIORATION: Déclencher automatiquement le rapatriement si nécessaire
+            if (needsHandlerFunds && address(handler) != address(0)) {
+                // Calculer le montant nécessaire depuis le handler
+                uint256 shortfall = gross1e8 - cash;
+                // Limiter par les limites de taux du handler
+                uint64 recallAmount = uint64(shortfall);
+                // Note: Le handler peut refuser si les limites de taux sont dépassées
+                try handler.pullFromCoreToEvm(recallAmount) {
+                    try handler.sweepToVault(recallAmount) {
+                        emit RecallAndSweep(shortfall);
+                    } catch {
+                        // Si sweep échoue, le retrait reste en file d'attente
+                    }
+                } catch {
+                    // Si pullFromCoreToEvm échoue, le retrait reste en file d'attente
+                }
+            }
         }
     }
 
