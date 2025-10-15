@@ -2,16 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useAccount, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
-import { parseUnits, formatUnits } from 'viem'
+import { parseUnits } from 'viem'
 import { useVaultConfig } from '@/hooks/useVaultConfig'
 import { erc20Contract } from '@/contracts/erc20'
 import { vaultContract } from '@/contracts/vault'
 import { formatNumber, formatUnitsSafe } from '@/lib/format'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { AlertCircle, CheckCircle2, Loader2, Wallet } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Input, Label } from '@/components/ui'
+import { AlertCircle, Loader2, Wallet } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/components/ui/use-toast'
 
@@ -65,7 +62,9 @@ export default function VaultPage() {
 
   const { data: contractData, refetch } = useReadContracts({
     contracts,
-    enabled: isConfigured && isConnected,
+    query: {
+      enabled: isConfigured && isConnected,
+    },
   })
 
   // Formater les données
@@ -275,7 +274,7 @@ export default function VaultPage() {
               </Button>
               {parseFloat(depositAmount) > parseFloat(allowance) && depositAmount && (
                 <p className="text-sm text-red-500">
-                  Veuillez d'abord approuver un montant suffisant
+                  Veuillez d&apos;abord approuver un montant suffisant
                 </p>
               )}
             </div>

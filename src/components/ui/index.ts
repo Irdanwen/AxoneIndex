@@ -1,6 +1,12 @@
 // Export du composant Button principal
-export { Button, buttonVariants } from './Button'
-export type { ButtonProps } from './Button'
+export { Button } from './button.js'
+export type { ButtonProps } from './button.d.ts'
+
+// Export des composants Card
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './card'
+
+// Export du composant Skeleton
+export { Skeleton } from './skeleton'
 
 // Autres exports
 export { Input } from './input'

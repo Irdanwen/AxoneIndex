@@ -2,9 +2,7 @@
 
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { formatNumber, truncateAddress } from '@/lib/format'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Skeleton } from '@/components/ui'
 import { AlertCircle, Wallet, Database, Globe } from 'lucide-react'
 import Link from 'next/link'
 import { useAccount } from 'wagmi'

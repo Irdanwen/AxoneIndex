@@ -60,7 +60,9 @@ export function useDashboardData() {
 
   const { data, isLoading, isError, error } = useReadContracts({
     contracts,
-    enabled: isConfigured && !!address,
+    query: {
+      enabled: isConfigured && !!address,
+    },
   })
 
   // Formater les données
@@ -73,18 +75,18 @@ export function useDashboardData() {
     coreBalances: {
       usdc: {
         tokenId: config?.coreTokenIds.usdc || 0,
-        balance: formatCoreBalance((data[5]?.result as any)?.total || 0n),
-        raw: (data[5]?.result as any)?.total || 0n,
+        balance: formatCoreBalance((data[5]?.result as { total: bigint })?.total || 0n),
+        raw: (data[5]?.result as { total: bigint })?.total || 0n,
       },
       hype: {
         tokenId: config?.coreTokenIds.hype || 0,
-        balance: formatCoreBalance((data[6]?.result as any)?.total || 0n),
-        raw: (data[6]?.result as any)?.total || 0n,
+        balance: formatCoreBalance((data[6]?.result as { total: bigint })?.total || 0n),
+        raw: (data[6]?.result as { total: bigint })?.total || 0n,
       },
       btc: {
         tokenId: config?.coreTokenIds.btc || 0,
-        balance: formatCoreBalance((data[7]?.result as any)?.total || 0n),
-        raw: (data[7]?.result as any)?.total || 0n,
+        balance: formatCoreBalance((data[7]?.result as { total: bigint })?.total || 0n),
+        raw: (data[7]?.result as { total: bigint })?.total || 0n,
       },
     },
   } : null

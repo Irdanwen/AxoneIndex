@@ -4,10 +4,7 @@ import { useState, useEffect } from 'react'
 import { isAddress } from 'viem'
 import { useVaultConfig } from '@/hooks/useVaultConfig'
 import { getDefaultConfig, type VaultUiConfig } from '@/lib/vaultConfig'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button, Input, Label, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui'
 import { AlertCircle, CheckCircle2, Save, RefreshCw } from 'lucide-react'
 
 export default function AdminVaultsPage() {
