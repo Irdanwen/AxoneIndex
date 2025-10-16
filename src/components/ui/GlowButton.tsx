@@ -41,22 +41,13 @@ export const GlowButton: React.FC<GlowButtonProps> = ({
     white: "hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] focus:ring-white",
   };
 
-  const Component = asChild ? motion.div : motion.button;
-  
-  // Si asChild est true, on passe seulement le className et les styles
-  const componentProps = asChild 
-    ? { className: cn(baseClasses, sizeClasses[size], variantClasses[variant], glowClasses[glowColor], className) }
-    : { 
-        className: cn(baseClasses, sizeClasses[size], variantClasses[variant], glowClasses[glowColor], className),
-        ...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)
-      };
-
-  return (
-    <Component
-      whileHover={{ scale: 1.05, y: -2 }}
-      whileTap={{ scale: 0.98 }}
-      {...componentProps}
-    >
+  if (asChild) {
+    return (
+      <motion.div
+        whileHover={{ scale: 1.05, y: -2 }}
+        whileTap={{ scale: 0.98 }}
+        className={cn(baseClasses, sizeClasses[size], variantClasses[variant], glowClasses[glowColor], className)}
+      >
       {/* Effet de brillance au survol */}
       <motion.div
         className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
