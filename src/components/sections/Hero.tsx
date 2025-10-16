@@ -2,206 +2,258 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Users, DollarSign, BarChart3 } from 'lucide-react';
-import { Button } from '../ui';
+import { ArrowRight, Users, DollarSign, BarChart3, Rocket, FileText, TrendingUp } from 'lucide-react';
+import { GlowButton } from '../ui/GlowButton';
 import AnimatedCounter from '../ui/AnimatedCounter';
 import GlassCard from '../ui/GlassCard';
+import { CosmicParticles } from '../ui/CosmicParticles';
+import { GeometricShapes } from '../ui/GeometricShapes';
 import Link from 'next/link';
 
 const Hero: React.FC = () => {
 
   const stats = [
-    { icon: Users, value: '125K+', label: 'Users' },
-    { icon: DollarSign, value: '$45.2M', label: 'TVL' },
-    { icon: BarChart3, value: '+18.5%', label: 'Performance' },
+    { icon: Users, value: 125000, suffix: '+', label: 'Utilisateurs', color: 'text-success' },
+    { icon: DollarSign, value: 45.2, prefix: '$', suffix: 'M', label: 'TVL', color: 'text-info' },
+    { icon: TrendingUp, value: 18.5, prefix: '+', suffix: '%', label: 'Performance', color: 'text-alert' },
   ];
 
   return (
-    <section id="home" className="hero-gradient min-h-screen flex items-center relative overflow-hidden">
-      {/* Particules de fond animées améliorées */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <section id="main-content" className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-b from-axone-dark via-axone-dark-light to-axone-dark">
+      {/* Fond animé cosmique */}
+      <div className="absolute inset-0">
+        {/* Gradient de fond animé */}
         <motion.div
-          className="absolute w-2 h-2 bg-axone-accent rounded-full opacity-60"
-          style={{ top: '20%', left: '10%' }}
+          className="absolute inset-0 opacity-50"
           animate={{
-            y: [0, -20, 0],
-            opacity: [0.6, 1, 0.6],
+            background: [
+              'radial-gradient(circle at 20% 50%, rgba(250, 176, 98, 0.15) 0%, transparent 50%)',
+              'radial-gradient(circle at 80% 50%, rgba(74, 140, 140, 0.15) 0%, transparent 50%)',
+              'radial-gradient(circle at 50% 50%, rgba(250, 176, 98, 0.15) 0%, transparent 50%)',
+            ],
           }}
           transition={{
-            duration: 4,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-        <motion.div
-          className="absolute w-3 h-3 bg-axone-flounce rounded-full opacity-40"
-          style={{ top: '60%', right: '15%' }}
-          animate={{
-            y: [0, 15, 0],
-            opacity: [0.4, 0.8, 0.4],
-          }}
-          transition={{
-            duration: 5,
+            duration: 10,
             repeat: Infinity,
             ease: "easeInOut",
-            delay: 1
           }}
         />
-        <motion.div
-          className="absolute w-1 h-1 bg-white-pure rounded-full opacity-80"
-          style={{ top: '80%', left: '20%' }}
-          animate={{
-            y: [0, -10, 0],
-            opacity: [0.8, 1, 0.8],
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 2
-          }}
-        />
-        <motion.div
-          className="absolute w-4 h-4 bg-axone-accent-light rounded-full opacity-30"
-          style={{ top: '30%', right: '30%' }}
-          animate={{
-            y: [0, -25, 0],
-            opacity: [0.3, 0.7, 0.3],
-          }}
-          transition={{
-            duration: 6,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 0.5
+        
+        {/* Particules cosmiques */}
+        <CosmicParticles count={30} />
+        
+        {/* Formes géométriques */}
+        <GeometricShapes />
+        
+        {/* Grille futuriste */}
+        <div 
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(250, 176, 98, 0.3) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(250, 176, 98, 0.3) 1px, transparent 1px)
+            `,
+            backgroundSize: '50px 50px',
           }}
         />
+        
+        {/* Effet de vignette */}
+        <div className="absolute inset-0 bg-gradient-to-t from-axone-dark via-transparent to-transparent opacity-70" />
       </div>
 
-      {/* Formes géométriques animées */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          className="absolute w-32 h-32 border border-axone-accent-20 rounded-full"
-          style={{ top: '10%', right: '10%' }}
-          animate={{
-            rotate: [0, 360],
-            scale: [1, 1.1, 1],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "linear"
-          }}
-        />
-        <motion.div
-          className="absolute w-24 h-24 border border-axone-flounce-20 rounded-full"
-          style={{ bottom: '20%', left: '5%' }}
-          animate={{
-            rotate: [360, 0],
-            scale: [1, 0.8, 1],
-          }}
-          transition={{
-            duration: 15,
-            repeat: Infinity,
-            ease: "linear"
-          }}
-        />
-      </div>
-
-      {/* Grille de fond améliorée */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `radial-gradient(circle at 1px 1px, var(--color-white-pure) 1px, transparent 0)`,
-          backgroundSize: '50px 50px'
-        }}></div>
-      </div>
-
-      <div className="container-custom relative z-10">
-        <div className="text-center">
-          {/* Titre principal */}
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="hero-title font-black max-w-4xl mx-auto mb-16"
-          >
-            <span className="text-white-pure">Axone Index</span>
-            <br />
-            <span className="text-gradient">L&apos;investissement Web3 réinventé</span>
-          </motion.h1>
-
-          {/* Sous-titre */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="space-y-4 max-w-4xl mx-auto mb-16"
-          >
-            <p className="text-white-85 font-medium leading-relaxed text-xl text-center">
-              Un seul actif en entrée, une exposition instantanée à plusieurs projets crypto
-            </p>
-          </motion.div>
-
-          {/* Boutons CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="flex flex-wrap justify-center"
-            style={{ gap: '5rem' }}
-          >
-            <Button 
-              variant="default" 
-              size="lg" 
-              asChild
-              className="btn-with-icon group hover:shadow-glow transition-all duration-300"
+      <div className="container mx-auto px-4 lg:px-8 relative z-10">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center space-y-8">
+            {/* Badge d'introduction */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="inline-block"
             >
-              <Link href="/referral">
-                Launch App
-                <ArrowRight className="w-5 h-5 btn-icon" />
-              </Link>
-            </Button>
-            <Button 
-              variant="secondary" 
-              size="lg" 
-              asChild
-              className="hover:shadow-glow-flounce transition-all duration-300"
+              <div className="glass-cosmic-accent px-6 py-2 rounded-full border border-axone-accent/30">
+                <span className="text-axone-accent font-semibold uppercase text-sm tracking-wider">
+                  ✨ L'avenir de la DeFi est là
+                </span>
+              </div>
+            </motion.div>
+            
+            {/* Titre principal futuriste */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="space-y-4"
             >
-              <Link href="/documentation">
-                Documentation
-              </Link>
-            </Button>
-          </motion.div>
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-black leading-tight">
+                <motion.span
+                  className="block text-white-pure"
+                  initial={{ opacity: 0, x: -30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  GET REWARDED
+                </motion.span>
+                <motion.span
+                  className="block mt-2"
+                  initial={{ opacity: 0, x: 30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-axone-accent via-axone-accent-light to-axone-flounce animate-gradient-shift bg-[length:200%_auto]">
+                    FOR SAVING
+                  </span>
+                </motion.span>
+                <motion.span
+                  className="block text-white-pure mt-2"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  WITHOUT GIVING UP CONTROL
+                </motion.span>
+              </h1>
+            </motion.div>
 
-          {/* Espacement entre les boutons et les statistiques */}
-          <div style={{ marginTop: '10rem' }}></div>
+            {/* Sous-titre */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="max-w-3xl mx-auto"
+            >
+              <p className="text-xl md:text-2xl text-white-75 leading-relaxed">
+                Découvrez l'écosystème d'investissement Web3 le plus avancé. 
+                <span className="text-white-pure font-semibold"> Un seul dépôt</span>, 
+                <span className="text-axone-accent font-semibold"> une exposition diversifiée</span>, 
+                <span className="text-axone-flounce font-semibold"> des rendements optimisés</span>.
+              </p>
+            </motion.div>
 
-          {/* Statistiques */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="flex flex-wrap justify-center items-center max-w-4xl mx-auto"
-            style={{ gap: '10rem' }}
-          >
-            {stats.map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.7 + index * 0.1 }}
-                whileHover={{ y: -8, scale: 1.05 }}
-                className="text-center group px-4 py-2 min-w-[120px]"
+            {/* Boutons CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 pt-8"
+            >
+              <GlowButton
+                variant="primary"
+                size="lg"
+                glowColor="accent"
+                className="min-w-[200px] group"
+                asChild
               >
-                <GlassCard className="flex items-center justify-center w-14 h-14 rounded-xl mb-3 mx-auto border border-axone-accent-20">
-                  <stat.icon className="w-7 h-7 text-axone-accent" />
-                </GlassCard>
-                <div className="stat-value text-2xl font-bold text-white-pure mb-1">
-                  <AnimatedCounter value={stat.value} duration={2} />
-                </div>
-                <div className="stat-label text-white-60 text-sm font-medium">{stat.label}</div>
+                <Link href="/vaults">
+                  <Rocket className="w-5 h-5 group-hover:animate-bounce" />
+                  <span>LAUNCH APP</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </GlowButton>
+              
+              <GlowButton
+                variant="secondary"
+                size="lg"
+                glowColor="flounce"
+                className="min-w-[200px]"
+                asChild
+              >
+                <Link href="/documentation">
+                  <FileText className="w-5 h-5" />
+                  <span>DOCUMENTATION</span>
+                </Link>
+              </GlowButton>
+            </motion.div>
+
+            {/* Statistiques avec compteurs animés */}
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.9 }}
+              className="grid grid-cols-1 sm:grid-cols-3 gap-6 md:gap-8 max-w-4xl mx-auto mt-20"
+            >
+              {stats.map((stat, index) => (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1 + index * 0.1 }}
+                  whileHover={{ y: -5 }}
+                  className="group"
+                >
+                  <GlassCard
+                    variant="dark"
+                    padding="sm"
+                    hover={true}
+                    className="text-center space-y-4"
+                  >
+                    {/* Icône avec effet de glow */}
+                    <div className="relative inline-block">
+                      <motion.div
+                        className="absolute inset-0 rounded-full bg-gradient-to-r from-axone-accent to-axone-flounce opacity-20 blur-xl"
+                        animate={{
+                          scale: [1, 1.2, 1],
+                          opacity: [0.2, 0.4, 0.2],
+                        }}
+                        transition={{
+                          duration: 3,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                        }}
+                      />
+                      <div className="relative w-16 h-16 rounded-full glass-cosmic flex items-center justify-center mx-auto border border-white/10 group-hover:border-axone-accent/30 transition-all duration-300">
+                        <stat.icon className={`w-8 h-8 ${stat.color}`} />
+                      </div>
+                    </div>
+                    
+                    {/* Valeur animée */}
+                    <div className="space-y-1">
+                      <div className={`text-3xl md:text-4xl font-black ${stat.color}`}>
+                        {stat.prefix && <span>{stat.prefix}</span>}
+                        <AnimatedCounter 
+                          value={stat.value} 
+                          duration={2.5}
+                          decimals={stat.value % 1 !== 0 ? 1 : 0}
+                        />
+                        {stat.suffix && <span>{stat.suffix}</span>}
+                      </div>
+                      <div className="text-white-60 text-sm font-medium uppercase tracking-wider">
+                        {stat.label}
+                      </div>
+                    </div>
+                  </GlassCard>
+                </motion.div>
+              ))}
+            </motion.div>
+            
+            {/* Indicateur de scroll */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.5 }}
+              className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
+            >
+              <motion.div
+                animate={{ y: [0, 10, 0] }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+                className="w-6 h-10 rounded-full border-2 border-white/20 flex items-start justify-center p-1"
+              >
+                <motion.div
+                  animate={{ y: [0, 16, 0] }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="w-1.5 h-1.5 rounded-full bg-axone-accent"
+                />
               </motion.div>
-            ))}
-          </motion.div>
+            </motion.div>
+          </div>
         </div>
       </div>
     </section>
