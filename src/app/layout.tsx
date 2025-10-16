@@ -78,6 +78,12 @@ export default function RootLayout({
         <meta name="msapplication-config" content="/browserconfig.xml" />
       </head>
       <body className="antialiased bg-background">
+        <a 
+          href="#main-content" 
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-axone-accent text-axone-dark px-4 py-2 rounded-lg font-semibold z-50 focus:outline-none focus:ring-2 focus:ring-axone-accent focus:ring-offset-2 focus:ring-offset-axone-dark"
+        >
+          Aller au contenu principal
+        </a>
         <div className="hero-gradient min-h-screen w-full">
           <WagmiProvider>
             <ThemeProvider>

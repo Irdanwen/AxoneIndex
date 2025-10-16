@@ -334,6 +334,98 @@
   }
 }
 
+/* Animations cosmiques */
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes orbit {
+  0% {
+    transform: rotate(0deg) translateX(150px) rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg) translateX(150px) rotate(-360deg);
+  }
+}
+
+@keyframes meteor {
+  0% {
+    transform: translate(300px, -300px);
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-300px, 300px);
+    opacity: 0;
+  }
+}
+
+@keyframes cosmicPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.8;
+  }
+}
+
+@keyframes starGlow {
+  0% {
+    box-shadow: 0 0 5px rgba(250, 176, 98, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(250, 176, 98, 0.8), 0 0 40px rgba(250, 176, 98, 0.4);
+  }
+}
+
+@keyframes constellationDraw {
+  0% {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes particleFloat {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-100px) translateX(50px);
+  }
+}
+
+@keyframes glowExpand {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.3;
+  }
+}
+
 @layer base {
   * {
     box-sizing: border-box;
@@ -791,6 +883,30 @@
 }
 
 @layer utilities {
+  /* Classe pour les lecteurs d'écran uniquement */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+  
+  .not-sr-only {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+  
   .drop-shadow-soft {
     filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
   }
@@ -1168,6 +1284,85 @@
     background: rgba(15, 20, 22, 0.6);
     backdrop-filter: blur(10px);
     border: 1px solid var(--border);
+  }
+  
+  /* Effets glassmorphism améliorés */
+  .glass-cosmic {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  }
+  
+  .glass-cosmic-dark {
+    background: rgba(1, 31, 38, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  }
+  
+  .glass-cosmic-accent {
+    background: rgba(250, 176, 98, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(250, 176, 98, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(250, 176, 98, 0.2);
+  }
+  
+  .glass-cosmic-flounce {
+    background: rgba(74, 140, 140, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(74, 140, 140, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(74, 140, 140, 0.2);
+  }
+  
+  /* Effets de glow cosmique */
+  .glow-cosmic {
+    box-shadow: 0 0 30px rgba(250, 176, 98, 0.4),
+                0 0 60px rgba(250, 176, 98, 0.2),
+                0 0 90px rgba(250, 176, 98, 0.1);
+  }
+  
+  .glow-cosmic-flounce {
+    box-shadow: 0 0 30px rgba(74, 140, 140, 0.4),
+                0 0 60px rgba(74, 140, 140, 0.2),
+                0 0 90px rgba(74, 140, 140, 0.1);
+  }
+  
+  /* Classes d'animation cosmique */
+  .animate-twinkle {
+    animation: twinkle 3s ease-in-out infinite;
+  }
+  
+  .animate-orbit {
+    animation: orbit 20s linear infinite;
+  }
+  
+  .animate-meteor {
+    animation: meteor 5s linear infinite;
+  }
+  
+  .animate-cosmic-pulse {
+    animation: cosmicPulse 4s ease-in-out infinite;
+  }
+  
+  .animate-star-glow {
+    animation: starGlow 2s ease-in-out infinite alternate;
+  }
+  
+  .animate-constellation-draw {
+    animation: constellationDraw 2s ease-out;
+  }
+  
+  .animate-particle-float {
+    animation: particleFloat 15s ease-in-out infinite;
+  }
+  
+  .animate-glow-expand {
+    animation: glowExpand 3s ease-in-out infinite;
   }
   
   /* Hover states */

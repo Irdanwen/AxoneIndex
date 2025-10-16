@@ -106,6 +106,20 @@ const config: Config = {
         
         'axone-black': {
           '20': 'rgba(0,0,0,0.2)',
+        },
+        
+        // Couleurs fonctionnelles Axone
+        'success': '#3CD88C',
+        'alert': '#FFB020',
+        'error': '#FF5C5C',
+        'info': '#4D9FFF',
+        
+        // Variations pour glassmorphism
+        'glass': {
+          'white': 'rgba(255, 255, 255, 0.05)',
+          'accent': 'rgba(250, 176, 98, 0.05)',
+          'flounce': 'rgba(74, 140, 140, 0.05)',
+          'dark': 'rgba(1, 31, 38, 0.05)',
         }
       },
       fontFamily: {
@@ -158,6 +172,8 @@ const config: Config = {
         'md': '8px',
         'lg': '12px',
         'xl': '16px',
+        '2xl': '20px',
+        '3xl': '24px',
       },
       animation: {
         'fade-in': 'fadeIn 0.6s ease-out',
@@ -172,6 +188,15 @@ const config: Config = {
         'shimmer': 'shimmer 2s ease-in-out infinite',
         'text-reveal': 'textReveal 0.8s ease-out',
         'underline-slide': 'underlineSlide 0.3s ease-out',
+        // Nouvelles animations cosmiques
+        'twinkle': 'twinkle 3s ease-in-out infinite',
+        'orbit': 'orbit 20s linear infinite',
+        'meteor': 'meteor 5s linear infinite',
+        'cosmic-pulse': 'cosmicPulse 4s ease-in-out infinite',
+        'star-glow': 'starGlow 2s ease-in-out infinite alternate',
+        'constellation-draw': 'constellationDraw 2s ease-out',
+        'particle-float': 'particleFloat 15s ease-in-out infinite',
+        'glow-expand': 'glowExpand 3s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -283,6 +308,90 @@ const config: Config = {
           },
           '100%': {
             width: '100%',
+          },
+        },
+        // Animations cosmiques
+        twinkle: {
+          '0%, 100%': {
+            opacity: '0.2',
+            transform: 'scale(1)',
+          },
+          '50%': {
+            opacity: '1',
+            transform: 'scale(1.2)',
+          },
+        },
+        orbit: {
+          '0%': {
+            transform: 'rotate(0deg) translateX(150px) rotate(0deg)',
+          },
+          '100%': {
+            transform: 'rotate(360deg) translateX(150px) rotate(-360deg)',
+          },
+        },
+        meteor: {
+          '0%': {
+            transform: 'translate(300px, -300px)',
+            opacity: '1',
+          },
+          '70%': {
+            opacity: '1',
+          },
+          '100%': {
+            transform: 'translate(-300px, 300px)',
+            opacity: '0',
+          },
+        },
+        cosmicPulse: {
+          '0%, 100%': {
+            transform: 'scale(1)',
+            opacity: '0.5',
+          },
+          '50%': {
+            transform: 'scale(1.5)',
+            opacity: '0.8',
+          },
+        },
+        starGlow: {
+          '0%': {
+            boxShadow: '0 0 5px rgba(250, 176, 98, 0.5)',
+          },
+          '100%': {
+            boxShadow: '0 0 20px rgba(250, 176, 98, 0.8), 0 0 40px rgba(250, 176, 98, 0.4)',
+          },
+        },
+        constellationDraw: {
+          '0%': {
+            strokeDasharray: '1000',
+            strokeDashoffset: '1000',
+          },
+          '100%': {
+            strokeDashoffset: '0',
+          },
+        },
+        particleFloat: {
+          '0%, 100%': {
+            transform: 'translateY(0) translateX(0)',
+            opacity: '0',
+          },
+          '10%': {
+            opacity: '1',
+          },
+          '90%': {
+            opacity: '1',
+          },
+          '50%': {
+            transform: 'translateY(-100px) translateX(50px)',
+          },
+        },
+        glowExpand: {
+          '0%, 100%': {
+            transform: 'scale(1)',
+            opacity: '0.6',
+          },
+          '50%': {
+            transform: 'scale(1.2)',
+            opacity: '0.3',
           },
         },
       },
