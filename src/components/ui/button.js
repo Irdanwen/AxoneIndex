@@ -2,7 +2,7 @@ import React from "react"
 import { cn } from "@/lib/utils"
 
 const Button = React.forwardRef(
-  ({ className, variant = "default", size = "default", asChild = false, ...props }, ref) => {
+  ({ className, variant = "default", size = "default", ...props }, ref) => {
     const baseClasses = "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-semibold ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none relative overflow-hidden"
     
     const variantClasses = {

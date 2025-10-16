@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Users, DollarSign, BarChart3, Rocket, FileText, TrendingUp } from 'lucide-react';
+import { ArrowRight, Users, DollarSign, Rocket, FileText, TrendingUp } from 'lucide-react';
 import { GlowButton } from '../ui/GlowButton';
 import AnimatedCounter from '../ui/AnimatedCounter';
 import GlassCard from '../ui/GlassCard';
@@ -73,7 +73,7 @@ const Hero: React.FC = () => {
             >
               <div className="glass-cosmic-accent px-6 py-2 rounded-full border border-axone-accent/30">
                 <span className="text-axone-accent font-semibold uppercase text-sm tracking-wider">
-                  ✨ L'avenir de la DeFi est là
+                  ✨ L&apos;avenir de la DeFi est là
                 </span>
               </div>
             </motion.div>
@@ -123,7 +123,7 @@ const Hero: React.FC = () => {
               className="max-w-3xl mx-auto"
             >
               <p className="text-xl md:text-2xl text-white-75 leading-relaxed">
-                Découvrez l'écosystème d'investissement Web3 le plus avancé. 
+                Découvrez l&apos;écosystème d&apos;investissement Web3 le plus avancé. 
                 <span className="text-white-pure font-semibold"> Un seul dépôt</span>, 
                 <span className="text-axone-accent font-semibold"> une exposition diversifiée</span>, 
                 <span className="text-axone-flounce font-semibold"> des rendements optimisés</span>.

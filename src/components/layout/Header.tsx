@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Menu, X, Rocket, Wallet } from 'lucide-react';
-import Image from 'next/image';
+import { Menu, X, Rocket, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { useAccount, useConnect, useSwitchChain } from 'wagmi';
 import { injected } from 'wagmi/connectors';

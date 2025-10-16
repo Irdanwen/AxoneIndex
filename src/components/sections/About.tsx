@@ -25,7 +25,7 @@ const About: React.FC = () => {
     {
       icon: Zap,
       title: 'Liquidité Native',
-      description: 'Accès direct à la liquidité profonde d\'Hyperliquid pour une exécution instantanée.',
+      description: 'Accès direct à la liquidité profonde d&apos;Hyperliquid pour une exécution instantanée.',
       gradient: 'from-axone-flounce to-axone-flounce-dark',
       iconColor: 'text-axone-flounce',
       glowColor: 'hover:shadow-[0_0_30px_rgba(74,140,140,0.3)]',
@@ -41,7 +41,7 @@ const About: React.FC = () => {
     {
       icon: Coins,
       title: 'Index Diversifié',
-      description: 'Exposition instantanée à un panier d\'actifs crypto soigneusement sélectionnés.',
+      description: 'Exposition instantanée à un panier d&apos;actifs crypto soigneusement sélectionnés.',
       gradient: 'from-info to-[#2563eb]',
       iconColor: 'text-info',
       glowColor: 'hover:shadow-[0_0_30px_rgba(77,159,255,0.3)]',
@@ -130,7 +130,7 @@ const About: React.FC = () => {
           </motion.div>
           
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6">
-            <span className="text-white-pure">L'investissement Web3</span>
+            <span className="text-white-pure">L&apos;investissement Web3</span>
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-axone-accent to-axone-flounce">
               Simplifié et Optimisé
@@ -166,8 +166,8 @@ const About: React.FC = () => {
                   Une Vision Globale
                 </h3>
                 <p className="text-lg text-white-85 leading-relaxed">
-                  Axone Index révolutionne l'investissement crypto en combinant la puissance de la DeFi 
-                  avec la simplicité d'utilisation. Notre protocole intelligent gère automatiquement 
+                  Axone Index révolutionne l&apos;investissement crypto en combinant la puissance de la DeFi 
+                  avec la simplicité d&apos;utilisation. Notre protocole intelligent gère automatiquement 
                   vos positions pour maximiser les rendements tout en minimisant les risques.
                 </p>
               </motion.div>
@@ -201,7 +201,7 @@ const About: React.FC = () => {
                     <div className="w-2 h-2 rounded-full bg-success mt-2 flex-shrink-0" />
                     <span className="text-white-75">
                       <strong className="text-white-pure">Transparence totale :</strong> Toutes les 
-                      opérations sont vérifiables on-chain, sans zone d'ombre.
+                      opérations sont vérifiables on-chain, sans zone d&apos;ombre.
                     </span>
                   </li>
                 </ul>

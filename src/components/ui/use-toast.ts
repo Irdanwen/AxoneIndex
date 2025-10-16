@@ -8,7 +8,6 @@ export interface Toast {
   duration?: number
 }
 
-type ToastActionElement = React.ReactElement
 
 interface ToastState {
   toasts: Toast[]
@@ -17,32 +16,8 @@ interface ToastState {
 export const TOAST_LIMIT = 1
 export const TOAST_REMOVE_DELAY = 1000000
 
-type ActionType =
-  | {
-      type: "ADD_TOAST"
-      toast: Toast
-    }
-  | {
-      type: "UPDATE_TOAST"
-      toast: Partial<Toast>
-    }
-  | {
-      type: "DISMISS_TOAST"
-      toastId?: Toast["id"]
-    }
-  | {
-      type: "REMOVE_TOAST"
-      toastId?: Toast["id"]
-    }
 
-interface ToastContextValue extends ToastState {
-  toast: (props: Omit<Toast, "id">) => void
-  dismiss: (toastId?: string) => void
-}
 
-const ToastContext = React.createContext<ToastContextValue | undefined>(
-  undefined
-)
 
 let count = 0
 

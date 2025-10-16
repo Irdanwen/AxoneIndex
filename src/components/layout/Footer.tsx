@@ -17,8 +17,16 @@ import {
 import { GlowButton } from '../ui/GlowButton';
 import Link from 'next/link';
 
+interface FooterLink {
+  label: string;
+  href: string;
+  icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  internal?: boolean;
+  external?: boolean;
+}
+
 const Footer: React.FC = () => {
-  const footerLinks = {
+  const footerLinks: Record<string, FooterLink[]> = {
     Produits: [
       { label: 'Vaults', href: '/vaults', icon: Shield },
       { label: 'Dashboard', href: '/dashboard', icon: FileText },
@@ -132,11 +140,11 @@ const Footer: React.FC = () => {
               {/* Message principal */}
               <div className="space-y-6">
                 <h4 className="text-2xl font-bold text-white-pure leading-tight">
-                  L'investissement Web3 réinventé pour une nouvelle ère financière
+                  L&apos;investissement Web3 réinventé pour une nouvelle ère financière
                 </h4>
                 <p className="text-white-60 leading-relaxed">
                   Axone transforme la complexité de la DeFi en une expérience simple et accessible. 
-                  Rejoignez des milliers d'investisseurs qui ont déjà choisi l'excellence.
+                  Rejoignez des milliers d&apos;investisseurs qui ont déjà choisi l&apos;excellence.
                 </p>
               </div>
 
@@ -256,7 +264,7 @@ const Footer: React.FC = () => {
                 href="#terms" 
                 className="text-white-40 hover:text-white-60 transition-colors text-sm"
               >
-                Conditions d'utilisation
+                Conditions d&apos;utilisation
               </a>
               <div className="w-px h-4 bg-white/10" />
               <a 

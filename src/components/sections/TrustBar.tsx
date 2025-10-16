@@ -130,7 +130,7 @@ const TrustBar: React.FC = () => {
           className="mb-20"
         >
           <h3 className="text-2xl font-bold text-white-pure text-center mb-12">
-            Construit avec les meilleurs de l'écosystème
+            Construit avec les meilleurs de l&apos;écosystème
           </h3>
           
           {/* Bandeau défilant des partenaires */}

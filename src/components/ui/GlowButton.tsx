@@ -48,7 +48,7 @@ export const GlowButton: React.FC<GlowButtonProps> = ({
     ? { className: cn(baseClasses, sizeClasses[size], variantClasses[variant], glowClasses[glowColor], className) }
     : { 
         className: cn(baseClasses, sizeClasses[size], variantClasses[variant], glowClasses[glowColor], className),
-        ...props 
+        ...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)
       };
 
   return (

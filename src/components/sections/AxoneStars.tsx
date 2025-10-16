@@ -86,14 +86,14 @@ const AxoneStars: React.FC = () => {
           >
             <Sparkles className="w-4 h-4 text-axone-accent animate-twinkle" />
             <span className="text-sm font-semibold text-white-pure uppercase tracking-wider">
-              L'écosystème Axone
+              L&apos;écosystème Axone
             </span>
           </motion.div>
           
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6">
             <span className="text-white-pure">Explorez les</span>{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-axone-accent via-axone-accent-light to-axone-flounce animate-gradient-shift bg-[length:200%_auto]">
-              Étoiles d'Axone
+              Étoiles d&apos;Axone
             </span>
           </h2>
           

@@ -7,7 +7,6 @@ import {
   Users, 
   BarChart3, 
   FileText, 
-  Settings, 
   ArrowRight,
   Rocket,
   Coins,
@@ -119,7 +118,7 @@ const ActionSection: React.FC = () => {
           >
             <Rocket className="w-4 h-4 text-axone-accent" />
             <span className="text-sm font-semibold text-white-pure uppercase tracking-wider">
-              Passez à l'action
+              Passez à l&apos;action
             </span>
           </motion.div>
           
@@ -131,7 +130,7 @@ const ActionSection: React.FC = () => {
           </h2>
           
           <p className="text-xl text-white-75 max-w-3xl mx-auto leading-relaxed">
-            Choisissez comment vous voulez interagir avec l'écosystème Axone. 
+            Choisissez comment vous voulez interagir avec l&apos;écosystème Axone. 
             Que vous soyez débutant ou expert, nous avons une solution pour vous.
           </p>
         </motion.div>
