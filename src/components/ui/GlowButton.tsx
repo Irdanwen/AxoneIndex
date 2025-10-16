@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 
 interface GlowButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
-  variant?: 'primary' | 'secondary' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'outline' | 'destructive';
   size?: 'sm' | 'md' | 'lg';
   glowColor?: 'accent' | 'flounce' | 'white';
   asChild?: boolean;
@@ -33,6 +33,8 @@ export const GlowButton: React.FC<GlowButtonProps> = ({
     primary: "bg-gradient-to-r from-axone-accent to-axone-accent-dark text-axone-dark",
     secondary: "bg-transparent border-2 border-axone-flounce text-white-pure",
     ghost: "bg-transparent text-white-pure",
+    outline: "bg-transparent text-axone-accent border border-axone-accent hover:bg-axone-accent hover:text-white-pure",
+    destructive: "bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700",
   };
   
   const glowClasses = {
@@ -69,7 +71,43 @@ export const GlowButton: React.FC<GlowButtonProps> = ({
           {children}
         </span>
       )}
-    </Component>
+      </motion.div>
+    );
+  }
+
+  const { onClick, onMouseDown, onMouseUp, onFocus, onBlur, ...buttonProps } = props;
+  
+  return (
+    // @ts-expect-error - Conflit entre les types HTML et Framer Motion
+    <motion.button
+      whileHover={{ scale: 1.05, y: -2 }}
+      whileTap={{ scale: 0.98 }}
+      className={cn(baseClasses, sizeClasses[size], variantClasses[variant], glowClasses[glowColor], className)}
+      onClick={onClick}
+      onMouseDown={onMouseDown}
+      onMouseUp={onMouseUp}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      {...buttonProps}
+    >
+      {/* Effet de brillance au survol */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+        initial={{ x: '-100%' }}
+        whileHover={{ x: '100%' }}
+        transition={{ duration: 0.6 }}
+      />
+      
+      {/* Effet de glow de fond */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-axone-accent/20 via-axone-flounce/20 to-axone-accent/20 blur-xl" />
+      </div>
+      
+      {/* Contenu du bouton */}
+      <span className="relative z-10 flex items-center justify-center gap-2">
+        {children}
+      </span>
+    </motion.button>
   );
 };
 

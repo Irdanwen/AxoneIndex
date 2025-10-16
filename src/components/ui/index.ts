@@ -1,6 +1,5 @@
 // Export du composant Button principal
-export { Button } from './button.js'
-export type { ButtonProps } from './button.d.ts'
+export { GlowButton as Button } from './GlowButton'
 
 // Export des composants Card
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './card'
