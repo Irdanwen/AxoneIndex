@@ -16,7 +16,12 @@ AxoneIndex est une plateforme DeFi construite sur HyperEVM (Hyperliquid). Elle c
 - Composants principaux
   - Contrats Solidity (Hardhat)
     - Dossier `contracts/` avec configuration Hardhat, scripts de déploiement et tests JS
-    - Contrats clés: `ReferralRegistry.sol`, modules liés aux vaults (ex. BTC50 Defensive)
+    - Contrats clés: 
+      - `ReferralRegistry.sol` : Système de parrainage avec codes à usage unique
+      - `AxoneToken.sol` : Token natif AXN (18 décimales)
+      - `AxoneSale.sol` : Vente publique d'AXN contre USDC avec protection slippage
+      - Modules vaults : BTC50 Defensive, HYPE50 Defensive (VaultContract + CoreInteractionHandler)
+      - Système de staking : `RewardsHub.sol`, `EmissionController.sol` (voir [Staking/README.md](../contracts/src/Staking/README.md))
   - Interface utilisateur (Next.js / App Router)
     - Dossier `src/app/` pour les routes (ex. `referral/`, `vaults/`, `admin/`)
     - Dossier `src/components/` pour les sections UI, providers (`WagmiProvider`, `ThemeProvider`) et composants réutilisables
@@ -69,39 +74,42 @@ AxoneIndex est une plateforme DeFi construite sur HyperEVM (Hyperliquid). Elle c
 ## Guides pratiques
 - [Gestion des parrainages](../REFERRAL_MANAGEMENT_GUIDE.md)
 - [Connexion wallet](../WALLET_CONNECTION_GUIDE.md)
-- - Contrats (détails récents):
-  - [CoreInteractionHandler — rôle rebalancer](./contracts/CoreInteractionHandler.md)
+- Documentation des contrats (détails récents):
+  - [ReferralRegistry — système de parrainage avec codes à usage unique](./contracts/ReferralRegistry.md)
+  - [AxoneSale — vente publique USDC avec protection slippage](./contracts/AxoneSale.md)
+  - [CoreInteractionHandler — rôle rebalancer et sécurité](./contracts/CoreInteractionHandler.md)
   - [VaultContract — frais de retrait par paliers](./contracts/VaultContract.md)
-  - [AxoneSale — vente publique USDC](./contracts/AxoneSale.md)
+  - [HYPE50 VaultContract — dépôts HYPE et NAV USD](./contracts/HYPE50_VaultContract.md)
+  - [Système de Staking — RewardsHub et EmissionController](./contracts/StakingSystem.md)
 
 ## Guide d’intégration rapide Vault + Handler
 
 1) Déployer les contrats
-- Déployer `CoreInteractionHandler` (avec ses paramètres init: `l1read`, `coreWriter`, `usdc`, limites, frais).
-- Déployer `VaultContract` avec l’adresse `usdc` (ERC20 à 8 décimales sur HyperEVM).
+- Déployer `CoreInteractionHandler` (USDC) et/ou `CoreInteractionHandler` HYPE50 (avec `hype`).
+- Déployer le `VaultContract` compatible (USDC ou HYPE50).
 
-2) Lier le vault au handler et configurer l’approval USDC
+2) Lier le vault au handler et configurer l’approval
 - Appeler `vault.setHandler(address(handler))` depuis l’owner du vault.
-- Cet appel accorde une approval USDC illimitée du vault vers le handler (nécessaire pour `safeTransferFrom` côté handler).
+- USDC: approval USDC illimitée; HYPE50: approval HYPE illimitée.
 
 3) Configurer Core (handler)
 - `handler.setVault(address(vault))`.
-- `handler.setUsdcCoreLink(systemAddress, usdcTokenId)` et `handler.setSpotIds(btcSpot, hypeSpot)`.
-- `handler.setSpotTokenIds(usdcTokenId, btcTokenId, hypeTokenId)` si requis.
-- Facultatif: `handler.setRebalancer(address)` et ajuster `setParams`, `setLimits`.
+- USDC: `handler.setUsdcCoreLink(systemAddress, usdcTokenId)`
+- HYPE50: `handler.setHypeCoreLink(systemAddress, hypeTokenId)`
+- Commun: `handler.setSpotIds(btcSpot, hypeSpot)` + `handler.setSpotTokenIds(usdcTokenId, btcTokenId, hypeTokenId)`
 
 4) Paramétrer le vault
 - Définir `setFees(depositFeeBps, withdrawFeeBps, autoDeployBps)`.
-- Définir les paliers via `setWithdrawFeeTiers(WithdrawFeeTier[])` (en USDC 1e8).
+- Définir les paliers via `setWithdrawFeeTiers(...)` (USDC 1e8 pour USDC, HYPE 1e18 pour HYPE50).
 
-5) Dépôts et conversions d’unités
-- Les utilisateurs appellent `vault.deposit(amount1e8)` (USDC en 1e8 côté vault). Sur HyperEVM et HyperCore, USDC a 8 décimales.
-- Si `autoDeployBps > 0`, le vault appelle directement `handler.executeDeposit(amount1e8, true)` sans conversion.
-  - La NAV inclut: USDC EVM (solde * 1e10) + equity Core renvoyée par le handler.
+5) Dépôts
+- USDC vault: `vault.deposit(amount1e8)` puis auto-deploy vers `executeDeposit(amount1e8, true)`.
+- HYPE50 vault: `vault.deposit(amount1e18)` puis auto-deploy vers `executeDepositHype(amount1e18, true)`.
 
 6) Rappel de liquidités
-- `vault.recallFromCoreAndSweep(amount1e8)` appelle `handler.pullFromCoreToEvm(amount1e8)` puis `handler.sweepToVault(amount1e8)`.
+- USDC: `vault.recallFromCoreAndSweep(amount1e8)` → `pullFromCoreToEvm` + `sweepToVault`.
+- HYPE50: `vault.recallFromCoreAndSweep(amount1e18)` → `pullHypeFromCoreToEvm` + `sweepHypeToVault`.
 
 7) Vérifications rapides
-- Après `setHandler`, vérifier `USDC.allowance(vault, handler) == type(uint256).max`.
-- Tester un petit `deposit` et confirmer l’absence de revert d’allowance.
+- Après `setHandler`, vérifier l’`allowance` illimitée du token de dépôt vers le handler.
+- Tester un petit `deposit` et confirmer l’absence de revert d’allowance et la mise à jour NAV.

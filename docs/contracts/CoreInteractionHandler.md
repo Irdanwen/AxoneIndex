@@ -1,7 +1,7 @@
 # CoreInteractionHandler — Rôle Rebalancer et Sécurité
 
 ## Résumé
-`CoreInteractionHandler.sol` gère les interactions avec Core (Hyperliquid): transferts USDC spot, ordres IOC BTC/HYPE, et rééquilibrage 50/50. Le rééquilibrage est désormais restreint à une adresse `rebalancer` définie par l'owner.
+- `CoreInteractionHandler.sol` gère les interactions avec Core (Hyperliquid): transferts USDC/HYPE spot, ordres IOC BTC/HYPE, et rééquilibrage 50/50. Le rééquilibrage est désormais restreint à une adresse `rebalancer` définie par l'owner. Pour HYPE50 Defensive, le handler supporte les dépôts en HYPE (18d) avec conversion 100% en USDC avant allocation 50/50.
 
 ## 🔒 Améliorations de Sécurité
 
@@ -23,14 +23,12 @@
 ## API Clés
 - `setRebalancer(address rebalancer)` (onlyOwner): définit l'adresse autorisée à appeler `rebalancePortfolio`.
 - `rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype)` (onlyRebalancer, whenNotPaused): calcule les deltas via l'oracle et place des ordres IOC pour revenir vers 50/50 (avec deadband).
-- `executeDeposit(uint64 usdc1e8, bool forceRebalance)` (onlyVault, whenNotPaused): le handler attend des montants USDC en 1e8 (unités Core, alignées HyperCore/HyperEVM). Pas de conversion nécessaire pour les transferts ERC20.
-- `pullFromCoreToEvm(uint64 usdc1e8)` (onlyVault, whenNotPaused): orchestre les ventes si nécessaire et crédite l'EVM; les montants restent en 1e8 pour les transferts ERC20.
+- `executeDeposit(uint64 usdc1e8, bool forceRebalance)` (onlyVault, whenNotPaused): dépôt USDC → achats 50/50 BTC/HYPE.
+- `pullFromCoreToEvm(uint64 usdc1e8)` (onlyVault, whenNotPaused): orchestre les ventes si nécessaire et crédite l'EVM en USDC.
 - `sweepToVault(uint64 amount1e8)` (onlyVault, whenNotPaused): calcule les frais en 1e8, puis transfère en EVM en 1e8 vers le vault.
-- `equitySpotUsd1e18()` (view): **CORRIGÉ** - Retourne l'équité totale des actifs spot en USD (format 1e18) avec conversion correcte weiDecimals
-- `spotBalanceInWei(address, uint64)` (internal view): **NOUVEAU** - Convertit les balances spot de szDecimals vers weiDecimals
-- `pause()` (onlyOwner): **NOUVEAU** - Met en pause toutes les opérations critiques
-- `unpause()` (onlyOwner): **NOUVEAU** - Reprend toutes les opérations
-- `emergencyPause()` (onlyOwner): **🚨 NOUVEAU** - Fonction d'urgence pour les situations critiques
+- `executeDepositHype(uint256 hype1e18, bool forceRebalance)` (onlyVault, whenNotPaused): dépôt HYPE (18d) → envoi HYPE sur Core → vente 100% en USDC → achats ~50% BTC et ~50% HYPE. Le rate limit s'applique sur l'équivalent USD (1e8).
+- `pullHypeFromCoreToEvm(uint64 hype1e8)` (onlyVault, whenNotPaused): achète du HYPE si nécessaire puis crédite l'EVM en HYPE.
+- `sweepHypeToVault(uint256 amount1e18)` (onlyVault, whenNotPaused): calcule les frais en HYPE (1e18), puis transfère le net vers le vault.
 
 ## Événements
 - `Rebalanced(int256 dBtc1e18, int256 dHype1e18)`
@@ -45,35 +43,18 @@
 Le contrat utilise un système de rate limiting basé sur les **blocs** (et non les timestamps) pour éviter toute manipulation par les validateurs.
 
 - **`epochLength`** : ⚠️ **Exprimé en nombre de blocs**, pas en secondes !
-  - Le code utilise `block.number` pour calculer les époques : `if (currentBlock - lastEpochStart >= epochLength)`
-  - **Exemples de calcul** :
-    - **HyperEVM (≈2 sec/bloc)** : 1 jour = 43200 blocs (86400 sec ÷ 2)
-    - **Ethereum mainnet (≈12 sec/bloc)** : 1 jour = 7200 blocs (86400 sec ÷ 12)
-    - **Polygon (≈2 sec/bloc)** : 1 jour = 43200 blocs
-  - ⚠️ **Erreur critique** : Utiliser `86400` (valeur en secondes) créerait une epoch de 86400 blocs ≈ 12-20 jours selon la chaîne, affaiblissant drastiquement la protection de rate limiting !
-- **`maxOutboundPerEpoch`** : Plafond de transferts USDC EVM→Core par epoch (en unités 1e8).
+- **`maxOutboundPerEpoch`** : Plafond de transferts USDC/HYPE (en équivalent USD pour les dépôts HYPE) par epoch.
 - **Réinitialisation** : Quand `epochLength` blocs sont écoulés, le compteur `sentThisEpoch` est remis à zéro.
 
-### Lien USDC Core
-- `setUsdcCoreLink(systemAddress, tokenId)`: `systemAddress` doit être non nul (`address(0)` interdit). `tokenId` peut valoir `0` et est accepté sans revert.
+### Liens Core
+- `setUsdcCoreLink(systemAddress, tokenId)`
+- `setHypeCoreLink(systemAddress, tokenId)`
+- `setSpotIds(btcSpot, hypeSpot)`
+- `setSpotTokenIds(usdcToken, btcToken, hypeToken)`
 
-## Exemple de Configuration
-```solidity
-// Définir l’adresse rebalancer
-handler.setRebalancer(0x1234...ABCD);
-
-// Appeler le rééquilibrage (depuis l’adresse rebalancer)
-handler.rebalancePortfolio(0, 0);
-```
-
-## Sécurité
-- `onlyVault` protège les flux de fonds (débits/credits USDC).
-- `onlyRebalancer` protège `rebalancePortfolio`.
-- `_rebalance` est interne pour les appels intra-contrat (ex. `executeDeposit`).
-- **NOUVEAU** : `whenNotPaused` protège toutes les opérations critiques contre les défaillances d'oracle
-- **NOUVEAU** : Mécanisme de pause d'urgence pour arrêter immédiatement les opérations en cas de problème
-- **🚨 CRITIQUE** : **Résistance à la manipulation temporelle** - Utilisation de `block.number` au lieu de `block.timestamp`
-- **⚡ OPTIMISÉ** : **Rate limiting basé sur les blocs** - Époques calculées en blocs pour éviter la manipulation des validateurs
+## Intégration avec `VaultContract`
+- Les vaults HYPE50 appellent `executeDepositHype()` pour auto-déployer la fraction HYPE en 50/50 après conversion en USDC.
+- Les retraits HYPE utilisent `pullHypeFromCoreToEvm()` puis `sweepHypeToVault()` si nécessaire.
 
 ## Gestion des Décimales (szDecimals vs weiDecimals)
 
