@@ -68,7 +68,7 @@ const AxoneStars: React.FC = () => {
         />
       </div>
 
-      <div className="container mx-auto px-4 lg:px-8 relative z-10">
+      <div className="container-custom relative z-10">
         {/* En-tête de section */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}

@@ -61,7 +61,7 @@ const Hero: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-axone-dark via-transparent to-transparent opacity-70" />
       </div>
 
-      <div className="container mx-auto px-4 lg:px-8 relative z-10">
+      <div className="container-custom relative z-10">
         <div className="max-w-7xl mx-auto">
           <div className="text-center space-y-8">
             {/* Badge d'introduction */}

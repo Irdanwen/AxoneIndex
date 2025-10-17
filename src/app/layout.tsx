@@ -84,7 +84,7 @@ export default function RootLayout({
         >
           Aller au contenu principal
         </a>
-        <div className="hero-gradient min-h-screen w-full">
+        <div className="hero-gradient min-h-screen">
           <WagmiProvider>
             <ThemeProvider>
               {children}
