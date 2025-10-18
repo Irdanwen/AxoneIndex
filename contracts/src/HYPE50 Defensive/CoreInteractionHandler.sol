@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {HLConstants} from "./utils/HLConstants.sol";
+import {CoreHandlerLib} from "./utils/CoreHandlerLib.sol";
 import {Rebalancer50Lib} from "./Rebalancer50Lib.sol";
 import {L1Read} from "./interfaces/L1Read.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -214,21 +215,7 @@ contract CoreInteractionHandler is Pausable {
     /// @param tokenId The token ID
     /// @return balanceInWei The balance converted to wei decimals (uint256 for precision)
     function spotBalanceInWei(address coreUser, uint64 tokenId) internal view returns (uint256) {
-        L1Read.SpotBalance memory b = l1read.spotBalance(coreUser, tokenId);
-        L1Read.TokenInfo memory info = l1read.tokenInfo(uint32(tokenId));
-        
-        uint256 total = uint256(b.total);
-        
-        // Convert from szDecimals to weiDecimals
-        // Formula: balanceInWei = total × 10^(weiDecimals - szDecimals)
-        if (info.weiDecimals > info.szDecimals) {
-            uint8 diff = info.weiDecimals - info.szDecimals;
-            return total * (10 ** diff);
-        } else if (info.weiDecimals < info.szDecimals) {
-            uint8 diff = info.szDecimals - info.weiDecimals;
-            return total / (10 ** diff);
-        }
-        return total;
+        return CoreHandlerLib.spotBalanceInWei(l1read, coreUser, tokenId);
     }
 
     function spotOraclePx1e8(uint32 spotAsset) public view returns (uint64) {
@@ -359,7 +346,7 @@ contract CoreInteractionHandler is Pausable {
             }
         }
         // Spot send to credit EVM
-        _send(coreWriter, HLConstants.encodeSpotSend(usdcCoreSystemAddress, usdcCoreTokenId, usdc1e8));
+        _send(coreWriter, CoreHandlerLib.encodeSpotSend(usdcCoreSystemAddress, usdcCoreTokenId, usdc1e8));
         emit InboundFromCore(usdc1e8);
         return usdc1e8;
     }
@@ -376,7 +363,7 @@ contract CoreInteractionHandler is Pausable {
             _sendLimitOrderDirect(spotHYPE, true, pxHLimit, SafeCast.toUint64(shortfall1e8), 0);
         }
         // Spot send to credit EVM HYPE
-        _send(coreWriter, HLConstants.encodeSpotSend(hypeCoreSystemAddress, hypeCoreTokenId, hype1e8));
+        _send(coreWriter, CoreHandlerLib.encodeSpotSend(hypeCoreSystemAddress, hypeCoreTokenId, hype1e8));
         emit InboundFromCore(hype1e8);
         return hype1e8;
     }
@@ -430,40 +417,19 @@ contract CoreInteractionHandler is Pausable {
     }
 
     function _computeRebalanceDeltas() internal returns (int256 dB, int256 dH, uint64 pxB, uint64 pxH) {
-        // CORRECTION AUDIT: Utilisation de spotBalanceInWei pour conversion correcte szDecimals -> weiDecimals
-        uint256 usdcBalWei = spotBalanceInWei(address(this), usdcCoreTokenId);
-        uint256 btcBalWei = spotBalanceInWei(address(this), spotTokenBTC);
-        uint256 hypeBalWei = spotBalanceInWei(address(this), spotTokenHYPE);
-        pxB = _validatedOraclePx1e8(true);
-        pxH = _validatedOraclePx1e8(false);
-
-        // Récupération des infos de décimales pour chaque token
-        L1Read.TokenInfo memory usdcInfo = l1read.tokenInfo(uint32(usdcCoreTokenId));
-        L1Read.TokenInfo memory btcInfo = l1read.tokenInfo(uint32(spotTokenBTC));
-        L1Read.TokenInfo memory hypeInfo = l1read.tokenInfo(uint32(spotTokenHYPE));
+        CoreHandlerLib.RebalanceContext memory ctx = CoreHandlerLib.RebalanceContext({
+            l1read: l1read,
+            usdcCoreTokenId: usdcCoreTokenId,
+            spotTokenBTC: spotTokenBTC,
+            spotTokenHYPE: spotTokenHYPE,
+            deadbandBps: deadbandBps,
+            maxSlippageBps: maxSlippageBps,
+            marketEpsilonBps: marketEpsilonBps,
+            spotBTC: spotBTC,
+            spotHYPE: spotHYPE
+        });
         
-        // Conversion USDC: balanceWei * 10^(18 - weiDecimals)
-        uint256 usdc1e18 = usdcBalWei * (10 ** (18 - usdcInfo.weiDecimals));
-        
-        // Conversion assets: valueUsd1e18 = balanceWei * price1e8 * 10^(18 - weiDecimals - 8)
-        int256 posB1e18;
-        int256 posH1e18;
-        
-        if (btcInfo.weiDecimals + 8 <= 18) {
-            posB1e18 = int256(btcBalWei * uint256(pxB) * (10 ** (18 - btcInfo.weiDecimals - 8)));
-        } else {
-            posB1e18 = int256((btcBalWei * uint256(pxB)) / (10 ** (btcInfo.weiDecimals + 8 - 18)));
-        }
-        
-        if (hypeInfo.weiDecimals + 8 <= 18) {
-            posH1e18 = int256(hypeBalWei * uint256(pxH) * (10 ** (18 - hypeInfo.weiDecimals - 8)));
-        } else {
-            posH1e18 = int256((hypeBalWei * uint256(pxH)) / (10 ** (hypeInfo.weiDecimals + 8 - 18)));
-        }
-        
-        uint256 equity1e18 = usdc1e18 + uint256(posB1e18) + uint256(posH1e18);
-
-        (dB, dH) = Rebalancer50Lib.computeDeltas(equity1e18, posB1e18, posH1e18, deadbandBps);
+        (dB, dH, pxB, pxH) = CoreHandlerLib.computeRebalanceDeltas(ctx, address(this));
     }
 
     function _placeRebalanceOrders(
@@ -499,21 +465,11 @@ contract CoreInteractionHandler is Pausable {
 
     // Internal utils
     function _limitFromOracle(uint64 oraclePx1e8, bool isBuy) internal view returns (uint64) {
-        uint256 bps = uint256(maxSlippageBps) + uint256(marketEpsilonBps);
-        uint256 adj = (uint256(oraclePx1e8) * bps) / 10_000;
-        if (isBuy) return uint64(uint256(oraclePx1e8) + adj);
-        uint256 lo = (uint256(oraclePx1e8) > adj) ? (uint256(oraclePx1e8) - adj) : 1;
-        return uint64(lo);
+        return CoreHandlerLib.limitFromOracle(oraclePx1e8, isBuy, maxSlippageBps, marketEpsilonBps);
     }
 
     function _toSz1e8(int256 deltaUsd1e18, uint64 price1e8) internal pure returns (uint64) {
-        if (deltaUsd1e18 == 0 || price1e8 == 0) return 0;
-        uint256 absUsd = uint256(deltaUsd1e18 > 0 ? deltaUsd1e18 : -deltaUsd1e18);
-        // size1e8 = (absUsd1e18 / price1e8) / 100
-        // Formule correcte: usd1e18 / price1e8 = 1e10, puis / 100 = 1e8
-        uint256 s = absUsd / uint256(price1e8) / 100;
-        if (s > type(uint64).max) return type(uint64).max;
-        return SafeCast.toUint64(s);
+        return CoreHandlerLib.toSz1e8(deltaUsd1e18, price1e8);
     }
 
     function _sellAssetForUsd(uint32 spotAsset, uint64 /*tokenId*/, uint256 targetUsd1e8) internal {
@@ -546,18 +502,17 @@ contract CoreInteractionHandler is Pausable {
 
     function _validatedOraclePx1e8(bool isBtc) internal returns (uint64) {
         uint32 asset = isBtc ? spotBTC : spotHYPE;
-        uint64 px = spotOraclePx1e8(asset);
-        uint64 lastPx = isBtc ? lastPxBtc1e8 : lastPxHype1e8;
-        bool init = isBtc ? pxInitB : pxInitH;
+        CoreHandlerLib.OracleValidation memory oracle = CoreHandlerLib.OracleValidation({
+            lastPxBtc1e8: lastPxBtc1e8,
+            lastPxHype1e8: lastPxHype1e8,
+            pxInitB: pxInitB,
+            pxInitH: pxInitH,
+            maxOracleDeviationBps: maxOracleDeviationBps
+        });
         
-        // Période de grâce : validation seulement si déjà initialisé et prix précédent valide
-        if (init && lastPx != 0) {
-            uint256 up = uint256(lastPx) * (10_000 + maxOracleDeviationBps) / 10_000;
-            uint256 down = uint256(lastPx) * (10_000 - maxOracleDeviationBps) / 10_000;
-            require(uint256(px) <= up && uint256(px) >= down, "ORACLE_DEV");
-        }
+        uint64 px = CoreHandlerLib.validatedOraclePx1e8(l1read, asset, oracle, isBtc);
         
-        // Mise à jour des prix même si pas encore initialisé (période de grâce)
+        // Update prices
         if (isBtc) {
             lastPxBtc1e8 = px;
             pxInitB = true;
@@ -568,45 +523,7 @@ contract CoreInteractionHandler is Pausable {
         return px;
     }
 
-    struct LimitOrderParams {
-        uint32 asset;
-        bool isBuy;
-        uint64 limitPx1e8;
-        uint64 sz1e8;
-        bool reduceOnly;
-        uint8 tif;
-        uint128 cloid;
-    }
 
-    struct RebalanceVars {
-        uint256 usdcBal1e8;
-        uint256 btcBal1e0;
-        uint256 hypeBal1e0;
-        uint64 pxB;
-        uint64 pxH;
-        int256 posB1e18;
-        int256 posH1e18;
-        uint256 equity1e18;
-        int256 dB;
-        int256 dH;
-        uint64 szB1e8;
-        uint64 szH1e8;
-    }
-
-    function _sendLimitOrder(ICoreWriter writer, LimitOrderParams memory p) internal {
-        _send(
-            writer,
-            HLConstants.encodeLimitOrder(
-                p.asset,
-                p.isBuy,
-                p.limitPx1e8,
-                p.sz1e8,
-                p.reduceOnly,
-                p.tif,
-                p.cloid
-            )
-        );
-    }
 
     function _sendLimitOrderDirect(
         uint32 asset,
@@ -615,18 +532,7 @@ contract CoreInteractionHandler is Pausable {
         uint64 sz1e8,
         uint128 cloid
     ) internal {
-        _send(
-            coreWriter,
-            HLConstants.encodeLimitOrder(
-                asset,
-                isBuy,
-                limitPx1e8,
-                sz1e8,
-                false,
-                HLConstants.TIF_IOC,
-                cloid
-            )
-        );
+        _send(coreWriter, CoreHandlerLib.encodeLimitOrder(asset, isBuy, limitPx1e8, sz1e8, cloid));
     }
 }
 
