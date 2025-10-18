@@ -120,4 +120,30 @@ export const vaultContractAbi = [
   }
 ] as const
 
+// Extensions spécifiques utilisées dans l’app
+export const vaultContractAbiExtended = [
+  ...vaultContractAbi,
+  {
+    type: 'function',
+    name: 'depositFeeBps',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint16' }]
+  },
+  {
+    type: 'function',
+    name: 'withdrawFeeBps',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint16' }]
+  },
+  {
+    type: 'function',
+    name: 'getWithdrawFeeBpsForAmount',
+    stateMutability: 'view',
+    inputs: [{ name: 'amount1e8', type: 'uint256' }],
+    outputs: [{ name: '', type: 'uint16' }]
+  }
+] as const
+
 
