@@ -55,6 +55,7 @@ library CoreHandlerLib {
         RebalanceContext memory ctx,
         address handler
     ) internal view returns (int256 dB, int256 dH, uint64 pxB, uint64 pxH) {
+        // Get balances and prices
         uint256 usdcBalWei = spotBalanceInWei(ctx.l1read, handler, ctx.usdcCoreTokenId);
         uint256 btcBalWei = spotBalanceInWei(ctx.l1read, handler, ctx.spotTokenBTC);
         uint256 hypeBalWei = spotBalanceInWei(ctx.l1read, handler, ctx.spotTokenHYPE);
@@ -62,31 +63,55 @@ library CoreHandlerLib {
         pxB = ctx.l1read.spotPx(ctx.spotBTC);
         pxH = ctx.l1read.spotPx(ctx.spotHYPE);
 
+        // Calculate positions using helper function to reduce stack depth
+        (int256 posB1e18, int256 posH1e18, uint256 usdc1e18) = _calculatePositions(
+            ctx.l1read, 
+            usdcBalWei, 
+            btcBalWei, 
+            hypeBalWei, 
+            pxB, 
+            pxH, 
+            ctx.usdcCoreTokenId, 
+            ctx.spotTokenBTC, 
+            ctx.spotTokenHYPE
+        );
+        
+        uint256 equity1e18 = usdc1e18 + uint256(posB1e18) + uint256(posH1e18);
+        (dB, dH) = Rebalancer50Lib.computeDeltas(equity1e18, posB1e18, posH1e18, ctx.deadbandBps);
+    }
+
+    function _calculatePositions(
+        L1Read l1read,
+        uint256 usdcBalWei,
+        uint256 btcBalWei,
+        uint256 hypeBalWei,
+        uint64 pxB,
+        uint64 pxH,
+        uint64 usdcCoreTokenId,
+        uint64 spotTokenBTC,
+        uint64 spotTokenHYPE
+    ) internal view returns (int256 posB1e18, int256 posH1e18, uint256 usdc1e18) {
         // Get token info for decimal conversion
-        L1Read.TokenInfo memory usdcInfo = ctx.l1read.tokenInfo(uint32(ctx.usdcCoreTokenId));
-        L1Read.TokenInfo memory btcInfo = ctx.l1read.tokenInfo(uint32(ctx.spotTokenBTC));
-        L1Read.TokenInfo memory hypeInfo = ctx.l1read.tokenInfo(uint32(ctx.spotTokenHYPE));
+        L1Read.TokenInfo memory usdcInfo = l1read.tokenInfo(uint32(usdcCoreTokenId));
+        L1Read.TokenInfo memory btcInfo = l1read.tokenInfo(uint32(spotTokenBTC));
+        L1Read.TokenInfo memory hypeInfo = l1read.tokenInfo(uint32(spotTokenHYPE));
         
-        // Convert to 1e18 USD values
-        uint256 usdc1e18 = usdcBalWei * (10 ** (18 - usdcInfo.weiDecimals));
+        // Convert USDC to 1e18 USD values
+        usdc1e18 = usdcBalWei * (10 ** (18 - usdcInfo.weiDecimals));
         
-        int256 posB1e18;
-        int256 posH1e18;
-        
+        // Convert BTC position
         if (btcInfo.weiDecimals + 8 <= 18) {
             posB1e18 = int256(btcBalWei * uint256(pxB) * (10 ** (18 - btcInfo.weiDecimals - 8)));
         } else {
             posB1e18 = int256((btcBalWei * uint256(pxB)) / (10 ** (btcInfo.weiDecimals + 8 - 18)));
         }
         
+        // Convert HYPE position
         if (hypeInfo.weiDecimals + 8 <= 18) {
             posH1e18 = int256(hypeBalWei * uint256(pxH) * (10 ** (18 - hypeInfo.weiDecimals - 8)));
         } else {
             posH1e18 = int256((hypeBalWei * uint256(pxH)) / (10 ** (hypeInfo.weiDecimals + 8 - 18)));
         }
-        
-        uint256 equity1e18 = usdc1e18 + uint256(posB1e18) + uint256(posH1e18);
-        (dB, dH) = Rebalancer50Lib.computeDeltas(equity1e18, posB1e18, posH1e18, ctx.deadbandBps);
     }
 
     function toSz1e8(int256 deltaUsd1e18, uint64 price1e8) internal pure returns (uint64) {
