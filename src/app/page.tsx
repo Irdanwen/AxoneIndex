@@ -1,6 +1,5 @@
 import React, { Suspense } from 'react';
 import dynamic from 'next/dynamic';
-import Header from '@/components/layout/Header';
 import Hero from '@/components/sections/Hero';
 
 // Lazy loading des sections non critiques
@@ -37,7 +36,6 @@ const SectionLoader = () => (
 export default function Home() {
   return (
     <main className="min-h-screen bg-axone-dark">
-      <Header />
       <Hero />
       <Suspense fallback={<SectionLoader />}>
         <About />

@@ -8,7 +8,6 @@ import GlassCard from '@/components/ui/GlassCard'
 import { Button } from '@/components/ui'
 import Stat from '@/components/ui/Stat'
 import { motion } from 'framer-motion'
-import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -209,7 +208,6 @@ export default function ReferralManagement() {
 
   return (
     <>
-      <Header />
       <main className="min-h-screen bg-axone-dark pt-24">
       {/* Section Hero avec tous les éléments */}
       <section className="hero-gradient min-h-screen flex items-center relative overflow-hidden">

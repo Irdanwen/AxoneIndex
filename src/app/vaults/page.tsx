@@ -6,7 +6,6 @@ import { VaultFilters } from '@/components/vaults/VaultFilters'
 import { VaultDashboard } from '@/components/vaults/VaultDashboard'
 import { MOCK_VAULTS } from '@/lib/vaultMock'
 import { Vault } from '@/lib/vaultTypes'
-import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { motion } from 'framer-motion'
 import { Loader2 } from 'lucide-react'
@@ -45,7 +44,6 @@ export default function VaultsPage() {
 
   return (
     <main className="min-h-screen hero-gradient">
-      <Header />
       
       <div className="relative">
         {/* Background gradient effect */}

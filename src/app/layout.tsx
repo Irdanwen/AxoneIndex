@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { WagmiProvider } from '@/components/providers/WagmiProvider'
 import ThemeProvider from '@/components/providers/ThemeProvider'
+import Header from '@/components/layout/Header'
 
 export const metadata: Metadata = {
   title: 'Axone Finance - L\'avenir de la finance décentralisée',
@@ -84,10 +85,13 @@ export default function RootLayout({
         >
           Aller au contenu principal
         </a>
+        <Header />
         <div className="hero-gradient min-h-screen">
           <WagmiProvider>
             <ThemeProvider>
-              {children}
+              <div id="main-content" className="pt-20 md:pt-24">
+                {children}
+              </div>
             </ThemeProvider>
           </WagmiProvider>
         </div>

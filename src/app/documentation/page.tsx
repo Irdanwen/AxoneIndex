@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from 'react';
-import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import GlassCard from '@/components/ui/GlassCard';
 import SectionTitle from '@/components/ui/SectionTitle';
@@ -55,7 +54,6 @@ export default function DocumentationPage() {
   }
   return (
     <div className="min-h-screen bg-axone-dark text-white-pure">
-      <Header />
       
       <main className="container-custom section-padding">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">

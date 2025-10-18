@@ -70,11 +70,11 @@ const Header: React.FC = () => {
         role="banner"
         aria-label="Navigation principale"
       >
-        <div className="container mx-auto px-4 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            
+        <div className="w-full max-w-screen-2xl mx-auto px-4 lg:px-8">
+          <div className="flex items-center h-20">
+
             {/* Logo futuriste à gauche */}
-            <motion.div 
+            <motion.div
               className="flex items-center space-x-4 z-50"
               whileHover={{ scale: 1.02 }}
             >
@@ -124,7 +124,7 @@ const Header: React.FC = () => {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="hidden lg:flex items-center space-x-8 absolute left-1/2 transform -translate-x-1/2"
+              className="hidden lg:flex flex-1 items-center justify-center gap-8"
               role="navigation"
               aria-label="Menu principal"
             >

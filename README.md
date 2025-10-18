@@ -1,210 +1,141 @@
-# Axone Finance - Landing Page
+# Axone Finance — Monorepo (App + Contracts + Monitoring + Bot)
 
-Une landing page moderne et futuriste pour Axone Finance, inspirée du design de Sky.money avec une ambiance cosmique et institutionnelle.
+Monorepo Axone Finance contenant l’application Next.js, les smart contracts Hardhat, un service de monitoring Core/HyperEVM et un bot de rebalancement. Cette documentation centralise l’installation, les commandes et les liens vers les guides détaillés.
 
-## 🎨 Charte Graphique
-
-### Couleurs Principales
-- **Sandy Brown** `#fab062` - Couleur d'accent principal
-- **Flounce** `#4a8c8c` - Couleur secondaire
-- **Stellar Green** `#011f26` - Couleur de fond sombre
-
-### Couleurs Fonctionnelles
-- **Succès** `#3CD88C`
-- **Alerte** `#FFB020`
-- **Erreur** `#FF5C5C`
-- **Info** `#4D9FFF`
-
-### Typographie
-- **Titres (H1/H2/H3)** : Inter Bold, espacé négatif léger (-0.5px)
-- **Texte** : Inter Regular/Medium
-- **Boutons CTA** : uppercase, SemiBold
-
-### Style UI
-- **Effet glassmorphism** : `rgba(255,255,255,0.05)` + `blur(20px)`
-- **Boutons CTA** : dégradé violet/bleu, arrondi XL, glow au hover
-- **Footer** : fond noir nuit, texte gris clair
-- **Background** : dégradés de sandy brown à Stellar Green + formes géométriques animées
-
-## 📁 Structure du Projet
+## 🧭 Aperçu des sous‑projets
 
 ```
-axone-finance/
-├── src/
-│   ├── app/
-│   │   ├── layout.tsx          # Layout principal
-│   │   ├── page.tsx            # Page d'accueil
-│   │   └── globals.css         # Styles globaux
-│   ├── components/
-│   │   ├── layout/
-│   │   │   ├── Header.tsx      # Header avec navigation
-│   │   │   └── Footer.tsx      # Footer avec liens
-│   │   ├── sections/
-│   │   │   ├── Hero.tsx        # Section héro principale
-│   │   │   ├── About.tsx       # Section Axone (2 colonnes)
-│   │   │   └── HowItWorks.tsx  # Section Axone Stars
-│   │   └── ui/
-│   │       ├── Button.tsx      # Composant bouton
-│   │       ├── AnimatedCounter.tsx # Compteur animé
-│   │       ├── GlassCard.tsx   # Carte avec effet glassmorphism
-│   │       └── SectionTitle.tsx # Titre de section
-│   └── lib/
-│       └── utils.ts            # Utilitaires shadcn/ui
-├── tailwind.config.ts          # Configuration Tailwind
-└── package.json
+AxoneIndex/
+├── src/                  # Frontend Next.js 15 / React 19 / Tailwind 4
+├── contracts/            # Smart contracts (Hardhat)
+├── monitoring/           # Service Node.js (PM2) pour monitorer les actions Core
+├── rebalancingbot/       # Bot Python pour rebalance périodique
+├── docs/                 # Documentation technique (contrats, guides)
+├── docsAgent/            # Guides de déploiement (Remix, HyperCore, Staking)
+├── scripts/              # Scripts utiles (logs, images, checks…)
+└── package.json          # Workspace root
 ```
 
-## 🚀 Sections du Site
+## ✅ Prérequis
 
-### 1. Header (Sticky, Semi-transparent)
-- Logo futuriste Axone à gauche
-- Navigation : Explore, Participate, Build, Docs
-- CTA bouton "Launch App"
+- Node.js 20 LTS recommandé (≥ 18.17 supporté par Next 15)
+- pnpm 9.x (recommandé et exigé en CI/CD)
+  - Remarque Vercel: fix réseau en forçant pnpm 9.x via `package.json → engines.pnpm` [[voir `docs/ops/VERCEL_BUILD_FIX_FINAL.md`]]
 
-### 2. Hero Section (Plein écran)
-- Fond dégradé avec formes géométriques animées
-- Titre : "Get rewarded for saving, without giving up control"
-- CTA principal "Launch App"
-- Statistiques : Users (125K+), TVL ($45.2M), Performance (+18.5%)
-
-### 3. Section Axone (2 colonnes)
-- Texte explicatif à gauche
-- Illustration du token Axone à droite
-- Bouton "Access Axone"
-
-### 4. Section Axone Stars (Ciel étoilé)
-- Fond sombre avec étoiles animées
-- 8 étoiles représentant les fonctionnalités clés
-- Layout en constellation
-
-### 5. Footer (Fond noir nuit)
-- 2 colonnes : branding + liens organisés
-- Liens : Explore, Ecosystem, Participate, Build
-- Mentions légales en bas
-
-## ✨ Animations
-
-### Effets Principaux
-- **Fade-in progressif** des sections au scroll
-- **Hover sur CTA** : glow cosmique
-- **Hover sur cartes** : `translateY(-5px)` + shadow douce
-- **Formes géométriques** animées lentement
-- **Particules flottantes** en arrière-plan
-
-### Animations CSS
-```css
-/* Exemples d'animations disponibles */
-.animate-fade-in
-.animate-fade-in-up
-.animate-scale-in
-.animate-float
-.animate-pulse-glow
-.animate-gradient-shift
-.animate-shimmer
-```
-
-## 🛠️ Technologies Utilisées
-
-- **Next.js 15** - Framework React
-- **TypeScript** - Typage statique
-- **Tailwind CSS 4** - Framework CSS
-- **Framer Motion** - Animations
-- **Lucide React** - Icônes
-- **shadcn/ui** - Composants UI
-
-## 🎯 Composants Réutilisables
-
-### Button
-```tsx
-<Button variant="primary" size="lg">
-  Launch App
-</Button>
-```
-
-### AnimatedCounter
-```tsx
-<AnimatedCounter value="125K+" duration={2} />
-```
-
-### GlassCard
-```tsx
-<div className="glass-card p-8 rounded-3xl">
-  Contenu avec effet glassmorphism
-</div>
-```
-
-## 🎨 Classes CSS Utilitaires
-
-### Couleurs
-```css
-.text-axone-accent      /* Sandy Brown */
-.text-axone-flounce     /* Flounce */
-.text-axone-dark        /* Stellar Green */
-.bg-gradient-primary    /* Dégradé principal */
-.bg-gradient-secondary  /* Dégradé secondaire */
-```
-
-### Effets
-```css
-.glass-card             /* Effet glassmorphism */
-.glass-card-strong      /* Glassmorphism plus prononcé */
-.shadow-glow            /* Ombre avec glow */
-.shadow-glow-flounce    /* Glow flounce */
-```
-
-### Animations
-```css
-.animate-float          /* Flottement */
-.animate-pulse-glow     /* Pulse avec glow */
-.animate-gradient-shift /* Dégradé animé */
-.animate-shimmer        /* Effet brillance */
-```
-
-## 📱 Responsive Design
-
-- **Mobile First** : Design optimisé pour mobile
-- **Breakpoints** : sm, md, lg, xl, 2xl
-- **Navigation** : Menu hamburger sur mobile
-- **Grilles** : Adaptatives selon la taille d'écran
-
-## 🚀 Installation et Démarrage
+## 🚀 Démarrage rapide (Frontend)
 
 ```bash
-# Installation des dépendances
-npm install
+# 1) Installer les dépendances du monorepo
+pnpm install
 
-# Démarrage en mode développement
-npm run dev
+# 2) Lancer le frontend en développement (Turbopack)
+pnpm dev
 
-# Build de production
-npm run build
+# 3) Build et démarrage production
+pnpm build && pnpm start
 
-# Démarrage en production
-npm start
+# Outils
+pnpm lint
+pnpm optimize-project   # prune + clear cache + optimisation des images
+pnpm clean              # reset local node_modules/.next puis réinstalle
 ```
 
-## 📊 Performance
+Technos côté app: Next.js 15, React 19, TypeScript, Tailwind CSS v4, Framer Motion, shadcn/ui, lucide-react, wagmi/viem.
 
-- **Lazy Loading** des composants
-- **Optimisation des images** avec Next.js
-- **Animations CSS** pour les performances
-- **Code splitting** automatique
+## 💼 Smart Contracts (Hardhat)
 
-## 🎨 Personnalisation
+Emplacement: `contracts/`
 
-### Modifier les couleurs
-Éditez `tailwind.config.ts` pour changer la palette de couleurs.
+```bash
+# Installation (dans le dossier contracts/)
+pnpm -C contracts install
 
-### Ajouter des animations
-Utilisez les classes d'animation existantes ou créez-en de nouvelles dans la config Tailwind.
+# Compiler / Tester
+pnpm -C contracts compile
+pnpm -C contracts test
 
-### Modifier le contenu
-Les textes et données sont facilement modifiables dans les composants correspondants.
+# Nœud local et déploiement
+pnpm -C contracts node
+pnpm -C contracts deploy:local
 
-## 📄 Licence
+# Réseaux
+pnpm -C contracts deploy:testnet
+pnpm -C contracts deploy:mainnet
 
-Ce projet est sous licence MIT. Voir le fichier LICENSE pour plus de détails.
+# Nettoyage
+pnpm -C contracts clean
+```
 
----
+Configuration attendue: copier `contracts/env.example` → `contracts/.env` puis renseigner `PRIVATE_KEY`, `TESTNET_RPC_URL`, `MAINNET_RPC_URL`, `ETHERSCAN_API_KEY`.
 
-**Axone Finance** - Le futur de la finance décentralisée 🌟
+Références utiles:
+- `docs/contracts/ReferralRegistry.md`
+- `docs/contracts/VaultContract.md`
+- `docs/contracts/CoreInteractionHandler.md`
+- `docs/contracts/StakingSystem.md`
+- Guides Remix/HyperCore dans `docsAgent/`
+
+## 📡 Monitoring Core (Node + PM2)
+
+Emplacement: `monitoring/`
+
+```bash
+# Dev
+pnpm -C monitoring dev
+
+# Production via PM2
+pnpm -C monitoring pm2         # start d’après pm2.config.cjs
+pnpm -C monitoring pm2:logs
+pnpm -C monitoring pm2:stop
+```
+
+Variables d’environnement (fichier `.env` dans `monitoring/`, voir code): RPC/keys/adresses selon votre environnement.
+
+## 🤖 Bot de Rebalancement (Python)
+
+Emplacement: `rebalancingbot/`
+
+Résumé:
+- Appelle périodiquement `rebalancePortfolio(0,0)` sur `CoreInteractionHandler`
+- Notifie via Telegram (succès/échec + balances Hyper Core)
+
+Démarrage rapide:
+```bash
+cd rebalancingbot
+pip install -r requirements.txt
+cp .env.example .env   # puis éditer RPC_URL, PRIVATE_KEY, HANDLER_ADDRESS, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
+python bot.py
+```
+
+Production: voir le README du dossier pour systemd, Docker ou PM2.
+
+## 🎨 Design & UI (Frontend)
+
+Pour la charte complète (couleurs, typographies, animations, conventions et exemples de composants), voir `docs/ui/STYLE_GUIDE.md`.
+
+## 📚 Documentation liée
+
+- Guides de vérification et déploiement HyperCore: `docs/HYPERCORE_VERIFICATION_GUIDE.md`, `docs/HYPERCORE_TESTNET_VERIFICATION_GUIDE.md`
+- Staking: `docs/contracts/StakingSystem.md`, `contracts/src/Staking/README.md`
+- Référencement/Parrainage: `docs/REFERRAL_GUIDE.md`, `docs/REFERRAL_MANAGEMENT_GUIDE.md`
+- Ops / CI: `docs/ops/VERCEL_BUILD_FIX_FINAL.md`, `VERCEL_BUILD_FIX_FINAL.md`, `VERCEL_CSS_FIX.md`
+
+## ⚙️ Personnalisation (Frontend)
+
+- Couleurs/Design: éditer `tailwind.config.ts`
+- Animations: utiliser/étendre les classes ci‑dessus via Tailwind 4
+- Contenus: éditer les composants dans `src/components` et sections dans `src/app`
+
+## 🔐 Sécurité
+
+- Ne jamais committer de secrets (`.env`, clés privées)
+- Utiliser des gestionnaires de secrets en production
+- Vérifier les adresses officielles (USDC, L1Read, CoreWriter) avant tout déploiement
+
+## 📜 Licence
+
+Projet sous licence MIT. Voir le fichier LICENSE si présent.
+
+—
+
+Axone Finance — Le futur de la finance décentralisée 🌟
