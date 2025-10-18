@@ -68,6 +68,11 @@ library CoreHandlerLib {
         RebalanceContext memory ctx,
         address handler
     ) internal view returns (int256 dB, int256 dH, uint64 pxB, uint64 pxH) {
+        // Préparer des variables temporaires dont la durée de vie s'étend hors du bloc
+        int256 _posB1e18;
+        int256 _posH1e18;
+        uint256 _equity1e18;
+
         // Isoler les variables lourdes dans un bloc pour limiter leur durée de vie sur la pile
         {
             // Get balances and prices
@@ -93,18 +98,23 @@ library CoreHandlerLib {
 
             (int256 posB1e18, int256 posH1e18, uint256 usdc1e18) = _calculatePositions(p);
 
-            // Appel direct sans variable intermédiaire pour réduire les locaux vivants
-            (dB, dH) = Rebalancer50Lib.computeDeltas(
-                usdc1e18 + uint256(posB1e18) + uint256(posH1e18),
-                posB1e18,
-                posH1e18,
-                ctx.deadbandBps
-            );
+            // Conserver uniquement les valeurs nécessaires hors du bloc
+            _posB1e18 = posB1e18;
+            _posH1e18 = posH1e18;
+            _equity1e18 = usdc1e18 + uint256(posB1e18) + uint256(posH1e18);
 
             // Assigner les prix de sortie après le calcul pour éviter qu'ils restent vivants pendant l'appel
             pxB = _pxB;
             pxH = _pxH;
         }
+
+        // Appeler computeDeltas en dehors du bloc pour réduire la pression de pile
+        (dB, dH) = Rebalancer50Lib.computeDeltas(
+            _equity1e18,
+            _posB1e18,
+            _posH1e18,
+            ctx.deadbandBps
+        );
     }
 
     function _calculatePositions(
