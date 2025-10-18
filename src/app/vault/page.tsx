@@ -222,16 +222,19 @@ export default function VaultPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-4xl">
-      <div className="mb-8">
+    <main className="min-h-screen hero-gradient">
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-vault-brand/5 to-transparent pointer-events-none" />
+        <div className="relative z-10 container-custom py-8" style={{ paddingTop: '10rem' }}>
+      <div className="mb-8 text-center w-full">
         <h1 className="text-3xl font-bold mb-2">Gestion du Vault</h1>
-        <p className="text-muted-foreground">
+        <p className="text-vault-muted max-w-2xl mx-auto">
           Approuvez, déposez et retirez vos fonds du vault
         </p>
       </div>
 
       {/* Balances */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Balance HYPE (native)</CardTitle>
@@ -252,7 +255,7 @@ export default function VaultPage() {
       </div>
 
       {/* Actions */}
-      <div className="grid gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Deposit */}
         <Card>
           <CardHeader>
@@ -400,6 +403,8 @@ export default function VaultPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+        </div>
+      </div>
+    </main>
   )
 }
