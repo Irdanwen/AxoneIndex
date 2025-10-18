@@ -1,5 +1,5 @@
-// Minimal ABI pour interagir avec le VaultContract BTC50 Defensive
-// Fonctions utilisées: deposit(uint64), withdraw(uint256), pps1e18() view, balanceOf(address) view, ERC20 (transfer, approve, transferFrom, allowance, totalSupply, name, symbol, decimals)
+// Minimal ABI pour interagir avec le VaultContract HYPE50 Defensive
+// Fonctions utilisées: deposit() payable, withdraw(uint256), pps1e18() view, balanceOf(address) view, ERC20 (transfer, approve, transferFrom, allowance, totalSupply, name, symbol, decimals)
 export const vaultContractAbi = [
   {
     type: 'function',
@@ -100,8 +100,8 @@ export const vaultContractAbi = [
   {
     type: 'function',
     name: 'deposit',
-    stateMutability: 'nonpayable',
-    inputs: [{ name: 'amount1e6', type: 'uint64' }],
+    stateMutability: 'payable',
+    inputs: [],
     outputs: []
   },
   {

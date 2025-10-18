@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAccount, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { useAccount, useReadContracts, useWriteContract, useWaitForTransactionReceipt, useBalance, useReadContract } from 'wagmi'
 import { parseUnits } from 'viem'
 import { useVaultConfig } from '@/hooks/useVaultConfig'
-import { erc20Contract } from '@/contracts/erc20'
 import { vaultContract } from '@/contracts/vault'
+import { coreInteractionHandlerContract } from '@/contracts/coreInteractionHandler'
 import { formatNumber, formatUnitsSafe } from '@/lib/format'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Input, Label } from '@/components/ui'
 import { AlertCircle, Loader2, Wallet } from 'lucide-react'
@@ -19,29 +19,17 @@ export default function VaultPage() {
   const { writeContract, isPending, data: hash } = useWriteContract()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
 
-  const [approveAmount, setApproveAmount] = useState('')
   const [depositAmount, setDepositAmount] = useState('')
   const [withdrawAmount, setWithdrawAmount] = useState('')
 
-  // Lire les balances et allowance
+  // Solde natif HYPE (1e18)
+  const { data: hypeNative } = useBalance({
+    address,
+    query: { enabled: !!address },
+  })
+
+  // Lire les infos du vault (shares, decimals, totalSupply, PPS, fees) et oracle HYPE
   const contracts = config && address ? [
-    // USDC balance
-    {
-      ...erc20Contract(config.usdcAddress),
-      functionName: 'balanceOf',
-      args: [address],
-    },
-    // USDC decimals
-    {
-      ...erc20Contract(config.usdcAddress),
-      functionName: 'decimals',
-    },
-    // USDC allowance
-    {
-      ...erc20Contract(config.usdcAddress),
-      functionName: 'allowance',
-      args: [address, config.vaultAddress],
-    },
     // Vault shares balance
     {
       ...vaultContract(config.vaultAddress),
@@ -58,6 +46,26 @@ export default function VaultPage() {
       ...vaultContract(config.vaultAddress),
       functionName: 'totalSupply',
     },
+    // PPS (USD 1e18)
+    {
+      ...vaultContract(config.vaultAddress),
+      functionName: 'pps1e18',
+    },
+    // depositFeeBps
+    {
+      ...vaultContract(config.vaultAddress),
+      functionName: 'depositFeeBps',
+    },
+    // withdrawFeeBps (par défaut)
+    {
+      ...vaultContract(config.vaultAddress),
+      functionName: 'withdrawFeeBps',
+    },
+    // Oracle HYPE 1e8 via handler
+    {
+      ...coreInteractionHandlerContract(config.handlerAddress),
+      functionName: 'oraclePxHype1e8',
+    },
   ] : []
 
   const { data: contractData, refetch } = useReadContracts({
@@ -68,18 +76,28 @@ export default function VaultPage() {
   })
 
   // Formater les données
-  const usdcBalance = formatUnitsSafe(contractData?.[0]?.result as bigint, 6)
-  const usdcDecimals = (contractData?.[1]?.result as number) || 6
-  const allowance = formatUnitsSafe(contractData?.[2]?.result as bigint, usdcDecimals)
-  const vaultShares = formatUnitsSafe(contractData?.[3]?.result as bigint, (contractData?.[4]?.result as number) || 18)
-  const vaultDecimals = (contractData?.[4]?.result as number) || 18
-  const vaultTotalSupply = formatUnitsSafe(contractData?.[5]?.result as bigint, vaultDecimals)
+  const hypeBalance = formatUnitsSafe(hypeNative?.value as bigint | undefined, hypeNative?.decimals ?? 18)
+  const vaultShares = formatUnitsSafe(contractData?.[0]?.result as bigint, (contractData?.[1]?.result as number) || 18)
+  const vaultDecimals = (contractData?.[1]?.result as number) || 18
+  const vaultTotalSupply = formatUnitsSafe(contractData?.[2]?.result as bigint, vaultDecimals)
+  const pps = formatUnitsSafe(contractData?.[3]?.result as bigint, 18)
+  const depositFeeBps = (contractData?.[4]?.result as number) || 0
+  const withdrawFeeBpsDefault = (contractData?.[5]?.result as number) || 0
+  const oraclePxHype1e8Str = formatUnitsSafe(contractData?.[6]?.result as bigint, 8)
+
+  // Valeurs brutes utiles pour calculs
+  const ppsRaw = (contractData?.[3]?.result as bigint) || 0n
+  const totalSupplyRaw = (contractData?.[2]?.result as bigint) || 0n
+  const pxHype1e8Raw = (contractData?.[6]?.result as bigint) || 0n
+
+  // Balance HYPE du contrat Vault (trésorerie EVM)
+  const { data: vaultCash } = useBalance({ address: (config?.vaultAddress as `0x${string}` | undefined), query: { enabled: !!config?.vaultAddress } })
+  const vaultCashHypeStr = formatUnitsSafe(vaultCash?.value as bigint | undefined, vaultCash?.decimals ?? 18)
 
   // Rafraîchir après une transaction réussie
   useEffect(() => {
     if (isSuccess) {
       refetch()
-      setApproveAmount('')
       setDepositAmount('')
       setWithdrawAmount('')
       toast({
@@ -89,27 +107,16 @@ export default function VaultPage() {
     }
   }, [isSuccess, refetch, toast])
 
-  // Fonctions pour les transactions
-  const handleApprove = () => {
-    if (!config || !approveAmount) return
-
-    const amount = parseUnits(approveAmount, usdcDecimals)
-    writeContract({
-      ...erc20Contract(config.usdcAddress),
-      functionName: 'approve',
-      args: [config.vaultAddress, amount],
-    })
-  }
-
   const handleDeposit = () => {
     if (!config || !depositAmount) return
 
-    // Le vault utilise deposit(uint64 amount1e6)
-    const amount = parseUnits(depositAmount, 6)
+    // Le vault HYPE50 utilise deposit() payable en HYPE natif (1e18)
+    const value = parseUnits(depositAmount, hypeNative?.decimals ?? 18)
     writeContract({
       ...vaultContract(config.vaultAddress),
       functionName: 'deposit',
-      args: [amount],
+      args: [],
+      value,
     })
   }
 
@@ -124,6 +131,60 @@ export default function VaultPage() {
       args: [shares],
     })
   }
+
+  // Estimation dépôt: shares attendues
+  const depositEstimate = (() => {
+    const amt = parseFloat(depositAmount || '0')
+    if (!amt || amt <= 0) return null
+    const px = parseFloat(oraclePxHype1e8Str || '0')
+    if (!px) return null
+    const ppsNum = parseFloat(pps || '0') || 1
+    // USD notionnel (1e18) = amt(HYPE) * px(1e8)
+    const depositUsd = amt * (px / 1e8)
+    const sharesBeforeFee = totalSupplyRaw === 0n ? depositUsd : (depositUsd / ppsNum)
+    const sharesAfterFee = sharesBeforeFee * (1 - (depositFeeBps / 10000))
+    return {
+      usd: depositUsd,
+      shares: sharesAfterFee,
+    }
+  })()
+
+  // Estimation retrait: net HYPE et risque de file (en fonction de la trésorerie EVM)
+  // Calcul grossHype1e18 pour intéroger le fee tier (si dispo)
+  const withdrawGrossHype1e18ForFee: bigint | undefined = (() => {
+    const sharesStr = withdrawAmount || '0'
+    const shares = sharesStr ? parseUnits(sharesStr, vaultDecimals) : 0n
+    if (shares <= 0n || ppsRaw === 0n || pxHype1e8Raw === 0n) return undefined
+    const dueUsd1e18 = (shares * ppsRaw) / 1000000000000000000n
+    const grossHype = (dueUsd1e18 * 100000000n) / pxHype1e8Raw
+    return grossHype
+  })()
+
+  const { data: feeBpsForAmount } = useReadContract({
+    ...vaultContract((config?.vaultAddress || '0x0000000000000000000000000000000000000000') as `0x${string}`),
+    functionName: 'getWithdrawFeeBpsForAmount',
+    args: withdrawGrossHype1e18ForFee ? [withdrawGrossHype1e18ForFee] : undefined,
+    query: { enabled: Boolean(config?.vaultAddress && withdrawGrossHype1e18ForFee !== undefined) }
+  })
+
+  const withdrawEstimate = (() => {
+    const sharesStr = withdrawAmount || '0'
+    const shares = sharesStr ? parseUnits(sharesStr, vaultDecimals) : 0n
+    if (shares <= 0n || ppsRaw === 0n || pxHype1e8Raw === 0n) return null
+    const dueUsd1e18 = (shares * ppsRaw) / 1000000000000000000n
+    const grossHype1e18 = (dueUsd1e18 * 100000000n) / pxHype1e8Raw
+    const appliedFeeBps = (feeBpsForAmount as number | undefined) ?? withdrawFeeBpsDefault
+    const fee = (grossHype1e18 * BigInt(appliedFeeBps)) / 10000n
+    const net = grossHype1e18 - fee
+    const cash = (vaultCash?.value as bigint | undefined) ?? 0n
+    const likelyQueued = grossHype1e18 > cash
+    return {
+      grossHype1e18,
+      netHype1e18: net,
+      feeBps: appliedFeeBps,
+      likelyQueued,
+    }
+  })()
 
   // Si pas de wallet connecté
   if (!isConnected) {
@@ -173,10 +234,10 @@ export default function VaultPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Balance USDC</CardTitle>
+            <CardTitle className="text-base">Balance HYPE (native)</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{formatNumber(usdcBalance, { decimals: 2 })}</p>
+            <p className="text-2xl font-bold">{formatNumber(hypeBalance, { decimals: 4 })}</p>
           </CardContent>
         </Card>
 
@@ -188,83 +249,43 @@ export default function VaultPage() {
             <p className="text-2xl font-bold">{formatNumber(vaultShares, { decimals: 6 })}</p>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Allowance USDC</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{formatNumber(allowance, { decimals: 2 })}</p>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Actions */}
       <div className="grid gap-6">
-        {/* Approve */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Approuver USDC</CardTitle>
-            <CardDescription>
-              Autorisez le vault à utiliser vos USDC
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="approveAmount">Montant à approuver (USDC)</Label>
-                <Input
-                  id="approveAmount"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={approveAmount}
-                  onChange={(e) => setApproveAmount(e.target.value)}
-                  disabled={isPending || isConfirming}
-                />
-              </div>
-              <Button
-                onClick={handleApprove}
-                disabled={!approveAmount || isPending || isConfirming}
-                className="w-full"
-              >
-                {isPending || isConfirming ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : null}
-                Approuver
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Deposit */}
         <Card>
           <CardHeader>
-            <CardTitle>Déposer USDC</CardTitle>
+            <CardTitle>Déposer HYPE (natif)</CardTitle>
             <CardDescription>
-              Déposez vos USDC dans le vault et recevez des parts
+              Déposez des HYPE dans le vault et recevez des parts
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="depositAmount">Montant à déposer (USDC)</Label>
+                <Label htmlFor="depositAmount">Montant à déposer (HYPE)</Label>
                 <Input
                   id="depositAmount"
                   type="number"
-                  step="0.01"
-                  placeholder="0.00"
+                  step="0.0001"
+                  placeholder="0.0000"
                   value={depositAmount}
                   onChange={(e) => setDepositAmount(e.target.value)}
                   disabled={isPending || isConfirming}
                 />
-                <p className="text-sm text-muted-foreground">
-                  Allowance actuelle : {formatNumber(allowance, { decimals: 2 })} USDC
-                </p>
+                <p className="text-sm text-muted-foreground">Balance disponible : {formatNumber(hypeBalance, { decimals: 4 })} HYPE</p>
+              {depositEstimate && (
+                <div className="text-xs text-muted-foreground">
+                  <div>Prix HYPE estimé: ~{formatNumber(oraclePxHype1e8Str, { decimals: 2 })} USD</div>
+                  <div>Montant USD estimé: ~{formatNumber(String(depositEstimate.usd), { decimals: 2 })} USD</div>
+                  <div>Parts estimées nettes (après frais {depositFeeBps} bps): ~{formatNumber(String(depositEstimate.shares), { decimals: 6 })}</div>
+                </div>
+              )}
               </div>
               <Button
                 onClick={handleDeposit}
-                disabled={!depositAmount || isPending || isConfirming || parseFloat(depositAmount) > parseFloat(allowance)}
+                disabled={!depositAmount || isPending || isConfirming || parseFloat(depositAmount || '0') <= 0 || parseFloat(depositAmount) > parseFloat(hypeBalance || '0')}
                 className="w-full"
               >
                 {isPending || isConfirming ? (
@@ -272,9 +293,9 @@ export default function VaultPage() {
                 ) : null}
                 Déposer
               </Button>
-              {parseFloat(depositAmount) > parseFloat(allowance) && depositAmount && (
+              {parseFloat(depositAmount || '0') > parseFloat(hypeBalance || '0') && depositAmount && (
                 <p className="text-sm text-red-500">
-                  Veuillez d&apos;abord approuver un montant suffisant
+                  Montant supérieur à votre balance HYPE
                 </p>
               )}
             </div>
@@ -286,7 +307,7 @@ export default function VaultPage() {
           <CardHeader>
             <CardTitle>Retirer du Vault</CardTitle>
             <CardDescription>
-              Échangez vos parts contre des USDC
+              Échangez vos parts contre des HYPE
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -305,6 +326,16 @@ export default function VaultPage() {
                 <p className="text-sm text-muted-foreground">
                   Parts disponibles : {formatNumber(vaultShares, { decimals: 6 })}
                 </p>
+                <div className="text-xs text-muted-foreground">
+                  <button
+                    type="button"
+                    className="underline"
+                    onClick={() => setWithdrawAmount(vaultShares || '0')}
+                    disabled={isPending || isConfirming}
+                  >
+                    Max
+                  </button>
+                </div>
               </div>
               <Button
                 onClick={handleWithdraw}
@@ -320,6 +351,19 @@ export default function VaultPage() {
                 <p className="text-sm text-red-500">
                   Montant supérieur à vos parts disponibles
                 </p>
+              )}
+              {withdrawEstimate && (
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <div>Frais de retrait estimés: {withdrawEstimate.feeBps} bps</div>
+                  <div>Montant brut (HYPE): ~{formatNumber(formatUnitsSafe(withdrawEstimate.grossHype1e18, 18), { decimals: 4 })}</div>
+                  <div>Montant net (HYPE): ~{formatNumber(formatUnitsSafe(withdrawEstimate.netHype1e18, 18), { decimals: 4 })}</div>
+                  <div>Trésorerie EVM du vault: {formatNumber(vaultCashHypeStr, { decimals: 4 })} HYPE</div>
+                  {withdrawEstimate.likelyQueued ? (
+                    <div className="text-amber-500">Ce retrait pourrait être mis en file d'attente (rappel Core nécessaire).</div>
+                  ) : (
+                    <div className="text-green-500">Retrait probablement payable immédiatement.</div>
+                  )}
+                </div>
               )}
             </div>
           </CardContent>
@@ -337,13 +381,21 @@ export default function VaultPage() {
               <span className="text-muted-foreground">Total Supply du Vault</span>
               <span className="font-mono">{formatNumber(vaultTotalSupply, { decimals: 2, compact: true })}</span>
             </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">PPS (USD)</span>
+            <span className="font-mono">{formatNumber(pps, { decimals: 6 })}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">NAV (USD)</span>
+            <span className="font-mono">{formatNumber(String((parseFloat(pps || '0') || 0) * (parseFloat(vaultTotalSupply || '0') || 0)), { decimals: 2, compact: true })}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Prix HYPE (oracle)</span>
+            <span className="font-mono">{formatNumber(oraclePxHype1e8Str, { decimals: 2 })} USD</span>
+          </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Adresse du Vault</span>
               <span className="font-mono text-xs">{config?.vaultAddress}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Adresse USDC</span>
-              <span className="font-mono text-xs">{config?.usdcAddress}</span>
             </div>
           </div>
         </CardContent>

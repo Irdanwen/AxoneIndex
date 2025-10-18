@@ -17,7 +17,6 @@ import { useAccount, useReadContract, useWaitForTransactionReceipt, useWriteCont
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { config } from '@/lib/wagmi'
 import { parseUnits, formatUnits } from 'viem'
-import { erc20Abi } from '@/lib/abi/erc20'
 import { vaultContractAbi } from '@/lib/abi/VaultContract'
 
 interface VaultCardProps {
@@ -58,27 +57,19 @@ export function VaultCard({ vault, onDeposit, onWithdraw, onInfo }: VaultCardPro
 
   const isBusy = isPending || isConfirming
 
-  const canInteract = useMemo(() => Boolean(vaultAddress && usdcAddress), [vaultAddress, usdcAddress])
+  const canInteract = useMemo(() => Boolean(vaultAddress), [vaultAddress])
 
   const handleDepositInternal = async () => {
     if (!canInteract || !userAddress) return
     try {
-      const amount1e6 = parseUnits(depositAmount || '0', 6)
-      if (amount1e6 <= 0n) return
-      // Approve USDC
-      const approveHash = await writeContractAsync({
-        abi: erc20Abi,
-        address: usdcAddress!,
-        functionName: 'approve',
-        args: [vaultAddress!, amount1e6]
-      })
-      await waitForTransactionReceipt(config, { hash: approveHash })
-      // Deposit amount in 1e6
+      const value = parseUnits(depositAmount || '0', 18)
+      if (value <= 0n) return
       await writeContractAsync({
         abi: vaultContractAbi,
         address: vaultAddress!,
         functionName: 'deposit',
-        args: [amount1e6]
+        args: [],
+        value
       })
       setDepositAmount('')
     } catch {
@@ -218,7 +209,7 @@ export function VaultCard({ vault, onDeposit, onWithdraw, onInfo }: VaultCardPro
           <div>
             <Input
               type="number"
-              placeholder="Montant à déposer (USDC)"
+              placeholder="Montant à déposer (HYPE)"
               value={depositAmount}
               onChange={(e) => setDepositAmount(e.target.value)}
               className="dark:bg-gray-800 dark:text-white"

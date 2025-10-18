@@ -117,8 +117,8 @@ export function useDashboardData() {
       },
     },
     coreEquityUsd: formatUnitsSafe(data[8]?.result as bigint, 18),
-    oraclePxBtc1e8: Number(data[9]?.result as bigint | number | undefined) || 0,
-    oraclePxHype1e8: Number(data[10]?.result as bigint | number | undefined) || 0,
+    oraclePxBtc: formatUnitsSafe(data[9]?.result as bigint, 8),
+    oraclePxHype: formatUnitsSafe(data[10]?.result as bigint, 8),
     pps: formatUnitsSafe(data[11]?.result as bigint, 18),
     hypeNativeBalance: formatUnitsSafe(hypeNative?.value as bigint | undefined, hypeNative?.decimals ?? 18),
   } : null
