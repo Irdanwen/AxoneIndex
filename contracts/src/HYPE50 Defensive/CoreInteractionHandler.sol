@@ -420,7 +420,7 @@ contract CoreInteractionHandler is Pausable {
         emit Rebalanced(dB, dH);
     }
 
-    function _computeRebalanceDeltas() internal returns (int256 dB, int256 dH, uint64 pxB, uint64 pxH) {
+    function _computeRebalanceDeltas() internal view returns (int256 dB, int256 dH, uint64 pxB, uint64 pxH) {
         CoreHandlerLib.RebalanceContext memory ctx = CoreHandlerLib.RebalanceContext({
             l1read: l1read,
             usdcCoreTokenId: usdcCoreTokenId,
