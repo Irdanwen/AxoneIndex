@@ -4,28 +4,26 @@
 Le vault HYPE50 accepte des dépôts en HYPE (18 décimales), valorise la NAV en USD via l'oracle HYPE, et paie les retraits en HYPE. Une fraction configurable (`autoDeployBps`) du dépôt peut être auto-déployée vers Core via le handler HYPE50 qui convertit 100% des HYPE en USDC puis alloue 50/50 BTC–HYPE.
 
 ## API
-- `deposit(uint256 amount1e18)` — dépôt HYPE (1e18). Parts mintées en proportion de la NAV USD.
+- `deposit()` (payable) — dépôt HYPE natif (montant via `msg.value`). Parts mintées en proportion de la NAV USD.
 - `withdraw(uint256 shares)` — paiement en HYPE; si la trésorerie EVM est insuffisante, mise en file et rappel via le handler.
-- `setHandler(IHandler handler)` — configure l’approval HYPE illimitée vers le handler.
+- `setHandler(IHandler handler)` — lie le handler; plus d’approval HYPE (dépôts natifs).
 - `setFees(depositFeeBps, withdrawFeeBps, autoDeployBps)` — frais de dépôt, de retrait, et fraction auto-déployée.
 - `setWithdrawFeeTiers(WithdrawFeeTier[])` — paliers de frais (exprimés en HYPE 1e18).
 
-## Points clés
-- NAV (USD 1e18) = HYPE EVM en USD + Equity spot Core en USD.
+- NAV (USD 1e18) = HYPE EVM (solde natif) en USD + Equity spot Core en USD.
 - Parts (`decimals=18`) restent USD-dénominées pour l’équité inter-dépôts.
 - Retraits: montant brut HYPE dérivé du PPS USD courant; frais en HYPE.
-- Auto-deploy: `executeDepositHype(deployAmt1e18, true)` côté handler.
+- Auto-deploy: `executeDepositHype{value: deployAmt}(true)` côté handler.
 
-## Sécurité & Invariants
 - Vérification `pxH > 0` dans `deposit()` et `settleWithdraw()`.
-- CEI respecté; `SafeERC20` utilisé.
-- `approve(0)` puis `approve(max)` lors de `setHandler`.
+- CEI respecté; envois natifs via `.call{value: ...}` avec vérification de succès.
+- Plus d’`approve` HYPE (flux natifs). 
 - Paliers triés et bornés (≤10).
 - `notPaused` sur fonctions sensibles.
 
 ## Formules
 - NAV côté vault:
-  - `evmHypeUsd1e18 = hype.balanceOf(this) * oraclePxHype1e8 / 1e8`
+  - `evmHypeUsd1e18 = address(this).balance * oraclePxHype1e8 / 1e8`
   - `nav = evmHypeUsd1e18 + handler.equitySpotUsd1e18()`
 - Shares mintées:
   - `shares = depositUsd1e18` si `totalSupply == 0`, sinon `shares = depositUsd1e18 * totalSupply / navPre`
@@ -40,23 +38,23 @@ Le vault HYPE50 accepte des dépôts en HYPE (18 décimales), valorise la NAV en
 
 ## Références code
 - NAV USD HYPE EVM + Core:
-```126:133:contracts/src/HYPE50 Defensive/VaultContract.sol
+```116:122:contracts/src/HYPE50 Defensive/VaultContract.sol
 function nav1e18() public view returns (uint256) {
     uint64 pxH = address(handler) == address(0) ? uint64(0) : handler.oraclePxHype1e8();
-    uint256 evmHypeUsd1e18 = pxH == 0 ? 0 : (hype.balanceOf(address(this)) * uint256(pxH)) / 1e8;
+    uint256 evmHypeUsd1e18 = pxH == 0 ? 0 : (address(this).balance * uint256(pxH)) / 1e8;
     uint256 coreEq1e18 = address(handler) == address(0) ? 0 : handler.equitySpotUsd1e18();
     return evmHypeUsd1e18 + coreEq1e18;
 }
 ```
-- Dépôt HYPE → auto-deploy:
-```154:189:contracts/src/HYPE50 Defensive/VaultContract.sol
-function deposit(uint256 amount1e18) external notPaused nonReentrant {
+- Dépôt HYPE natif → auto-deploy:
+```144:175:contracts/src/HYPE50 Defensive/VaultContract.sol
+function deposit() external payable notPaused nonReentrant {
     ...
-    handler.executeDepositHype(deployAmt, true);
+    handler.executeDepositHype{value: deployAmt}(true);
 }
 ```
 - Retrait HYPE et rappel si nécessaire:
-```192:238:contracts/src/HYPE50 Defensive/VaultContract.sol
+```177:225:contracts/src/HYPE50 Defensive/VaultContract.sol
 function withdraw(uint256 shares) external notPaused nonReentrant {
     ...
     try handler.pullHypeFromCoreToEvm(recallAmount1e8) { ... }

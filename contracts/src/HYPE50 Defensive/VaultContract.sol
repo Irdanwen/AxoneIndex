@@ -2,25 +2,21 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface IHandler {
     function equitySpotUsd1e18() external view returns (uint256);
     function oraclePxHype1e8() external view returns (uint64);
-    function executeDepositHype(uint256 hype1e18, bool forceRebalance) external;
+    function executeDepositHype(bool forceRebalance) external payable;
     function pullHypeFromCoreToEvm(uint64 hype1e8) external returns (uint64);
     function sweepHypeToVault(uint256 amount1e18) external;
 }
 
 contract VaultContract is ReentrancyGuard {
-    using SafeERC20 for IERC20;
     // ERC20 share
     string public constant name = "Core50 Vault Share";
     string public constant symbol = "c50USD";
     uint8 public constant decimals = 18;
 
-    IERC20 public immutable hype;
     address public owner;
     IHandler public handler;
     bool public paused;
@@ -69,23 +65,17 @@ contract VaultContract is ReentrancyGuard {
         _;
     }
 
-    constructor(IERC20 _hype) {
-        hype = _hype;
+    constructor() {
         owner = msg.sender;
         autoDeployBps = 9000; // default 90%
     }
+
+    receive() external payable {}
 
     function setHandler(IHandler _handler) external onlyOwner {
         require(address(_handler) != address(0), "Handler zero");
         handler = _handler;
         emit HandlerSet(address(_handler));
-        // Approval illimite pour permettre au handler de tirer les HYPE du vault
-        try hype.approve(address(_handler), type(uint256).max) {
-        } catch {
-            try hype.approve(address(_handler), 0) {
-                hype.approve(address(_handler), type(uint256).max);
-            } catch {}
-        }
     }
 
     function setFees(uint16 _depositFeeBps, uint16 _withdrawFeeBps, uint16 _autoDeployBps) external onlyOwner {
@@ -126,7 +116,7 @@ contract VaultContract is ReentrancyGuard {
     // NAV/PPS
     function nav1e18() public view returns (uint256) {
         uint64 pxH = address(handler) == address(0) ? uint64(0) : handler.oraclePxHype1e8();
-        uint256 evmHypeUsd1e18 = pxH == 0 ? 0 : (hype.balanceOf(address(this)) * uint256(pxH)) / 1e8;
+        uint256 evmHypeUsd1e18 = pxH == 0 ? 0 : (address(this).balance * uint256(pxH)) / 1e8;
         uint256 coreEq1e18 = address(handler) == address(0) ? 0 : handler.equitySpotUsd1e18();
         return evmHypeUsd1e18 + coreEq1e18;
     }
@@ -151,12 +141,12 @@ contract VaultContract is ReentrancyGuard {
         emit Transfer(from, address(0), amount);
     }
 
-    // Deposit in HYPE (1e18)
-    function deposit(uint256 amount1e18) external notPaused nonReentrant {
+    // Deposit in native HYPE (1e18)
+    function deposit() external payable notPaused nonReentrant {
+        uint256 amount1e18 = msg.value;
         require(amount1e18 > 0, "amount=0");
         uint256 navPre = nav1e18();
         deposits[msg.sender] += amount1e18;
-        hype.safeTransferFrom(msg.sender, address(this), amount1e18);
         // USD notional for minting
         uint64 pxH = handler.oraclePxHype1e8();
         require(pxH > 0, "px");
@@ -178,12 +168,7 @@ contract VaultContract is ReentrancyGuard {
         if (address(handler) != address(0) && autoDeployBps > 0) {
             uint256 deployAmt = (uint256(amount1e18) * uint256(autoDeployBps)) / 10000;
             if (deployAmt > 0) {
-                uint256 currentAllowance = hype.allowance(address(this), address(handler));
-                if (currentAllowance < deployAmt) {
-                    hype.approve(address(handler), 0);
-                    hype.approve(address(handler), type(uint256).max);
-                }
-                handler.executeDepositHype(deployAmt, true);
+                handler.executeDepositHype{value: deployAmt}(true);
             }
         }
         emit NavUpdated(nav1e18());
@@ -207,13 +192,14 @@ contract VaultContract is ReentrancyGuard {
             ? (grossHype1e18 * uint256(feeBpsApplied)) / 10000
             : 0;
         uint256 netHype1e18 = grossHype1e18 - feeHype1e18;
-        uint256 cash = hype.balanceOf(address(this));
+        uint256 cash = address(this).balance;
 
         bool needsHandlerFunds = grossHype1e18 > cash;
 
         if (cash >= netHype1e18 && !needsHandlerFunds) {
             _burn(msg.sender, shares);
-            hype.safeTransfer(msg.sender, netHype1e18);
+            (bool ok, ) = payable(msg.sender).call{value: netHype1e18}("");
+            require(ok, "native pay fail");
             uint256 base = _getBaseAmountHype(grossHype1e18, deposits[msg.sender]);
             if (base > 0) {
                 deposits[msg.sender] -= base;
@@ -261,7 +247,8 @@ contract VaultContract is ReentrancyGuard {
         require(pay1e18 == maxPay, "pay!=due");
         r.settled = true;
         _burn(r.user, r.shares);
-        hype.safeTransfer(to, pay1e18);
+        (bool ok2, ) = payable(to).call{value: pay1e18}("");
+        require(ok2, "native pay fail");
         uint256 base = _getBaseAmountHype(grossHype1e18, deposits[r.user]);
         if (base > 0) {
             deposits[r.user] -= base;

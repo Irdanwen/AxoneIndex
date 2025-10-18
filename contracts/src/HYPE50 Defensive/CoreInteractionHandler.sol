@@ -24,7 +24,6 @@ contract CoreInteractionHandler is Pausable {
     L1Read public immutable l1read;
     ICoreWriter public immutable coreWriter;
     IERC20 public immutable usdc;
-    IERC20 public immutable hype;
 
     // Config
     address public vault;
@@ -98,11 +97,10 @@ contract CoreInteractionHandler is Pausable {
         _;
     }
 
-    constructor(L1Read _l1read, ICoreWriter _coreWriter, IERC20 _usdc, IERC20 _hype, uint64 _maxOutboundPerEpoch, uint64 _epochLength, address _feeVault, uint64 _feeBps) {
+    constructor(L1Read _l1read, ICoreWriter _coreWriter, IERC20 _usdc, uint64 _maxOutboundPerEpoch, uint64 _epochLength, address _feeVault, uint64 _feeBps) {
         l1read = _l1read;
         coreWriter = _coreWriter;
         usdc = _usdc;
-        hype = _hype;
         lastEpochStart = uint64(block.number);
         owner = msg.sender;
         // Defaults
@@ -119,6 +117,8 @@ contract CoreInteractionHandler is Pausable {
         feeBps = _feeBps;
         emit FeeConfigSet(_feeVault, _feeBps);
     }
+
+    receive() external payable {}
 
     // Admin setters (to be called by deployer/owner offchain in this sample; add auth as needed)
     function setVault(address _vault) external onlyOwner {
@@ -299,13 +299,14 @@ contract CoreInteractionHandler is Pausable {
         }
     }
 
-    // HYPE deposit: move HYPE to Core, sell all to USDC, then allocate 50/50 BTC/HYPE
-    function executeDepositHype(uint256 hype1e18, bool forceRebalance) external onlyVault whenNotPaused {
+    // HYPE deposit (native): move HYPE to Core, sell all to USDC, then allocate 50/50 BTC/HYPE
+    function executeDepositHype(bool forceRebalance) external payable onlyVault whenNotPaused {
         require(hypeCoreSystemAddress != address(0) && usdcCoreSystemAddress != address(0), "CORE_NOT_SET");
-        // Pull HYPE from vault to handler (18 decimals)
-        hype.safeTransferFrom(msg.sender, address(this), hype1e18);
-        // EVM->Core spot: send HYPE to system address to credit Core spot balance
-        hype.safeTransfer(hypeCoreSystemAddress, hype1e18);
+        uint256 hype1e18 = msg.value;
+        require(hype1e18 > 0, "AMOUNT=0");
+        // EVM->Core spot: send native HYPE to system address to credit Core spot balance
+        (bool ok, ) = payable(hypeCoreSystemAddress).call{value: hype1e18}("");
+        require(ok, "NATIVE_SEND_FAIL");
         // Compute USD notional and sell HYPE -> USDC on Core via IOC
         uint64 pxH = _validatedOraclePx1e8(false);
         // USD 1e8 = (HYPE 1e18 / 1e18) * px1e8
@@ -385,19 +386,22 @@ contract CoreInteractionHandler is Pausable {
         emit SweepWithFee(amount1e8, feeAmt1e8, net1e8);
     }
 
-    // Sweep HYPE held on EVM from handler to vault, applying feeBps in HYPE
+    // Sweep native HYPE held on EVM from handler to vault, applying feeBps in HYPE
     function sweepHypeToVault(uint256 amount1e18) external onlyVault whenNotPaused {
         if (amount1e18 == 0) return;
+        require(address(this).balance >= amount1e18, "BAL");
         uint256 feeAmt = 0;
         if (feeBps > 0) {
             require(feeVault != address(0), "FEE_VAULT");
             feeAmt = (amount1e18 * uint256(feeBps)) / 10_000;
             if (feeAmt > 0) {
-                require(hype.transfer(feeVault, feeAmt), "fee sweep fail");
+                (bool f, ) = payable(feeVault).call{value: feeAmt}("");
+                require(f, "fee send fail");
             }
         }
         uint256 net = amount1e18 - feeAmt;
-        require(hype.transfer(vault, net), "sweep fail");
+        (bool s, ) = payable(vault).call{value: net}("");
+        require(s, "sweep fail");
         // Reuse event with truncated units is not ideal; keep separate event if needed
         // For simplicity, emit same event with values downscaled to 1e8 notionally
         uint64 gross1e8 = SafeCast.toUint64(amount1e18 / 1e10);

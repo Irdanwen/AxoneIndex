@@ -1,7 +1,7 @@
 # CoreInteractionHandler — Rôle Rebalancer et Sécurité
 
 ## Résumé
-- `CoreInteractionHandler.sol` gère les interactions avec Core (Hyperliquid): transferts USDC/HYPE spot, ordres IOC BTC/HYPE, et rééquilibrage 50/50. Le rééquilibrage est désormais restreint à une adresse `rebalancer` définie par l'owner. Pour HYPE50 Defensive, le handler supporte les dépôts en HYPE (18d) avec conversion 100% en USDC avant allocation 50/50.
+- `CoreInteractionHandler.sol` gère les interactions avec Core (Hyperliquid): transferts USDC/HYPE spot, ordres IOC BTC/HYPE, et rééquilibrage 50/50. Le rééquilibrage est désormais restreint à une adresse `rebalancer` définie par l'owner. Pour HYPE50 Defensive, HYPE est traité comme le jeton de gaz natif: les dépôts se font en natif (payable), sont convertis 100% en USDC côté Core, puis alloués 50/50.
 
 ## 🔒 Améliorations de Sécurité
 
@@ -21,12 +21,13 @@
 - **💰 CORRECTION AUDIT** : **Valorisation correcte des soldes spot** - Implémentation de `spotBalanceInWei()` pour convertir les balances de `szDecimals` vers `weiDecimals` avant calcul de la valeur USD. Correction appliquée dans `equitySpotUsd1e18()` et `_computeRebalanceDeltas()` pour éviter la surévaluation/sous-évaluation des actifs.
 
 ## API Clés
+- `receive()` (payable): permet de recevoir le jeton natif HYPE en provenance du Core si nécessaire.
 - `setRebalancer(address rebalancer)` (onlyOwner): définit l'adresse autorisée à appeler `rebalancePortfolio`.
 - `rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype)` (onlyRebalancer, whenNotPaused): calcule les deltas via l'oracle et place des ordres IOC pour revenir vers 50/50 (avec deadband).
 - `executeDeposit(uint64 usdc1e8, bool forceRebalance)` (onlyVault, whenNotPaused): dépôt USDC → achats 50/50 BTC/HYPE.
 - `pullFromCoreToEvm(uint64 usdc1e8)` (onlyVault, whenNotPaused): orchestre les ventes si nécessaire et crédite l'EVM en USDC.
 - `sweepToVault(uint64 amount1e8)` (onlyVault, whenNotPaused): calcule les frais en 1e8, puis transfère en EVM en 1e8 vers le vault.
-- `executeDepositHype(uint256 hype1e18, bool forceRebalance)` (onlyVault, whenNotPaused): dépôt HYPE (18d) → envoi HYPE sur Core → vente 100% en USDC → achats ~50% BTC et ~50% HYPE. Le rate limit s'applique sur l'équivalent USD (1e8).
+- `executeDepositHype(bool forceRebalance)` (payable, onlyVault, whenNotPaused): dépôt HYPE natif (`msg.value`) → envoi natif vers `hypeCoreSystemAddress` → vente 100% en USDC → achats ~50% BTC et ~50% HYPE. Le rate limit s'applique sur l'équivalent USD (1e8).
 - `pullHypeFromCoreToEvm(uint64 hype1e8)` (onlyVault, whenNotPaused): achète du HYPE si nécessaire puis crédite l'EVM en HYPE.
 - `sweepHypeToVault(uint256 amount1e18)` (onlyVault, whenNotPaused): calcule les frais en HYPE (1e18), puis transfère le net vers le vault.
 
@@ -53,7 +54,7 @@ Le contrat utilise un système de rate limiting basé sur les **blocs** (et non 
 - `setSpotTokenIds(usdcToken, btcToken, hypeToken)`
 
 ## Intégration avec `VaultContract`
-- Les vaults HYPE50 appellent `executeDepositHype()` pour auto-déployer la fraction HYPE en 50/50 après conversion en USDC.
+- Les vaults HYPE50 appellent `executeDepositHype{value: deployAmt}(true)` pour auto-déployer la fraction HYPE en 50/50 après conversion en USDC.
 - Les retraits HYPE utilisent `pullHypeFromCoreToEvm()` puis `sweepHypeToVault()` si nécessaire.
 
 ## Gestion des Décimales (szDecimals vs weiDecimals)
@@ -96,5 +97,5 @@ Sans cette correction, si `weiDecimals - szDecimals > 0`, les actifs seraient **
 
 ## Intégration avec `VaultContract`
 
-- Le `VaultContract` doit appeler `setHandler(handler)` après déploiement pour que l'approval USDC illimitée soit configurée côté vault.
+- Le `VaultContract` doit appeler `setHandler(handler)` après déploiement. USDC conserve une approval illimitée côté vault; HYPE50 n'utilise plus d'approvals (dépôts natifs payable).
 - Le `VaultContract` transmet désormais directement les montants en 1e8 au handler (`executeDeposit`, `pullFromCoreToEvm`, `sweepToVault`). Plus aucune conversion 1e8↔1e6 n'est nécessaire.

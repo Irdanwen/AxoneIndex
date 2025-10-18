@@ -85,12 +85,12 @@ AxoneIndex est une plateforme DeFi construite sur HyperEVM (Hyperliquid). Elle c
 ## Guide d’intégration rapide Vault + Handler
 
 1) Déployer les contrats
-- Déployer `CoreInteractionHandler` (USDC) et/ou `CoreInteractionHandler` HYPE50 (avec `hype`).
+- Déployer `CoreInteractionHandler` (USDC) et/ou `CoreInteractionHandler` HYPE50 (sans paramètre `hype`; HYPE est natif).
 - Déployer le `VaultContract` compatible (USDC ou HYPE50).
 
 2) Lier le vault au handler et configurer l’approval
 - Appeler `vault.setHandler(address(handler))` depuis l’owner du vault.
-- USDC: approval USDC illimitée; HYPE50: approval HYPE illimitée.
+- USDC: approval USDC illimitée; HYPE50: pas d’approval (dépôts natifs payable).
 
 3) Configurer Core (handler)
 - `handler.setVault(address(vault))`.
@@ -104,12 +104,12 @@ AxoneIndex est une plateforme DeFi construite sur HyperEVM (Hyperliquid). Elle c
 
 5) Dépôts
 - USDC vault: `vault.deposit(amount1e8)` puis auto-deploy vers `executeDeposit(amount1e8, true)`.
-- HYPE50 vault: `vault.deposit(amount1e18)` puis auto-deploy vers `executeDepositHype(amount1e18, true)`.
+- HYPE50 vault: `vault.deposit()` (payable, montant via `msg.value`) puis auto-deploy vers `executeDepositHype{value: deployAmt}(true)`.
 
 6) Rappel de liquidités
 - USDC: `vault.recallFromCoreAndSweep(amount1e8)` → `pullFromCoreToEvm` + `sweepToVault`.
 - HYPE50: `vault.recallFromCoreAndSweep(amount1e18)` → `pullHypeFromCoreToEvm` + `sweepHypeToVault`.
 
 7) Vérifications rapides
-- Après `setHandler`, vérifier l’`allowance` illimitée du token de dépôt vers le handler.
-- Tester un petit `deposit` et confirmer l’absence de revert d’allowance et la mise à jour NAV.
+- Après `setHandler`, vérifier l’`allowance` illimitée du token de dépôt vers le handler (USDC uniquement).
+- Tester un petit `deposit` et confirmer la mise à jour NAV.

@@ -468,10 +468,8 @@ Contrat de vault ERC20 pour la gestion des parts d'investissement avec système 
 
 ### Fonctions Principales
 
-#### `constructor(IERC20 _usdc)`
-**Description**: Initialise le vault avec le token USDC.
-**Paramètres**:
-- `_usdc`: Adresse du token USDC
+#### `constructor()`
+**Description**: Initialise le vault HYPE50 (dépôts natifs) ou version générique sans dépendance token côté constructeur.
 
 **Exemple d'utilisation**:
 ```solidity
@@ -514,10 +512,8 @@ tiers[1] = WithdrawFeeTier(10000 * 1e8, 50); // 0.5% pour < 10000 USDC
 vault.setWithdrawFeeTiers(tiers);
 ```
 
-#### `deposit(uint256 amount1e8)`
-**Description**: Dépôt de USDC dans le vault.
-**Paramètres**:
-- `amount1e8`: Montant en USDC (8 décimales)
+#### `deposit()` (payable pour HYPE50)
+**Description**: Dépôt natif de HYPE dans le vault HYPE50. Pour la variante USDC, l’API peut différer.
 
 **Exemple d'utilisation**:
 ```solidity
@@ -536,11 +532,11 @@ vault.deposit(1000 * 1e8);
 vault.withdraw(100 * 1e18);
 ```
 
-#### `settleWithdraw(uint256 id, uint256 pay1e8, address to)`
+#### `settleWithdraw(uint256 id, uint256 pay1e18, address to)`
 **Description**: Règle un retrait en attente.
 **Paramètres**:
 - `id`: ID du retrait
-- `pay1e8`: Montant à payer
+- `pay1e18`: Montant à payer (HYPE natif 1e18 pour HYPE50)
 - `to`: Adresse destinataire
 
 **Exemple d'utilisation**:
@@ -874,13 +870,13 @@ uint8 decimals = usdc.decimals(); // Retourne 8
 
 ## Exemples d'Intégration
 
-### Workflow Complet de Dépôt dans le Vault
+### Workflow Complet de Dépôt dans le Vault (HYPE50)
 
 ```solidity
-// 1. Dépôt dans le vault
-vault.deposit(1000 * 1e8); // 1000 USDC
+// 1. Dépôt natif dans le vault (1 HYPE)
+vault.deposit{value: 1e18}();
 
-// 2. Le vault auto-déploie vers Core via le handler
+// 2. Le vault auto-déploie vers Core via le handler natif
 // (automatique si autoDeployBps > 0)
 
 // 3. Staking des parts dans le hub de récompenses
