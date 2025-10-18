@@ -29,6 +29,19 @@ library CoreHandlerLib {
         uint64 maxOracleDeviationBps;
     }
 
+    // Group inputs to reduce stack usage when calculating positions
+    struct PositionInputs {
+        L1Read l1read;
+        uint256 usdcBalWei;
+        uint256 btcBalWei;
+        uint256 hypeBalWei;
+        uint64 pxB;
+        uint64 pxH;
+        uint64 usdcCoreTokenId;
+        uint64 spotTokenBTC;
+        uint64 spotTokenHYPE;
+    }
+
     /// @notice Get spot balance converted to wei decimals
     function spotBalanceInWei(
         L1Read l1read,
@@ -59,58 +72,52 @@ library CoreHandlerLib {
         uint256 usdcBalWei = spotBalanceInWei(ctx.l1read, handler, ctx.usdcCoreTokenId);
         uint256 btcBalWei = spotBalanceInWei(ctx.l1read, handler, ctx.spotTokenBTC);
         uint256 hypeBalWei = spotBalanceInWei(ctx.l1read, handler, ctx.spotTokenHYPE);
-        
+
         pxB = ctx.l1read.spotPx(ctx.spotBTC);
         pxH = ctx.l1read.spotPx(ctx.spotHYPE);
 
-        // Calculate positions using helper function to reduce stack depth
-        (int256 posB1e18, int256 posH1e18, uint256 usdc1e18) = _calculatePositions(
-            ctx.l1read, 
-            usdcBalWei, 
-            btcBalWei, 
-            hypeBalWei, 
-            pxB, 
-            pxH, 
-            ctx.usdcCoreTokenId, 
-            ctx.spotTokenBTC, 
-            ctx.spotTokenHYPE
-        );
+        // Calculate positions using grouped inputs to minimize stack usage
+        PositionInputs memory p = PositionInputs({
+            l1read: ctx.l1read,
+            usdcBalWei: usdcBalWei,
+            btcBalWei: btcBalWei,
+            hypeBalWei: hypeBalWei,
+            pxB: pxB,
+            pxH: pxH,
+            usdcCoreTokenId: ctx.usdcCoreTokenId,
+            spotTokenBTC: ctx.spotTokenBTC,
+            spotTokenHYPE: ctx.spotTokenHYPE
+        });
+
+        (int256 posB1e18, int256 posH1e18, uint256 usdc1e18) = _calculatePositions(p);
         
         uint256 equity1e18 = usdc1e18 + uint256(posB1e18) + uint256(posH1e18);
         (dB, dH) = Rebalancer50Lib.computeDeltas(equity1e18, posB1e18, posH1e18, ctx.deadbandBps);
     }
 
     function _calculatePositions(
-        L1Read l1read,
-        uint256 usdcBalWei,
-        uint256 btcBalWei,
-        uint256 hypeBalWei,
-        uint64 pxB,
-        uint64 pxH,
-        uint64 usdcCoreTokenId,
-        uint64 spotTokenBTC,
-        uint64 spotTokenHYPE
+        PositionInputs memory p
     ) internal view returns (int256 posB1e18, int256 posH1e18, uint256 usdc1e18) {
         // Get token info for decimal conversion
-        L1Read.TokenInfo memory usdcInfo = l1read.tokenInfo(uint32(usdcCoreTokenId));
-        L1Read.TokenInfo memory btcInfo = l1read.tokenInfo(uint32(spotTokenBTC));
-        L1Read.TokenInfo memory hypeInfo = l1read.tokenInfo(uint32(spotTokenHYPE));
+        L1Read.TokenInfo memory usdcInfo = p.l1read.tokenInfo(uint32(p.usdcCoreTokenId));
+        L1Read.TokenInfo memory btcInfo = p.l1read.tokenInfo(uint32(p.spotTokenBTC));
+        L1Read.TokenInfo memory hypeInfo = p.l1read.tokenInfo(uint32(p.spotTokenHYPE));
         
         // Convert USDC to 1e18 USD values
-        usdc1e18 = usdcBalWei * (10 ** (18 - usdcInfo.weiDecimals));
+        usdc1e18 = p.usdcBalWei * (10 ** (18 - usdcInfo.weiDecimals));
         
         // Convert BTC position
         if (btcInfo.weiDecimals + 8 <= 18) {
-            posB1e18 = int256(btcBalWei * uint256(pxB) * (10 ** (18 - btcInfo.weiDecimals - 8)));
+            posB1e18 = int256(p.btcBalWei * uint256(p.pxB) * (10 ** (18 - btcInfo.weiDecimals - 8)));
         } else {
-            posB1e18 = int256((btcBalWei * uint256(pxB)) / (10 ** (btcInfo.weiDecimals + 8 - 18)));
+            posB1e18 = int256((p.btcBalWei * uint256(p.pxB)) / (10 ** (btcInfo.weiDecimals + 8 - 18)));
         }
         
         // Convert HYPE position
         if (hypeInfo.weiDecimals + 8 <= 18) {
-            posH1e18 = int256(hypeBalWei * uint256(pxH) * (10 ** (18 - hypeInfo.weiDecimals - 8)));
+            posH1e18 = int256(p.hypeBalWei * uint256(p.pxH) * (10 ** (18 - hypeInfo.weiDecimals - 8)));
         } else {
-            posH1e18 = int256((hypeBalWei * uint256(pxH)) / (10 ** (hypeInfo.weiDecimals + 8 - 18)));
+            posH1e18 = int256((p.hypeBalWei * uint256(p.pxH)) / (10 ** (hypeInfo.weiDecimals + 8 - 18)));
         }
     }
 
