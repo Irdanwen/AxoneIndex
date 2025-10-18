@@ -85,10 +85,10 @@ export default function RootLayout({
         >
           Aller au contenu principal
         </a>
-        <Header />
         <div className="hero-gradient min-h-screen">
           <WagmiProvider>
             <ThemeProvider>
+              <Header />
               <div id="main-content" className="pt-20 md:pt-24">
                 {children}
               </div>
