@@ -14,8 +14,6 @@ import {
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useAccount, useReadContract, useWaitForTransactionReceipt, useWriteContract } from 'wagmi'
-import { waitForTransactionReceipt } from 'wagmi/actions'
-import { config } from '@/lib/wagmi'
 import { parseUnits, formatUnits } from 'viem'
 import { vaultContractAbi } from '@/lib/abi/VaultContract'
 
@@ -34,7 +32,7 @@ export function VaultCard({ vault, onDeposit, onWithdraw, onInfo }: VaultCardPro
   const [withdrawAmount, setWithdrawAmount] = useState<string>('')
 
   const vaultAddress = vault.contractAddress as `0x${string}` | undefined
-  const usdcAddress = vault.usdcAddress as `0x${string}` | undefined
+  // const usdcAddress = vault.usdcAddress as `0x${string}` | undefined
 
   // Prix par share - pour usage futur
   // const { data: pps } = useReadContract({

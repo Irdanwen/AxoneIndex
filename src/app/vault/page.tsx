@@ -359,7 +359,7 @@ export default function VaultPage() {
                   <div>Montant net (HYPE): ~{formatNumber(formatUnitsSafe(withdrawEstimate.netHype1e18, 18), { decimals: 4 })}</div>
                   <div>Trésorerie EVM du vault: {formatNumber(vaultCashHypeStr, { decimals: 4 })} HYPE</div>
                   {withdrawEstimate.likelyQueued ? (
-                    <div className="text-amber-500">Ce retrait pourrait être mis en file d'attente (rappel Core nécessaire).</div>
+                    <div className="text-amber-500">Ce retrait pourrait être mis en file d&apos;attente (rappel Core nécessaire).</div>
                   ) : (
                     <div className="text-green-500">Retrait probablement payable immédiatement.</div>
                   )}
