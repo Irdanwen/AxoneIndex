@@ -64,7 +64,7 @@ export default function DashboardPage() {
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+        <h1 className="text-3xl font-bold mb-2">HYPE50 Defensive - Dashboard</h1>
         <p className="text-muted-foreground">
           Adresse connectée : {address ? truncateAddress(address) : 'Non connectée'}
         </p>
@@ -79,15 +79,15 @@ export default function DashboardPage() {
           </h2>
           <Card>
             <CardHeader>
-              <CardTitle>Balance USDC</CardTitle>
-              <CardDescription>Solde de votre adresse sur HyperEVM</CardDescription>
+              <CardTitle>Balance HYPE</CardTitle>
+              <CardDescription>Solde natif HYPE sur HyperEVM</CardDescription>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <Skeleton className="h-8 w-32" />
               ) : (
                 <p className="text-2xl font-bold">
-                  {formatNumber(data?.usdcBalance || '0', { decimals: 2 })} USDC
+                  {formatNumber(data?.hypeNativeBalance || '0', { decimals: 4 })} HYPE
                 </p>
               )}
             </CardContent>
@@ -104,7 +104,7 @@ export default function DashboardPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Vos parts du vault</CardTitle>
-                <CardDescription>Nombre de tokens du vault détenus</CardDescription>
+                <CardDescription>Nombre de parts h50USD détenues</CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
@@ -120,7 +120,7 @@ export default function DashboardPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Total Supply du Vault</CardTitle>
-                <CardDescription>Supply totale des tokens du vault</CardDescription>
+                <CardDescription>Supply totale des parts h50USD</CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
@@ -132,6 +132,36 @@ export default function DashboardPage() {
                 )}
               </CardContent>
             </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>PPS (Prix par part)</CardTitle>
+                <CardDescription>USD par part (1e18)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <Skeleton className="h-8 w-32" />
+                ) : (
+                  <p className="text-2xl font-bold">
+                    ${formatNumber(data?.pps || '0', { decimals: 6 })}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Core Equity (USD)</CardTitle>
+                <CardDescription>Valeur des positions Core (1e18)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <Skeleton className="h-8 w-32" />
+                ) : (
+                  <p className="text-2xl font-bold">
+                    ${formatNumber(data?.coreEquityUsd || '0', { decimals: 2, compact: true })}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
 
@@ -139,12 +169,12 @@ export default function DashboardPage() {
         <div>
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <Globe className="h-5 w-5" />
-            Balances Hypercore
+            Balances Hypercore (Handler)
           </h2>
           <Card>
             <CardHeader>
               <CardTitle>Soldes du Handler sur Core</CardTitle>
-              <CardDescription>Balances des assets sur Hypercore</CardDescription>
+              <CardDescription>USDC, HYPE et BTC sur Hypercore (1e8)</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -208,6 +238,24 @@ export default function DashboardPage() {
                     )}
                   </tbody>
                 </table>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <div className="text-sm text-muted-foreground">Oracle BTC (1e8)</div>
+                  {isLoading ? (
+                    <Skeleton className="h-6 w-28" />
+                  ) : (
+                    <div className="text-lg font-mono">{data?.oraclePxBtc1e8}</div>
+                  )}
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Oracle HYPE (1e8)</div>
+                  {isLoading ? (
+                    <Skeleton className="h-6 w-28" />
+                  ) : (
+                    <div className="text-lg font-mono">{data?.oraclePxHype1e8}</div>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

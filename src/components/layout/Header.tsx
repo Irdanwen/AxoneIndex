@@ -70,7 +70,7 @@ const Header: React.FC = () => {
         role="banner"
         aria-label="Navigation principale"
       >
-        <div className="w-full max-w-screen-2xl mx-auto px-4 lg:px-8">
+        <div className="container-custom">
           <div className="flex items-center h-20">
 
             {/* Logo futuriste à gauche */}

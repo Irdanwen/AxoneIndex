@@ -1,13 +1,20 @@
-import { useAccount, useReadContracts } from 'wagmi'
+import { useAccount, useReadContracts, useBalance } from 'wagmi'
 import { useVaultConfig } from './useVaultConfig'
 import { erc20Contract } from '@/contracts/erc20'
 import { vaultContract } from '@/contracts/vault'
 import { l1readContract } from '@/contracts/l1read'
+import { coreInteractionHandlerContract } from '@/contracts/coreInteractionHandler'
 import { formatUnitsSafe, formatCoreBalance } from '@/lib/format'
 
 export function useDashboardData() {
   const { address } = useAccount()
   const { config, isConfigured } = useVaultConfig()
+
+  // Solde natif HYPE (1e18)
+  const { data: hypeNative, isLoading: isLoadingNative } = useBalance({
+    address,
+    query: { enabled: !!address },
+  })
 
   // Préparer les contrats pour les lectures
   const contracts = config && address ? [
@@ -56,6 +63,26 @@ export function useDashboardData() {
       functionName: 'spotBalance',
       args: [config.handlerAddress, BigInt(config.coreTokenIds.btc)],
     },
+    // Handler core equity (USD 1e18)
+    {
+      ...coreInteractionHandlerContract(config.handlerAddress),
+      functionName: 'equitySpotUsd1e18',
+    },
+    // Oracle BTC (1e8)
+    {
+      ...coreInteractionHandlerContract(config.handlerAddress),
+      functionName: 'oraclePxBtc1e8',
+    },
+    // Oracle HYPE (1e8)
+    {
+      ...coreInteractionHandlerContract(config.handlerAddress),
+      functionName: 'oraclePxHype1e8',
+    },
+    // Vault PPS (USD 1e18)
+    {
+      ...vaultContract(config.vaultAddress),
+      functionName: 'pps1e18',
+    },
   ] : []
 
   const { data, isLoading, isError, error } = useReadContracts({
@@ -89,11 +116,16 @@ export function useDashboardData() {
         raw: (data[7]?.result as { total: bigint })?.total || 0n,
       },
     },
+    coreEquityUsd: formatUnitsSafe(data[8]?.result as bigint, 18),
+    oraclePxBtc1e8: Number(data[9]?.result as bigint | number | undefined) || 0,
+    oraclePxHype1e8: Number(data[10]?.result as bigint | number | undefined) || 0,
+    pps: formatUnitsSafe(data[11]?.result as bigint, 18),
+    hypeNativeBalance: formatUnitsSafe(hypeNative?.value as bigint | undefined, hypeNative?.decimals ?? 18),
   } : null
 
   return {
     data: formattedData,
-    isLoading,
+    isLoading: isLoading || isLoadingNative,
     isError,
     error,
     isConfigured,
