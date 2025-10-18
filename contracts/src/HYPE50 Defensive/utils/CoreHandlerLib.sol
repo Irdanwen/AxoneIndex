@@ -68,31 +68,43 @@ library CoreHandlerLib {
         RebalanceContext memory ctx,
         address handler
     ) internal view returns (int256 dB, int256 dH, uint64 pxB, uint64 pxH) {
-        // Get balances and prices
-        uint256 usdcBalWei = spotBalanceInWei(ctx.l1read, handler, ctx.usdcCoreTokenId);
-        uint256 btcBalWei = spotBalanceInWei(ctx.l1read, handler, ctx.spotTokenBTC);
-        uint256 hypeBalWei = spotBalanceInWei(ctx.l1read, handler, ctx.spotTokenHYPE);
+        // Isoler les variables lourdes dans un bloc pour limiter leur durée de vie sur la pile
+        {
+            // Get balances and prices
+            uint256 usdcBalWei = spotBalanceInWei(ctx.l1read, handler, ctx.usdcCoreTokenId);
+            uint256 btcBalWei = spotBalanceInWei(ctx.l1read, handler, ctx.spotTokenBTC);
+            uint256 hypeBalWei = spotBalanceInWei(ctx.l1read, handler, ctx.spotTokenHYPE);
 
-        pxB = ctx.l1read.spotPx(ctx.spotBTC);
-        pxH = ctx.l1read.spotPx(ctx.spotHYPE);
+            uint64 _pxB = ctx.l1read.spotPx(ctx.spotBTC);
+            uint64 _pxH = ctx.l1read.spotPx(ctx.spotHYPE);
 
-        // Calculate positions using grouped inputs to minimize stack usage
-        PositionInputs memory p = PositionInputs({
-            l1read: ctx.l1read,
-            usdcBalWei: usdcBalWei,
-            btcBalWei: btcBalWei,
-            hypeBalWei: hypeBalWei,
-            pxB: pxB,
-            pxH: pxH,
-            usdcCoreTokenId: ctx.usdcCoreTokenId,
-            spotTokenBTC: ctx.spotTokenBTC,
-            spotTokenHYPE: ctx.spotTokenHYPE
-        });
+            // Calculate positions using grouped inputs to minimize stack usage
+            PositionInputs memory p = PositionInputs({
+                l1read: ctx.l1read,
+                usdcBalWei: usdcBalWei,
+                btcBalWei: btcBalWei,
+                hypeBalWei: hypeBalWei,
+                pxB: _pxB,
+                pxH: _pxH,
+                usdcCoreTokenId: ctx.usdcCoreTokenId,
+                spotTokenBTC: ctx.spotTokenBTC,
+                spotTokenHYPE: ctx.spotTokenHYPE
+            });
 
-        (int256 posB1e18, int256 posH1e18, uint256 usdc1e18) = _calculatePositions(p);
-        
-        uint256 equity1e18 = usdc1e18 + uint256(posB1e18) + uint256(posH1e18);
-        (dB, dH) = Rebalancer50Lib.computeDeltas(equity1e18, posB1e18, posH1e18, ctx.deadbandBps);
+            (int256 posB1e18, int256 posH1e18, uint256 usdc1e18) = _calculatePositions(p);
+
+            // Appel direct sans variable intermédiaire pour réduire les locaux vivants
+            (dB, dH) = Rebalancer50Lib.computeDeltas(
+                usdc1e18 + uint256(posB1e18) + uint256(posH1e18),
+                posB1e18,
+                posH1e18,
+                ctx.deadbandBps
+            );
+
+            // Assigner les prix de sortie après le calcul pour éviter qu'ils restent vivants pendant l'appel
+            pxB = _pxB;
+            pxH = _pxH;
+        }
     }
 
     function _calculatePositions(

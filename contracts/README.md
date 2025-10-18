@@ -63,6 +63,9 @@ npm run deploy:local  # Dans un autre terminal
 ```bash
 npm run test:referral  # Test complet du ReferralRegistry
 ```
+> Remarques:
+> - Les codes expirent après ~30 jours en se basant sur `BLOCKS_PER_DAY` (12s/bloc).
+> - `setQuota`, `setCodeGenerationPaused`, `whitelistDirect`, `revokeCode` sont disponibles pour l’admin.
 
 ## Smart Contracts
 
@@ -71,9 +74,11 @@ npm run test:referral  # Test complet du ReferralRegistry
 - **Fonctionnalités** :
   - Création de codes de parrainage uniques
   - Système de whitelist basé sur les codes
-  - Quota configurable par créateur (défaut: 5 codes)
-  - Expiration automatique des codes (30 jours)
-  - Pause d'urgence
+  - Quota configurable par créateur (défaut: 5 codes) via `setQuota(uint256)`
+  - Expiration automatique des codes (~30 jours) basée sur les blocs (`BLOCKS_PER_DAY = 7200`)
+  - Génération de code on-chain optionnelle (`createCode()`) avec stockage du code brut consultable
+  - Pause dédiée pour la génération (`setCodeGenerationPaused(bool)`) et pause globale (`pause()`/`unpause()`)
+  - Bootstrapping/gestion: `whitelistDirect(address)` et révocation d’un code (`revokeCode(bytes32)`) par l’owner
   - Gestion des permissions (Ownable)
 - **Sécurité** : ReentrancyGuard, Pausable, validation complète
 
@@ -88,14 +93,19 @@ npm run test:referral  # Test complet du ReferralRegistry
   - Admin : `setExcludedFromCirculating(address, bool)`
   - Getters : `circulatingSupply()`, `getExcludedAddresses()`, `isAddressExcludedFromCirculating(address)`
 - **Paramètres d'inflation** : `setInflationRecipient(address)`, `setInflationInterval(uint256)`, `nextMintTimestamp()`
+  - `mintInflation()` (whenNotPaused, nonReentrant) frappe en fonction du temps écoulé depuis `lastMintTimestamp`
+  - Intervalle par défaut 1 jour (min 1 heure); premier mint autorisé immédiatement
+  - Suivi des adresses exclues via `excludedBalances` et `totalExcludedBalance` pour un `circulatingSupply()` exact
 
 ### AxoneSale
 - **Type** : Contrat de vente publique USDC → AXN
 - **Fonctionnalités** : Achat en USDC, plafond de vente, pause d'urgence, retrait des invendus
   - Détails clés:
-    - Décimales: `AXN` 1e18, `USDC` 1e6
-    - Prix: `PRICE_PER_AXN_IN_USDC = 100_000` (0,1 USDC en 6 décimales)
-    - Formule: `usdcAmount = (axnAmount * PRICE_PER_AXN_IN_USDC) / AXN_DECIMALS`
+    - Décimales: `AXN` 1e18, `USDC` 1e8
+    - Prix initial: `PRICE_PER_AXN_IN_USDC = USDC_DECIMALS / 10` (0,1 USDC en 8 décimales), modifiable via `updatePrice(uint256)`
+    - Slippage: borne l’évolution du prix courant par `maxSlippageBps` entre deux blocs; `getCurrentPrice()` expose la valeur courante
+    - Minimum d’achat: `MIN_PURCHASE = 1000 * 1e18`; Cap: `saleCap = 50_000_000 * 1e18`
+    - Formule: `usdcAmount = (axnAmount * currentPrice) / AXN_DECIMALS`
     - Flux: `USDC.transferFrom(buyer→treasury)` puis `AXN.transfer(contract→buyer)`
 
 ## Sécurité
@@ -110,14 +120,17 @@ Les artefacts compilés (ABI et adresses) peuvent être utilisés dans votre app
 
 ## BTC50 Defensive — Guide et Déploiement Remix
 
+> Remarque: Les instructions ci‑dessous s’appliquent également à **HYPE50 Defensive**. Le code et les interfaces de `VaultContract` et `CoreInteractionHandler` sont identiques; seules les valeurs d’IDs marché/token à configurer côté HYPE diffèrent. Voir aussi `contracts/src/HYPE50 Defensive/` et `docs/contracts/HYPE50_VaultContract.md`.
+
 ### Aperçu des contrats
 
 - **VaultContract** (`contracts/src/BTC50 Defensive/VaultContract.sol`)
   - Jeton de parts 18 décimales (PPS/NAV en 1e18).
-  - Dépôt en USDC 1e6 via `deposit(uint64 amount1e6)` avec frais de dépôt optionnels (`depositFeeBps`).
+  - Dépôt en USDC 1e8 via `deposit(uint256 amount1e8)` avec frais de dépôt optionnels (`depositFeeBps`).
   - Retrait immédiat si la trésorerie EVM est suffisante, sinon mise en file et règlement ultérieur via `settleWithdraw`.
   - Déploiement automatique d'une fraction du dépôt vers Core via `autoDeployBps` (par défaut 90%).
-  - Frais de retrait dépendants du montant retiré (brut): configuration par paliers avec `setWithdrawFeeTiers(WithdrawFeeTier[])`. Si aucun palier ne correspond, fallback sur `withdrawFeeBps`.
+  - Frais de retrait dépendants du montant retiré (brut, USDC 1e8): configuration par paliers avec `setWithdrawFeeTiers(WithdrawFeeTier[])`. Si aucun palier ne correspond, fallback sur `withdrawFeeBps`.
+  - Shares ERC20-like: support de `transfer`, `approve`, `transferFrom`, `allowance` et événements `Transfer`/`Approval`.
   - Sécurité: `ReentrancyGuard`, `paused`, `SafeERC20`, snapshot des frais (BPS) au moment de la demande pour les retraits différés.
 
 - **CoreInteractionHandler** (`contracts/src/BTC50 Defensive/CoreInteractionHandler.sol`)
@@ -126,6 +139,7 @@ Les artefacts compilés (ABI et adresses) peuvent être utilisés dans votre app
   - Paramètres de marché: `maxSlippageBps`, `marketEpsilonBps`, `deadbandBps` (≤ 50 bps), garde d'écart oracle via `maxOracleDeviationBps` (par défaut 5%).
   - Sécurité: `onlyVault` pour les flux de fonds, `onlyRebalancer` pour `rebalancePortfolio`, validation de prix oracle avec mémoire du dernier prix.
   - Admin: `setRebalancer(address)` pour définir l'adresse autorisée à appeler le rééquilibrage.
+  - Frais: configuration via `setFeeConfig(address feeVault, uint64 feeBps)` et prélèvement à la collecte (`sweepToVault`).
 
 - **Librairies**
   - `Rebalancer50Lib.sol`: calcule les deltas USD pour revenir au 50/50 avec deadband.
@@ -143,9 +157,10 @@ Les artefacts compilés (ABI et adresses) peuvent être utilisés dans votre app
 - `CoreInteractionHandler` (constructeur)
   - `L1Read _l1read` (adresse du reader oracle/état Core)
   - `ICoreWriter _coreWriter` (adresse d'écrivain Core)
-  - `IERC20 _usdc` (adresse USDC ERC20 sur EVM)
+  - `IERC20 _usdc` (USDC EVM, 8 décimales)
   - `uint64 _maxOutboundPerEpoch` (> 0)
-  - `uint64 _epochLength` (> 0, secondes)
+  - `uint64 _epochLength` (> 0, en blocs)
+  - `address _feeVault`, `uint64 _feeBps` (0–10000)
   - Défauts appliqués: `deadbandBps=50`, `maxOracleDeviationBps=500 (5%)`, `maxSlippageBps=50`, `marketEpsilonBps=10`.
 
 - `CoreInteractionHandler.setParams(_, _, deadbandBps)` exige `deadbandBps ≤ 50`.
@@ -165,8 +180,8 @@ Les artefacts compilés (ABI et adresses) peuvent être utilisés dans votre app
   - `_l1read`: adresse du contrat `L1Read` sur le réseau cible.
   - `_coreWriter`: adresse du contrat writer Core.
   - `_usdc`: adresse du token USDC (ERC20) sur le réseau cible.
-  - `_maxOutboundPerEpoch`: ex. `1000000` (1,000,000 USDC par epoch).
-  - `_epochLength`: ex. `3600` (1 heure).
+  - `_maxOutboundPerEpoch`: ex. `1000000` (1,000,000 USDC 1e8 par epoch).
+  - `_epochLength`: ex. `300` (≈ 1 heure si ~12s/bloc).
 - Déployer et noter l’adresse du Handler.
 
 3) Configurer le Handler
@@ -191,12 +206,12 @@ Les artefacts compilés (ABI et adresses) peuvent être utilisés dans votre app
 
 7) Effectuer un dépôt de test
 - L’utilisateur doit d’abord approuver le Vault sur l’USDC: appeler `USDC.approve(vaultAddress, amount)`.
-- Appeler `Vault.deposit(amount1e6)` (USDC 6 décimales).
+- Appeler `Vault.deposit(amount1e8)` (USDC 8 décimales).
 - Le Vault transférera automatiquement une fraction (`autoDeployBps`) vers le Handler, qui: crédite USDC spot sur Core, puis passe des IOC pour acheter BTC/HYPE, puis (si `forceRebalance=true` côté Vault) peut rebalancer 50/50.
 
 8) Tester les retraits
-- `Vault.withdraw(shares)` retire selon la trésorerie EVM; sinon crée une demande en file. Les frais appliqués dépendent du montant brut (USDC 1e6) selon les paliers configurés via `setWithdrawFeeTiers`; la valeur de BPS utilisée est figée au moment de la demande si le retrait est différé.
-- `settleWithdraw(id, pay1e6, to)` doit payer exactement le dû net calculé avec le BPS figé au moment de la demande (basé sur le montant brut à cette date).
+- `Vault.withdraw(shares)` retire selon la trésorerie EVM; sinon crée une demande en file. Les frais appliqués dépendent du montant brut (USDC 1e8) selon les paliers configurés via `setWithdrawFeeTiers`; la valeur de BPS utilisée est figée au moment de la demande si le retrait est différé.
+- `settleWithdraw(id, pay1e8, to)` doit payer exactement le dû net calculé avec le BPS figé au moment de la demande (basé sur le montant brut à cette date).
 
 ### Bonnes pratiques et sécurité
 
@@ -212,11 +227,11 @@ Les artefacts compilés (ABI et adresses) peuvent être utilisés dans votre app
 // Définir l'adresse rebalancer (seul autorisé à appeler rebalancePortfolio)
 handler.setRebalancer(0x1234...ABCD);
 
-// Configurer des paliers de frais de retrait (USDC 1e6)
+// Configurer des paliers de frais de retrait (USDC 1e8)
 VaultContract.WithdrawFeeTier[] memory tiers = new VaultContract.WithdrawFeeTier[](3);
-tiers[0] = VaultContract.WithdrawFeeTier({amount1e6: 1_000_000, feeBps: 50});    // <= 1 USDC : 0,50%
-tiers[1] = VaultContract.WithdrawFeeTier({amount1e6: 10_000_000, feeBps: 30});  // <= 10 USDC : 0,30%
-tiers[2] = VaultContract.WithdrawFeeTier({amount1e6: 100_000_000, feeBps: 10}); // <= 100 USDC : 0,10%
+tiers[0] = VaultContract.WithdrawFeeTier({amount1e8: 100_000_000, feeBps: 50});    // <= 1 USDC : 0,50%
+tiers[1] = VaultContract.WithdrawFeeTier({amount1e8: 1_000_000_000, feeBps: 30});  // <= 10 USDC : 0,30%
+tiers[2] = VaultContract.WithdrawFeeTier({amount1e8: 10_000_000_000, feeBps: 10}); // <= 100 USDC : 0,10%
 vault.setWithdrawFeeTiers(tiers);
 ```
 
@@ -237,9 +252,9 @@ Exemple succinct (Remix/Script):
 // Rebalancer
 handler.setRebalancer(0x1234...ABCD);
 
-// Paliers de frais (brut en USDC 1e6)
+// Paliers de frais (brut en USDC 1e8)
 VaultContract.WithdrawFeeTier[] memory tiers = new VaultContract.WithdrawFeeTier[](2);
-tiers[0] = VaultContract.WithdrawFeeTier({amount1e6: 5_000_000, feeBps: 40});
-tiers[1] = VaultContract.WithdrawFeeTiers({amount1e6: 50_000_000, feeBps: 20});
+tiers[0] = VaultContract.WithdrawFeeTier({amount1e8: 500_000_000, feeBps: 40});   // 5 USDC
+tiers[1] = VaultContract.WithdrawFeeTier({amount1e8: 5_000_000_000, feeBps: 20}); // 50 USDC
 vault.setWithdrawFeeTiers(tiers);
 ```

@@ -13,8 +13,8 @@ interface IHandler {
 
 contract VaultContract is ReentrancyGuard {
     // ERC20 share
-    string public constant name = "Core50 Vault Share";
-    string public constant symbol = "c50USD";
+    string public constant name = "HYPE50 Vault Share";
+    string public constant symbol = "h50USD";
     uint8 public constant decimals = 18;
 
     address public owner;
