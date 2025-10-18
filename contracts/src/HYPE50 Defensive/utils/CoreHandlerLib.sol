@@ -68,53 +68,50 @@ library CoreHandlerLib {
         RebalanceContext memory ctx,
         address handler
     ) internal view returns (int256 dB, int256 dH, uint64 pxB, uint64 pxH) {
-        // Préparer des variables temporaires dont la durée de vie s'étend hors du bloc
-        int256 _posB1e18;
-        int256 _posH1e18;
-        uint256 _equity1e18;
+        // Calculer positions et prix dans une fonction séparée pour réduire la pression sur la pile
+        (int256 _posB1e18, int256 _posH1e18, uint256 _usdc1e18, uint64 _pxB, uint64 _pxH) =
+            _getPositionsAndPrices(ctx, handler);
 
-        // Isoler les variables lourdes dans un bloc pour limiter leur durée de vie sur la pile
-        {
-            // Get balances and prices
-            uint256 usdcBalWei = spotBalanceInWei(ctx.l1read, handler, ctx.usdcCoreTokenId);
-            uint256 btcBalWei = spotBalanceInWei(ctx.l1read, handler, ctx.spotTokenBTC);
-            uint256 hypeBalWei = spotBalanceInWei(ctx.l1read, handler, ctx.spotTokenHYPE);
+        uint256 _equity1e18 = _usdc1e18 + uint256(_posB1e18) + uint256(_posH1e18);
+        (dB, dH) = Rebalancer50Lib.computeDeltas(_equity1e18, _posB1e18, _posH1e18, ctx.deadbandBps);
+        pxB = _pxB;
+        pxH = _pxH;
+    }
 
-            uint64 _pxB = ctx.l1read.spotPx(ctx.spotBTC);
-            uint64 _pxH = ctx.l1read.spotPx(ctx.spotHYPE);
+    function _getPositionsAndPrices(
+        RebalanceContext memory ctx,
+        address handler
+    ) internal view returns (int256 posB1e18, int256 posH1e18, uint256 usdc1e18, uint64 pxB, uint64 pxH) {
+        // Balances spot convertis en wei
+        uint256 usdcBalWei = spotBalanceInWei(ctx.l1read, handler, ctx.usdcCoreTokenId);
+        uint256 btcBalWei = spotBalanceInWei(ctx.l1read, handler, ctx.spotTokenBTC);
+        uint256 hypeBalWei = spotBalanceInWei(ctx.l1read, handler, ctx.spotTokenHYPE);
 
-            // Calculate positions using grouped inputs to minimize stack usage
-            PositionInputs memory p = PositionInputs({
-                l1read: ctx.l1read,
-                usdcBalWei: usdcBalWei,
-                btcBalWei: btcBalWei,
-                hypeBalWei: hypeBalWei,
-                pxB: _pxB,
-                pxH: _pxH,
-                usdcCoreTokenId: ctx.usdcCoreTokenId,
-                spotTokenBTC: ctx.spotTokenBTC,
-                spotTokenHYPE: ctx.spotTokenHYPE
-            });
+        // Prix oracles 1e8
+        pxB = ctx.l1read.spotPx(ctx.spotBTC);
+        pxH = ctx.l1read.spotPx(ctx.spotHYPE);
 
-            (int256 posB1e18, int256 posH1e18, uint256 usdc1e18) = _calculatePositions(p);
+        // Infos de décimales
+        L1Read.TokenInfo memory usdcInfo = ctx.l1read.tokenInfo(uint32(ctx.usdcCoreTokenId));
+        L1Read.TokenInfo memory btcInfo = ctx.l1read.tokenInfo(uint32(ctx.spotTokenBTC));
+        L1Read.TokenInfo memory hypeInfo = ctx.l1read.tokenInfo(uint32(ctx.spotTokenHYPE));
 
-            // Conserver uniquement les valeurs nécessaires hors du bloc
-            _posB1e18 = posB1e18;
-            _posH1e18 = posH1e18;
-            _equity1e18 = usdc1e18 + uint256(posB1e18) + uint256(posH1e18);
+        // USDC en 1e18 (suppose 18 >= weiDecimals, conforme usage antérieur)
+        usdc1e18 = usdcBalWei * (10 ** (18 - usdcInfo.weiDecimals));
 
-            // Assigner les prix de sortie après le calcul pour éviter qu'ils restent vivants pendant l'appel
-            pxB = _pxB;
-            pxH = _pxH;
+        // BTC en USD 1e18
+        if (btcInfo.weiDecimals + 8 <= 18) {
+            posB1e18 = int256(btcBalWei * uint256(pxB) * (10 ** (18 - btcInfo.weiDecimals - 8)));
+        } else {
+            posB1e18 = int256((btcBalWei * uint256(pxB)) / (10 ** (btcInfo.weiDecimals + 8 - 18)));
         }
 
-        // Appeler computeDeltas en dehors du bloc pour réduire la pression de pile
-        (dB, dH) = Rebalancer50Lib.computeDeltas(
-            _equity1e18,
-            _posB1e18,
-            _posH1e18,
-            ctx.deadbandBps
-        );
+        // HYPE en USD 1e18
+        if (hypeInfo.weiDecimals + 8 <= 18) {
+            posH1e18 = int256(hypeBalWei * uint256(pxH) * (10 ** (18 - hypeInfo.weiDecimals - 8)));
+        } else {
+            posH1e18 = int256((hypeBalWei * uint256(pxH)) / (10 ** (hypeInfo.weiDecimals + 8 - 18)));
+        }
     }
 
     function _calculatePositions(
