@@ -98,7 +98,7 @@ const Header: React.FC = () => {
         role="banner"
         aria-label="Navigation principale"
       >
-        <div className="mx-auto max-w-[1920px] w-full px-4 md:px-6 lg:px-10">
+        <div className="w-full px-4 md:px-6 lg:px-10">
           <div className="flex h-20 items-center justify-between gap-4">
             {/* Logo */}
             <motion.div className="flex items-center gap-3 z-50 shrink-0" whileHover={{ scale: 1.02 }}>
