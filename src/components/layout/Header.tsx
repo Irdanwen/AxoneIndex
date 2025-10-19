@@ -70,8 +70,8 @@ const Header: React.FC = () => {
         role="banner"
         aria-label="Navigation principale"
       >
-        <div className="container-custom">
-          <div className="flex items-center h-20">
+        <div className="w-full px-4 md:px-6 lg:px-10">
+          <div className="flex items-center justify-between h-20 w-full">
 
             {/* Logo futuriste à gauche */}
             <motion.div
