@@ -33,6 +33,27 @@ library HLConstants {
         );
     }
 
+    // Action 2: Spot Limit Order (IOC)
+    // asset: spot id (uint32)
+    // isBuy: true if buy
+    // limitPx1e8: price in 1e8
+    // szInSzDecimals: base size in token szDecimals
+    // tif: time-in-force (IOC)
+    // cloid: client order id
+    function encodeSpotLimitOrder(
+        uint32 asset,
+        bool isBuy,
+        uint64 limitPx1e8,
+        uint64 szInSzDecimals,
+        uint8 tif,
+        uint128 cloid
+    ) internal pure returns (bytes memory) {
+        return abi.encodePacked(
+            _header(2),
+            abi.encode(asset, isBuy, limitPx1e8, szInSzDecimals, tif, cloid)
+        );
+    }
+
     // Action 6: Spot Send (Core -> EVM credit)
     function encodeSpotSend(
         address destination,

@@ -56,7 +56,7 @@ const Header: React.FC = () => {
   const handleConnect = async () => {
     try {
       await connect({ connector: injected() });
-    } catch (err) {
+    } catch {
       toast({
         title: 'Wallet introuvable',
         description: 'Installez MetaMask ou utilisez Brave Wallet puis réessayez.',
@@ -67,8 +67,13 @@ const Header: React.FC = () => {
   const handleSwitch = async () => {
     try {
       await switchChain({ chainId: 998 });
-    } catch (err: any) {
-      if (err?.code === 4902) {
+    } catch (err: unknown) {
+      if (
+        typeof err === 'object' &&
+        err !== null &&
+        'code' in err &&
+        (err as { code?: number }).code === 4902
+      ) {
         toast({
           title: 'Réseau manquant',
           description: 'Ajoutez HyperEVM Testnet (ID 998) dans votre wallet puis réessayez.',
