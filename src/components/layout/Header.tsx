@@ -98,10 +98,10 @@ const Header: React.FC = () => {
         role="banner"
         aria-label="Navigation principale"
       >
-        <div className="w-full px-4 md:px-6 lg:px-10">
-          <div className="flex h-20 w-full items-center justify-between">
+        <div className="mx-auto max-w-[1920px] w-full px-4 md:px-6 lg:px-10">
+          <div className="flex h-20 items-center justify-between gap-4">
             {/* Logo */}
-            <motion.div className="flex items-center gap-3 z-50" whileHover={{ scale: 1.02 }}>
+            <motion.div className="flex items-center gap-3 z-50 shrink-0" whileHover={{ scale: 1.02 }}>
               <Link href="/" className="flex items-center gap-3 group">
                 <motion.div className="relative h-12 w-12" whileHover={{ rotate: 360 }} transition={{ duration: 0.8, ease: 'easeInOut' }}>
                   <div className="absolute inset-0 rounded-full bg-gradient-to-r from-axone-accent to-axone-flounce opacity-90" />
@@ -121,7 +121,7 @@ const Header: React.FC = () => {
             </motion.div>
 
             {/* Nav desktop */}
-            <nav className="hidden lg:flex flex-1 items-center justify-center" role="navigation" aria-label="Menu principal">
+            <nav className="hidden lg:flex items-center justify-center" role="navigation" aria-label="Menu principal">
               <div className="flex items-center gap-8">
                 {navLinks.map((link) => (
                   <Link
@@ -149,29 +149,29 @@ const Header: React.FC = () => {
             </nav>
 
             {/* Actions droites */}
-            <div className="flex items-center gap-3 z-50">
+            <div className="flex items-center gap-3 z-50 shrink-0">
               <ThemeToggle />
-              <div className="hidden lg:flex items-center gap-3">
+              <div className="hidden lg:flex items-center gap-2 xl:gap-3">
                 {isConnected ? (
                   <>
                     <button
                       onClick={handleSwitch}
                       disabled={isPending}
-                      className="glass-cosmic px-4 py-2 rounded-lg text-sm font-medium text-white-75 hover:text-white-pure transition-all duration-300 border border-white/10 hover:border-axone-accent/30"
+                      className="glass-cosmic px-3 xl:px-4 py-2 rounded-lg text-sm font-medium text-white-75 hover:text-white-pure transition-all duration-300 border border-white/10 hover:border-axone-accent/30 whitespace-nowrap"
                     >
                       {isPending ? 'Changement…' : 'HyperEVM'}
                     </button>
-                    <div className="glass-cosmic border border-axone-accent/20 rounded-lg pl-3 pr-2 py-2 flex items-center gap-2">
-                      <Wallet className="w-4 h-4 text-axone-accent" />
-                      <span className="text-white-pure font-mono text-sm">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
+                    <div className="glass-cosmic border border-axone-accent/20 rounded-lg pl-3 pr-2 py-2 flex items-center gap-2 max-w-[280px]">
+                      <Wallet className="w-4 h-4 text-axone-accent shrink-0" />
+                      <span className="text-white-pure font-mono text-sm truncate">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
                       <button
                         onClick={() => disconnect()}
-                        className="ml-1 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-white-75 hover:text-white-pure hover:bg-white/5 transition-colors"
+                        className="ml-1 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-white-75 hover:text-white-pure hover:bg-white/5 transition-colors whitespace-nowrap shrink-0"
                         aria-label="Se déconnecter"
                         title="Se déconnecter"
                       >
                         <LogOut className="h-3.5 w-3.5" />
-                        Déconnecter
+                        <span className="hidden xl:inline">Déconnecter</span>
                       </button>
                     </div>
                   </>

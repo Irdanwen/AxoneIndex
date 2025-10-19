@@ -144,6 +144,20 @@ async function verifyOrder(p) {
     logger.info({ id: p.id, fill: found }, 'Ordre confirmé via API Hyperliquid');
     return true;
   }
+  // Fallback: vérifier l’état spot (positions/ordres) si pas de fill perps disponible
+  const spotState = await getSpotState(HANDLER_ADDRESS);
+  if (spotState && (spotState.openOrders?.length || spotState.recentFills?.length)) {
+    const anyFill = (spotState.recentFills || []).find(f => {
+      const t = Number(f.time || f.timestamp || 0);
+      return t && Math.abs(t - emittedSec) <= 120;
+    });
+    if (anyFill) {
+      confirmedCounter.inc({ type: 'order' });
+      pending.delete(p.id);
+      logger.info({ id: p.id, fill: anyFill }, 'Ordre SPOT confirmé via spotClearinghouseState');
+      return true;
+    }
+  }
   if (p.retries >= MAX_VERIFY_ATTEMPTS) {
     failedCounter.inc({ type: 'order' });
     pending.delete(p.id);

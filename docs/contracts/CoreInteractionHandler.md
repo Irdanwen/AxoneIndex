@@ -1,7 +1,7 @@
 # CoreInteractionHandler — Rôle Rebalancer et Sécurité
 
 ## Résumé
-- `CoreInteractionHandler.sol` gère les interactions avec Core (Hyperliquid): transferts USDC/HYPE spot, ordres IOC BTC/HYPE, et rééquilibrage 50/50. Le rééquilibrage est désormais restreint à une adresse `rebalancer` définie par l'owner. Pour HYPE50 Defensive, HYPE est traité comme le jeton de gaz natif: les dépôts se font en natif (payable), sont convertis 100% en USDC côté Core, puis alloués 50/50.
+- `CoreInteractionHandler.sol` gère les interactions avec Core (Hyperliquid): transferts USDC/HYPE spot, ordres IOC SPOT BTC/HYPE, et rééquilibrage 50/50. Le rééquilibrage est restreint à une adresse `rebalancer` définie par l'owner. Pour HYPE50 Defensive, HYPE est traité comme le jeton de gaz natif: les dépôts se font en natif (payable), sont convertis 100% en USDC côté Core, puis alloués 50/50.
 
 ## 🔒 Améliorations de Sécurité
 
@@ -17,22 +17,23 @@
 - **Période de grâce pour l'oracle** : Initialisation progressive de l'oracle sans blocage initial
 - **⚡ OPTIMISATION CRITIQUE** : **Migration vers block.number** - Remplacement de `block.timestamp` par `block.number` pour éviter la manipulation des validateurs
 - **🔒 SÉCURITÉ RENFORCÉE** : **Rate limiting basé sur les blocs** - Utilisation de `block.number` pour les époques au lieu de timestamps manipulables
-- **🐛 CORRECTION CRITIQUE** : **Fix fonction _toSz1e8** - Correction de la division par 1e10 en division par 100 pour respecter la formule `size1e8 = usd1e18 / price1e8 / 100`. Cette correction multiplie par 100 les quantités d'ordres (dépôts, rebalancement, ventes) pour correspondre aux montants réels d'investissement.
+- **🐛 CORRECTION CRITIQUE** : **Migration vers ordres SPOT** — Les ordres de rééquilibrage et de dépôt utilisent désormais un encodage SPOT dédié (`encodeSpotLimitOrder`) avec TIF=IOC. Les tailles sont converties selon `szDecimals` via `toSzInSzDecimals()`.
 - **💰 CORRECTION AUDIT** : **Valorisation correcte des soldes spot** - Implémentation de `spotBalanceInWei()` pour convertir les balances de `szDecimals` vers `weiDecimals` avant calcul de la valeur USD. Correction appliquée dans `equitySpotUsd1e18()` et `_computeRebalanceDeltas()` pour éviter la surévaluation/sous-évaluation des actifs.
 
 ## API Clés
 - `receive()` (payable): permet de recevoir le jeton natif HYPE en provenance du Core si nécessaire.
 - `setRebalancer(address rebalancer)` (onlyOwner): définit l'adresse autorisée à appeler `rebalancePortfolio`.
-- `rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype)` (onlyRebalancer, whenNotPaused): calcule les deltas via l'oracle et place des ordres IOC pour revenir vers 50/50 (avec deadband).
-- `executeDeposit(uint64 usdc1e8, bool forceRebalance)` (onlyVault, whenNotPaused): dépôt USDC → achats 50/50 BTC/HYPE.
+- `rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype)` (onlyRebalancer, whenNotPaused): calcule les deltas via l'oracle et place des ordres IOC SPOT pour revenir vers 50/50 (avec deadband).
+- `executeDeposit(uint64 usdc1e8, bool forceRebalance)` (onlyVault, whenNotPaused): dépôt USDC → achats 50/50 BTC/HYPE avec ordres SPOT IOC et tailles en `szDecimals` corrects.
 - `pullFromCoreToEvm(uint64 usdc1e8)` (onlyVault, whenNotPaused): orchestre les ventes si nécessaire et crédite l'EVM en USDC.
 - `sweepToVault(uint64 amount1e8)` (onlyVault, whenNotPaused): calcule les frais en 1e8, puis transfère en EVM en 1e8 vers le vault.
-- `executeDepositHype(bool forceRebalance)` (payable, onlyVault, whenNotPaused): dépôt HYPE natif (`msg.value`) → envoi natif vers `hypeCoreSystemAddress` → vente 100% en USDC → achats ~50% BTC et ~50% HYPE. Le rate limit s'applique sur l'équivalent USD (1e8).
+- `executeDepositHype(bool forceRebalance)` (payable, onlyVault, whenNotPaused): dépôt HYPE natif (`msg.value`) → envoi natif vers `hypeCoreSystemAddress` → vente 100% en USDC via ordre SPOT IOC → achats ~50% BTC et ~50% HYPE via ordres SPOT IOC. Le rate limit s'applique sur l'équivalent USD (1e8).
 - `pullHypeFromCoreToEvm(uint64 hype1e8)` (onlyVault, whenNotPaused): achète du HYPE si nécessaire puis crédite l'EVM en HYPE.
 - `sweepHypeToVault(uint256 amount1e18)` (onlyVault, whenNotPaused): calcule les frais en HYPE (1e18), puis transfère le net vers le vault.
 
 ## Événements
 - `Rebalanced(int256 dBtc1e18, int256 dHype1e18)`
+- `SpotOrderPlaced(uint32 asset, bool isBuy, uint64 limitPx1e8, uint64 sizeSzDecimals, uint128 cloid)`
 - `RebalancerSet(address rebalancer)`
 
 ## Paramètres et Contraintes
@@ -65,7 +66,7 @@ Le contrat gère deux types de décimales pour les tokens HyperLiquid :
 
 1. **szDecimals** : Format utilisé pour les opérations de trading (ordres, transfers)
    - Utilisé par `SpotBalance.total` (retourné par le precompile)
-   - Utilisé pour les montants dans `encodeLimitOrder()` et `encodeSpotSend()`
+- Utilisé pour les montants dans `encodeSpotLimitOrder()` et `encodeSpotSend()`
    - Fonction : `spotBalance()` retourne directement en szDecimals
 
 2. **weiDecimals** : Format utilisé pour la représentation on-chain et valorisation
@@ -82,8 +83,8 @@ balanceInWei = balanceSz × 10^(weiDecimals - szDecimals)
 
 | Fonction | Format Balance | Raison |
 |----------|---------------|---------|
-| `executeDeposit()` | szDecimals (via `spotBalance()`) | Trading/Transfers |
-| `pullFromCoreToEvm()` | szDecimals (via `spotBalance()`) | Trading/Transfers |
+| `executeDeposit()` | szDecimals (via `spotBalance()`) | Ordres SPOT / Transfers |
+| `pullFromCoreToEvm()` | szDecimals (via `spotBalance()`) | Ordres SPOT / Transfers |
 | `equitySpotUsd1e18()` | weiDecimals (via `spotBalanceInWei()`) | Valorisation USD |
 | `_computeRebalanceDeltas()` | weiDecimals (via `spotBalanceInWei()`) | Valorisation USD |
 

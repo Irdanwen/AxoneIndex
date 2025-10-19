@@ -148,6 +148,25 @@ library CoreHandlerLib {
         return SafeCast.toUint64(s);
     }
 
+    // Convertit un delta USD 1e18 en taille base aux szDecimals du token spot
+    function toSzInSzDecimals(
+        L1Read l1read,
+        uint64 spotTokenId,
+        int256 deltaUsd1e18,
+        uint64 price1e8
+    ) internal view returns (uint64) {
+        if (deltaUsd1e18 == 0 || price1e8 == 0) return 0;
+        L1Read.TokenInfo memory info = l1read.tokenInfo(uint32(spotTokenId));
+        uint256 absUsd = uint256(deltaUsd1e18 > 0 ? deltaUsd1e18 : -deltaUsd1e18);
+        // tailleBase(szDecimals) = (USD1e18 / px1e8) * 10^(szDecimals-8)
+        // = absUsd * 10^(szDecimals) / 10^8 / px1e8
+        uint256 numerator = absUsd * (10 ** uint256(info.szDecimals));
+        uint256 denom = uint256(price1e8) * 1e8;
+        uint256 s = numerator / denom;
+        if (s > type(uint64).max) return type(uint64).max;
+        return SafeCast.toUint64(s);
+    }
+
     function limitFromOracle(uint64 oraclePx1e8, bool isBuy, uint64 maxSlippageBps, uint64 marketEpsilonBps) internal pure returns (uint64) {
         uint256 bps = uint256(maxSlippageBps) + uint256(marketEpsilonBps);
         uint256 adj = (uint256(oraclePx1e8) * bps) / 10_000;
@@ -188,6 +207,23 @@ library CoreHandlerLib {
             limitPx1e8,
             sz1e8,
             false,
+            HLConstants.TIF_IOC,
+            cloid
+        );
+    }
+
+    function encodeSpotLimitOrder(
+        uint32 asset,
+        bool isBuy,
+        uint64 limitPx1e8,
+        uint64 szInSzDecimals,
+        uint128 cloid
+    ) internal pure returns (bytes memory) {
+        return HLConstants.encodeSpotLimitOrder(
+            asset,
+            isBuy,
+            limitPx1e8,
+            szInSzDecimals,
             HLConstants.TIF_IOC,
             cloid
         );

@@ -353,7 +353,7 @@ handler.setSpotIds(1, 2);
 - `usdc1e8`: Montant USDC à déposer (8 décimales - format HyperCore)
 - `forceRebalance`: Forcer le rééquilibrage
 
-**Note**: La fonction utilise `_toSz1e8` pour convertir les montants USD en quantités d'actifs avec la formule `size1e8 = usd1e18 / price1e8 / 100`.
+**Note**: La fonction utilise des ordres SPOT IOC et convertit les tailles vers `szDecimals` via `toSzInSzDecimals()`.
 
 **Exemple d'utilisation**:
 ```solidity
@@ -367,7 +367,7 @@ handler.executeDeposit(1000 * 1e8, true);
 - `usdc1e8`: Montant à retirer (8 décimales)
 **Retour**: `uint64` - Montant effectivement retiré
 
-**Note**: Utilise `_toSz1e8` via `_sellAssetForUsd` pour déterminer les quantités à vendre.
+**Note**: Utilise des ordres SPOT IOC via `_sellAssetForUsd` avec conversion des tailles `szDecimals`.
 
 **Exemple d'utilisation**:
 ```solidity
@@ -390,7 +390,7 @@ handler.sweepToVault(1000 * 1e8);
 - `cloidBtc`: ID d'ordre BTC
 - `cloidHype`: ID d'ordre HYPE
 
-**Note**: Utilise `_toSz1e8` via `_placeRebalanceOrders` pour calculer les quantités à acheter/vendre.
+**Note**: Utilise des ordres SPOT IOC via `_placeRebalanceOrders` avec conversion `szDecimals`.
 
 **Exemple d'utilisation**:
 ```solidity
@@ -925,7 +925,7 @@ uint256 newEquity = handler.equitySpotUsd1e18();
 Le système HyperLiquid utilise deux types de décimales pour chaque token :
 
 1. **szDecimals** : Format pour les opérations de trading
-   - Utilisé pour les ordres de trading (`encodeLimitOrder`)
+- Utilisé pour les ordres de trading SPOT (`encodeSpotLimitOrder`)
    - Utilisé pour les transfers spot (`encodeSpotSend`)
    - Retourné par `spotBalance()`
    - ✅ Utilisé dans : `executeDeposit()`, `pullFromCoreToEvm()`

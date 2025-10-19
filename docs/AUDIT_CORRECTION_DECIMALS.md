@@ -175,7 +175,7 @@ function equitySpotUsd1e18() public view returns (uint256) {
 Ces fonctions utilisent `spotBalance()` (format szDecimals) car :
 - Elles effectuent des **opérations de trading/transfer**
 - Les protocoles HyperLiquid attendent des montants en szDecimals
-- `encodeLimitOrder()` et `encodeSpotSend()` utilisent szDecimals
+- `encodeSpotLimitOrder()` et `encodeSpotSend()` utilisent szDecimals
 
 **Conclusion** : L'utilisation de szDecimals est **correcte** pour les opérations, seule la **valorisation** nécessite weiDecimals.
 
@@ -247,7 +247,7 @@ function spotBalanceInWei(address coreUser, uint64 tokenId) internal view return
 
 | Opération | Format Requis | Fonction à Utiliser | Raison |
 |-----------|---------------|-------------------|---------|
-| **Trading** (ordres) | szDecimals | `spotBalance()` | Format attendu par `encodeLimitOrder()` |
+| **Trading** (ordres SPOT) | szDecimals | `spotBalance()` | Format attendu par `encodeSpotLimitOrder()` |
 | **Transfers** (spot sends) | szDecimals | `spotBalance()` | Format attendu par `encodeSpotSend()` |
 | **Valorisation USD** | weiDecimals | `spotBalanceInWei()` | Calcul de valeur correct |
 | **NAV / PPS** | weiDecimals | `spotBalanceInWei()` | Équité correcte |

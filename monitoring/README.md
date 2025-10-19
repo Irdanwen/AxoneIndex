@@ -68,6 +68,7 @@ npm run pm2:logs
 ### Ce qui est vérifié
 
 - **Ordres IOC** (déduits des `OutboundToCore`): le service recherche des fills récents sur l'API Hyperliquid pour l'adresse du handler. Si un fill est trouvé dans la fenêtre ±2 min autour de l'événement, l'action est **confirmée**.
+  - Fallback SPOT: si aucun fill perps correspondant n'est trouvé, le service interroge `spotClearinghouseState` et tente de corréler des fills SPOT récents.
 - **Transferts Inbound** (`InboundFromCore(amount)`): le service lit le solde USDC EVM du handler et confirme si l'augmentation est ≥ `amount` dans la fenêtre de vérification.
 
 Notes:

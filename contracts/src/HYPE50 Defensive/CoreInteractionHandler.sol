@@ -75,6 +75,7 @@ contract CoreInteractionHandler is Pausable {
     event OutboundToCore(bytes data);
     event InboundFromCore(uint64 amount1e8);
     event Rebalanced(int256 dBtc1e18, int256 dHype1e18);
+    event SpotOrderPlaced(uint32 asset, bool isBuy, uint64 limitPx1e8, uint64 sizeSzDecimals, uint128 cloid);
     event FeeConfigSet(address feeVault, uint64 feeBps);
     event SweepWithFee(uint64 gross1e8, uint64 fee1e8, uint64 net1e8);
     event RebalancerSet(address rebalancer);
@@ -284,15 +285,17 @@ contract CoreInteractionHandler is Pausable {
         uint256 halfUsd1e18 = (uint256(usdc1e8) * 1e10) / 2;
         uint64 pxB = _validatedOraclePx1e8(true);
         uint64 pxH = _validatedOraclePx1e8(false);
-        uint64 szB1e8 = _toSz1e8(int256(halfUsd1e18), pxB);
-        uint64 szH1e8 = _toSz1e8(int256(halfUsd1e18), pxH);
-        if (szB1e8 > 0) {
+        uint64 szB = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenBTC, int256(halfUsd1e18), pxB);
+        uint64 szH = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenHYPE, int256(halfUsd1e18), pxH);
+        if (szB > 0) {
             uint64 pxBLimit = _limitFromOracle(pxB, true);
-            _sendLimitOrderDirect(spotBTC, true, pxBLimit, szB1e8, 0);
+            _sendSpotLimitOrderDirect(spotBTC, true, pxBLimit, szB, 0);
+            emit SpotOrderPlaced(spotBTC, true, pxBLimit, szB, 0);
         }
-        if (szH1e8 > 0) {
+        if (szH > 0) {
             uint64 pxHLimit = _limitFromOracle(pxH, true);
-            _sendLimitOrderDirect(spotHYPE, true, pxHLimit, szH1e8, 0);
+            _sendSpotLimitOrderDirect(spotHYPE, true, pxHLimit, szH, 0);
+            emit SpotOrderPlaced(spotHYPE, true, pxHLimit, szH, 0);
         }
         if (forceRebalance) {
             _rebalance(0, 0);
@@ -317,15 +320,17 @@ contract CoreInteractionHandler is Pausable {
         // Allocate 50/50 from USDC to BTC/HYPE
         uint256 halfUsd1e18 = (uint256(usd1e8) * 1e10) / 2;
         uint64 pxB = _validatedOraclePx1e8(true);
-        uint64 szB1e8 = _toSz1e8(int256(halfUsd1e18), pxB);
-        uint64 szH1e8 = _toSz1e8(int256(halfUsd1e18), pxH);
-        if (szB1e8 > 0) {
+        uint64 szB = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenBTC, int256(halfUsd1e18), pxB);
+        uint64 szH = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenHYPE, int256(halfUsd1e18), pxH);
+        if (szB > 0) {
             uint64 pxBLimit = _limitFromOracle(pxB, true);
-            _sendLimitOrderDirect(spotBTC, true, pxBLimit, szB1e8, 0);
+            _sendSpotLimitOrderDirect(spotBTC, true, pxBLimit, szB, 0);
+            emit SpotOrderPlaced(spotBTC, true, pxBLimit, szB, 0);
         }
-        if (szH1e8 > 0) {
+        if (szH > 0) {
             uint64 pxHLimit = _limitFromOracle(pxH, true);
-            _sendLimitOrderDirect(spotHYPE, true, pxHLimit, szH1e8, 0);
+            _sendSpotLimitOrderDirect(spotHYPE, true, pxHLimit, szH, 0);
+            emit SpotOrderPlaced(spotHYPE, true, pxHLimit, szH, 0);
         }
         if (forceRebalance) {
             _rebalance(0, 0);
@@ -361,7 +366,14 @@ contract CoreInteractionHandler is Pausable {
             // Buy HYPE using USDC via IOC for the shortfall size directly
             uint64 pxH = _validatedOraclePx1e8(false);
             uint64 pxHLimit = _limitFromOracle(pxH, true);
-            _sendLimitOrderDirect(spotHYPE, true, pxHLimit, SafeCast.toUint64(shortfall1e8), 0);
+            // shortfall1e8 est déjà en szDecimals pour HYPE si tokenId a szDecimals=8; sinon convertir en szDecimals
+            // Pour robustesse, recalculer via USD notional
+            uint256 usd1e18 = uint256(shortfall1e8) * 1e10;
+            uint64 szH = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenHYPE, int256(usd1e18), pxH);
+            if (szH > 0) {
+                _sendSpotLimitOrderDirect(spotHYPE, true, pxHLimit, szH, 0);
+                emit SpotOrderPlaced(spotHYPE, true, pxHLimit, szH, 0);
+            }
         }
         // Spot send to credit EVM HYPE
         _send(coreWriter, CoreHandlerLib.encodeSpotSend(hypeCoreSystemAddress, hypeCoreTokenId, hype1e8));
@@ -444,26 +456,28 @@ contract CoreInteractionHandler is Pausable {
         uint128 cloidBtc,
         uint128 cloidHype
     ) internal {
-        uint64 szB1e8 = _toSz1e8(dB, pxB);
-        if (szB1e8 > 0) {
-            _sendLimitOrderDirect(
+        uint64 szB = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenBTC, dB, pxB);
+        if (szB > 0) {
+            _sendSpotLimitOrderDirect(
                 spotBTC,
                 dB > 0,
                 _limitFromOracle(pxB, dB > 0),
-                szB1e8,
+                szB,
                 cloidBtc
             );
+            emit SpotOrderPlaced(spotBTC, dB > 0, _limitFromOracle(pxB, dB > 0), szB, cloidBtc);
         }
 
-        uint64 szH1e8 = _toSz1e8(dH, pxH);
-        if (szH1e8 > 0) {
-            _sendLimitOrderDirect(
+        uint64 szH = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenHYPE, dH, pxH);
+        if (szH > 0) {
+            _sendSpotLimitOrderDirect(
                 spotHYPE,
                 dH > 0,
                 _limitFromOracle(pxH, dH > 0),
-                szH1e8,
+                szH,
                 cloidHype
             );
+            emit SpotOrderPlaced(spotHYPE, dH > 0, _limitFromOracle(pxH, dH > 0), szH, cloidHype);
         }
     }
 
@@ -481,11 +495,12 @@ contract CoreInteractionHandler is Pausable {
         uint64 px = spotOraclePx1e8(spotAsset);
         // Convert target USD to base size 1e8
         uint256 targetUsd1e18 = targetUsd1e8 * 1e10;
-        uint64 sz1e8 = _toSz1e8(int256(targetUsd1e18), px);
-        if (sz1e8 == 0) return;
+        uint64 spotTokenId = spotAsset == spotBTC ? spotTokenBTC : spotTokenHYPE;
+        uint64 szBase = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenId, int256(targetUsd1e18), px);
+        if (szBase == 0) return;
         // Sell with lower bound price
         uint64 pxLimit = _limitFromOracle(px, false);
-        _sendLimitOrderDirect(spotAsset, false, pxLimit, sz1e8, 0);
+        _sendSpotLimitOrderDirect(spotAsset, false, pxLimit, szBase, 0);
     }
 
     function _send(ICoreWriter writer, bytes memory data) internal {
@@ -529,14 +544,14 @@ contract CoreInteractionHandler is Pausable {
 
 
 
-    function _sendLimitOrderDirect(
+    function _sendSpotLimitOrderDirect(
         uint32 asset,
         bool isBuy,
         uint64 limitPx1e8,
-        uint64 sz1e8,
+        uint64 szInSzDecimals,
         uint128 cloid
     ) internal {
-        _send(coreWriter, CoreHandlerLib.encodeLimitOrder(asset, isBuy, limitPx1e8, sz1e8, cloid));
+        _send(coreWriter, CoreHandlerLib.encodeSpotLimitOrder(asset, isBuy, limitPx1e8, szInSzDecimals, cloid));
     }
 }
 
