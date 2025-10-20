@@ -194,7 +194,7 @@ const Header: React.FC = () => {
         role="banner"
         aria-label="Navigation principale"
       >
-        <div className="mx-auto grid h-16 max-w-6xl grid-cols-[auto,1fr,auto] items-center gap-6 px-4 sm:px-6 lg:px-8">
+        <div className="grid h-16 w-full grid-cols-[auto,1fr,auto] items-center gap-6 px-4 sm:px-6 lg:px-10">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-900">
