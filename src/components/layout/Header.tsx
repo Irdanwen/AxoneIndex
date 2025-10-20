@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Rocket, Wallet, LogOut } from 'lucide-react';
+import { Menu, X, Wallet, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
 import { injected } from 'wagmi/connectors';
-import { GlowButton } from '../ui/GlowButton';
 import ThemeToggle from '../ui/ThemeToggle';
 import { useToast } from '../ui/use-toast';
 
@@ -15,6 +14,9 @@ const Header: React.FC = () => {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isMobileAccountMenuOpen, setIsMobileAccountMenuOpen] = useState(false);
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
 
   // wagmi
   const { address, isConnected } = useAccount();
@@ -35,10 +37,14 @@ const Header: React.FC = () => {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
+      setIsMobileAccountMenuOpen(false);
     }
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsMobileOpen(false);
+      if (e.key === 'Escape') {
+        setIsMobileOpen(false);
+        setIsMobileAccountMenuOpen(false);
+      }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
@@ -87,115 +93,142 @@ const Header: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (!isAccountMenuOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (accountMenuRef.current && !accountMenuRef.current.contains(event.target as Node)) {
+        setIsAccountMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isAccountMenuOpen]);
+
+  useEffect(() => {
+    if (isAccountMenuOpen) {
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          setIsAccountMenuOpen(false);
+        }
+      };
+      window.addEventListener('keydown', onKeyDown);
+      return () => window.removeEventListener('keydown', onKeyDown);
+    }
+  }, [isAccountMenuOpen]);
+
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled
-            ? 'supports-[backdrop-filter]:bg-black/30 backdrop-blur-xl border-b border-white/10'
-            : 'bg-transparent'
+        className={`fixed inset-x-0 top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur transition-shadow ${
+          isScrolled ? 'shadow-sm' : ''
         }`}
         role="banner"
         aria-label="Navigation principale"
       >
-        <div className="w-full px-4 md:px-6 lg:px-10">
-          <div className="flex h-20 items-center justify-between gap-4">
-            {/* Logo */}
-            <motion.div className="flex items-center gap-3 z-50 shrink-0" whileHover={{ scale: 1.02 }}>
-              <Link href="/" className="flex items-center gap-3 group">
-                <motion.div className="relative h-12 w-12" whileHover={{ rotate: 360 }} transition={{ duration: 0.8, ease: 'easeInOut' }}>
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-axone-accent to-axone-flounce opacity-90" />
-                  <div className="absolute inset-0 rounded-full glass-cosmic flex items-center justify-center">
-                    <svg className="h-8 w-8 text-white-pure" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-                      <path d="M16 4L28 16L16 28L4 16L16 4Z" stroke="currentColor" strokeWidth="2" fill="none" />
-                      <circle cx="16" cy="16" r="6" stroke="currentColor" strokeWidth="2" fill="none" />
-                      <circle cx="16" cy="16" r="2" fill="currentColor" />
-                    </svg>
-                  </div>
-                </motion.div>
-                <div className="flex flex-col">
-                  <span className="text-2xl font-black text-white-pure group-hover:text-gradient transition-colors">AXONE</span>
-                  <span className="text-xs font-medium text-axone-accent uppercase tracking-wider">Finance</span>
-                </div>
-              </Link>
-            </motion.div>
+        <div className="mx-auto grid h-16 max-w-6xl grid-cols-[auto,1fr,auto] items-center gap-6 px-4 sm:px-6 lg:px-8">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-900">
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 3L21 12L12 21L3 12L12 3Z" stroke="currentColor" strokeWidth="1.5" />
+                <circle cx="12" cy="12" r="4.5" stroke="currentColor" strokeWidth="1.5" />
+              </svg>
+            </span>
+            <span className="text-lg font-semibold text-slate-900">Axone Finance</span>
+          </Link>
 
-            {/* Nav desktop */}
-            <nav className="hidden lg:flex items-center justify-center" role="navigation" aria-label="Menu principal">
-              <div className="flex items-center gap-8">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`relative uppercase text-sm tracking-wider font-medium transition-colors ${
-                      isActive(link.href) ? 'text-white-pure' : 'text-white-75 hover:text-white-pure'
-                    }`}
-                  >
-                    {link.label}
-                    <span
-                      className={`absolute -bottom-2 left-0 h-0.5 bg-gradient-to-r from-axone-accent to-axone-flounce transition-all duration-300 ${
-                        isActive(link.href) ? 'w-full' : 'w-0 group-hover:w-full'
+          {/* Nav desktop */}
+          <nav className="hidden lg:block" role="navigation" aria-label="Menu principal">
+            <ul className="flex items-center justify-center gap-8">
+              {navLinks.map((link) => {
+                const active = isActive(link.href);
+                return (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className={`relative inline-flex items-center pb-1 text-sm font-semibold transition-colors after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-slate-900 after:transition-opacity ${
+                        active
+                          ? 'text-slate-900 after:opacity-100'
+                          : 'text-slate-600 hover:text-slate-900 after:opacity-0 hover:after:opacity-100'
                       }`}
-                    />
-                  </Link>
-                ))}
-                <GlowButton variant="primary" size="sm" glowColor="accent" className="ml-2" asChild>
-                  <Link href="/vaults">
-                    <Rocket className="w-4 h-4" />
-                    <span>LAUNCH APP</span>
-                  </Link>
-                </GlowButton>
-              </div>
-            </nav>
-
-            {/* Actions droites */}
-            <div className="flex items-center gap-3 z-50 shrink-0">
-              <ThemeToggle />
-              <div className="hidden lg:flex items-center gap-2 xl:gap-3">
-                {isConnected ? (
-                  <>
-                    <button
-                      onClick={handleSwitch}
-                      disabled={isPending}
-                      className="glass-cosmic px-3 xl:px-4 py-2 rounded-lg text-sm font-medium text-white-75 hover:text-white-pure transition-all duration-300 border border-white/10 hover:border-axone-accent/30 whitespace-nowrap"
                     >
-                      {isPending ? 'Changement…' : 'HyperEVM'}
-                    </button>
-                    <div className="glass-cosmic border border-axone-accent/20 rounded-lg pl-3 pr-2 py-2 flex items-center gap-2 max-w-[280px]">
-                      <Wallet className="w-4 h-4 text-axone-accent shrink-0" />
-                      <span className="text-white-pure font-mono text-sm truncate">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
-                      <button
-                        onClick={() => disconnect()}
-                        className="ml-1 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-white-75 hover:text-white-pure hover:bg-white/5 transition-colors whitespace-nowrap shrink-0"
-                        aria-label="Se déconnecter"
-                        title="Se déconnecter"
-                      >
-                        <LogOut className="h-3.5 w-3.5" />
-                        <span className="hidden xl:inline">Déconnecter</span>
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <GlowButton variant="secondary" size="sm" glowColor="flounce" onClick={handleConnect}>
-                    <Wallet className="w-4 h-4" />
-                    <span>CONNECT WALLET</span>
-                  </GlowButton>
-                )}
-              </div>
+                      {link.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
 
-              {/* Burger */}
-              <button
-                onClick={() => setIsMobileOpen((v) => !v)}
-                className="lg:hidden p-2 rounded-lg glass-cosmic border border-white/10 hover:border-axone-accent/30 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-axone-accent focus:ring-offset-2 focus:ring-offset-axone-dark"
-                aria-label="Menu de navigation"
-                aria-expanded={isMobileOpen}
-                aria-controls="mobile-menu"
-              >
-                <motion.div animate={{ rotate: isMobileOpen ? 90 : 0 }} transition={{ duration: 0.3 }}>
-                  {isMobileOpen ? <X className="w-6 h-6 text-white-pure" /> : <Menu className="w-6 h-6 text-white-pure" />}
-                </motion.div>
-              </button>
+          {/* Actions droites */}
+          <div className="flex items-center justify-end gap-3">
+            <ThemeToggle />
+            <div className="hidden lg:flex items-center gap-3">
+              {isConnected ? (
+                <>
+                  <button
+                    onClick={handleSwitch}
+                    disabled={isPending}
+                    className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {isPending ? 'Changement…' : 'HyperEVM'}
+                  </button>
+                  <div className="relative" ref={accountMenuRef}>
+                    <button
+                      type="button"
+                      onClick={() => setIsAccountMenuOpen((open) => !open)}
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                      aria-haspopup="menu"
+                      aria-expanded={isAccountMenuOpen}
+                    >
+                      <Wallet className="h-4 w-4" aria-hidden="true" />
+                      <span className="font-mono">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
+                    </button>
+                    {isAccountMenuOpen ? (
+                      <div
+                        role="menu"
+                        aria-label="Options du wallet"
+                        className="absolute right-0 top-full z-50 mt-2 w-40 rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
+                      >
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            disconnect();
+                            setIsAccountMenuOpen(false);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                        >
+                          <LogOut className="h-4 w-4" aria-hidden="true" />
+                          Déconnecter
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleConnect}
+                  className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                >
+                  <Wallet className="h-4 w-4" aria-hidden="true" />
+                  Connect Wallet
+                </button>
+              )}
             </div>
+            <button
+              onClick={() => setIsMobileOpen((v) => !v)}
+              className="inline-flex items-center justify-center rounded-full border border-slate-300 p-2 text-slate-700 transition hover:border-slate-400 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 lg:hidden"
+              aria-label="Menu de navigation"
+              aria-expanded={isMobileOpen}
+              aria-controls="mobile-menu"
+            >
+              <span className="sr-only">Menu</span>
+              <motion.div animate={{ rotate: isMobileOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
+                {isMobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </motion.div>
+            </button>
           </div>
         </div>
       </header>
@@ -208,87 +241,96 @@ const Header: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+              className="absolute inset-0 bg-slate-900/40"
               onClick={() => setIsMobileOpen(false)}
             />
             <motion.nav
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
-              transition={{ type: 'tween', duration: 0.28 }}
-              className="absolute right-0 top-0 h-full w-full max-w-sm glass-cosmic-dark border-l border-white/10"
+              transition={{ type: 'tween', duration: 0.25 }}
+              className="absolute right-0 top-0 h-full w-full max-w-sm bg-white text-slate-900 shadow-xl"
               id="mobile-menu"
               role="navigation"
               aria-label="Menu principal mobile"
             >
-              <div className="flex h-full flex-col p-8 pt-24 overflow-auto">
-                {navLinks.map((link, index) => (
-                  <motion.div key={link.href} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 * index }}>
-                    <Link
-                      href={link.href}
-                      onClick={() => setIsMobileOpen(false)}
-                      className={`block text-2xl font-bold transition-colors uppercase tracking-wider mb-6 ${
-                        isActive(link.href) ? 'text-axone-accent' : 'text-white-pure hover:text-axone-accent'
-                      }`}
-                    >
-                      {link.label}
-                    </Link>
-                  </motion.div>
-                ))}
-
-                <div className="pt-2 mb-6">
-                  <GlowButton variant="primary" size="lg" glowColor="accent" className="w-full" asChild>
-                    <Link href="/vaults" onClick={() => setIsMobileOpen(false)}>
-                      <Rocket className="w-5 h-5" />
-                      <span>LAUNCH APP</span>
-                    </Link>
-                  </GlowButton>
-                </div>
-
-                {isConnected ? (
-                  <div className="mt-auto">
-                    <div className="glass-cosmic border border-axone-accent/20 rounded-lg p-4 mb-4">
-                      <div className="flex items-center mb-3">
-                        <Wallet className="w-5 h-5 text-axone-accent" />
-                        <span className="ml-2 font-mono text-white-pure">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
-                      </div>
-                      <div className="flex gap-3">
-                        <button
-                          onClick={handleSwitch}
-                          disabled={isPending}
-                          className="flex-1 glass-cosmic px-4 py-2 rounded-lg text-sm font-medium text-white-75 hover:text-white-pure transition-all duration-300 border border-white/10 hover:border-axone-accent/30"
+              <div className="flex h-full flex-col gap-8 overflow-auto px-6 pb-10 pt-24">
+                <nav>
+                  <ul className="space-y-2 text-lg font-semibold">
+                    {navLinks.map((link) => (
+                      <li key={link.href}>
+                        <Link
+                          href={link.href}
+                          onClick={() => setIsMobileOpen(false)}
+                          className={`block rounded-md px-2 py-2 transition-colors ${
+                            isActive(link.href) ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                          }`}
                         >
-                          {isPending ? 'Changement…' : 'HyperEVM'}
-                        </button>
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+
+                <div className="mt-auto space-y-4">
+                  {isConnected ? (
+                    <>
+                      <button
+                        onClick={handleSwitch}
+                        disabled={isPending}
+                        className="w-full rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 disabled:cursor-not-allowed disabled:opacity-70"
+                      >
+                        {isPending ? 'Changement…' : 'HyperEVM'}
+                      </button>
+                      <div className="relative">
                         <button
-                          onClick={() => {
-                            disconnect();
-                            setIsMobileOpen(false);
-                          }}
-                          className="flex-1 glass-cosmic px-4 py-2 rounded-lg text-sm font-medium text-white-75 hover:text-white-pure transition-colors border border-white/10 hover:border-red-400/40"
+                          type="button"
+                          onClick={() => setIsMobileAccountMenuOpen((open) => !open)}
+                          className="flex w-full items-center justify-center gap-2 rounded-full bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                          aria-haspopup="menu"
+                          aria-expanded={isMobileAccountMenuOpen}
                         >
-                          <span className="inline-flex items-center gap-2"><LogOut className="w-4 h-4" /> Déconnecter</span>
+                          <Wallet className="h-4 w-4" aria-hidden="true" />
+                          {address?.slice(0, 6)}...{address?.slice(-4)}
                         </button>
+                        {isMobileAccountMenuOpen ? (
+                          <div
+                            role="menu"
+                            aria-label="Options du wallet mobile"
+                            className="absolute left-0 right-0 top-full z-50 mt-2 rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
+                          >
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={() => {
+                                disconnect();
+                                setIsMobileAccountMenuOpen(false);
+                                setIsMobileOpen(false);
+                              }}
+                              className="flex w-full items-center justify-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                            >
+                              <LogOut className="h-4 w-4" aria-hidden="true" />
+                              Déconnecter
+                            </button>
+                          </div>
+                        ) : null}
                       </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-auto">
-                    <GlowButton
-                      variant="secondary"
-                      size="lg"
-                      glowColor="flounce"
-                      className="w-full mb-6"
+                    </>
+                  ) : (
+                    <button
+                      type="button"
                       onClick={() => {
                         handleConnect();
                         setIsMobileOpen(false);
                       }}
+                      className="flex w-full items-center justify-center gap-2 rounded-full bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                     >
-                      <Wallet className="w-5 h-5" />
-                      <span>CONNECT WALLET</span>
-                    </GlowButton>
-                  </div>
-                )}
+                      <Wallet className="h-5 w-5" aria-hidden="true" />
+                      Connect Wallet
+                    </button>
+                  )}
+                </div>
               </div>
             </motion.nav>
           </motion.div>
