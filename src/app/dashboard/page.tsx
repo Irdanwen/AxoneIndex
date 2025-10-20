@@ -171,7 +171,7 @@ export default function DashboardPage() {
                 Balances Hypercore (Handler)
               </div>
               <p className="text-sm text-[var(--text-secondary)]">
-                Soldes USDC, HYPE et BTC sur Hypercore (1e8).
+                Soldes USDC, HYPE et BTC sur Hypercore convertis selon les décimales natives.
               </p>
             </header>
             <div className="mt-6">
