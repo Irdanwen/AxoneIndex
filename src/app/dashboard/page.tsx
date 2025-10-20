@@ -132,7 +132,7 @@ export default function DashboardPage() {
               </div>
               <p className="text-sm text-[var(--text-secondary)]">Performances et métriques du vault h50USD.</p>
             </header>
-            <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <DashboardKpi
                 label="Vos parts du vault"
                 value={<span className="font-mono">{formatNumber(data?.vaultShares || '0', { decimals: 6 })}</span>}
