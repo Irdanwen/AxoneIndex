@@ -2,10 +2,12 @@
 
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { formatNumber, truncateAddress } from '@/lib/format'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Skeleton } from '@/components/ui'
+import { Card, CardContent, Button, Skeleton } from '@/components/ui'
 import { AlertCircle, Wallet, Database, Globe } from 'lucide-react'
 import Link from 'next/link'
 import { useAccount } from 'wagmi'
+import { DashboardKpi } from '@/components/dashboard/DashboardKpi'
+import { CoreBalancesTable } from '@/components/dashboard/CoreBalancesTable'
 
 export default function DashboardPage() {
   const { data, isLoading, isError, error, isConfigured, address } = useDashboardData()
@@ -61,205 +63,144 @@ export default function DashboardPage() {
     )
   }
 
+  const coreBalanceRows = [
+    {
+      token: 'USDC',
+      tokenId: data?.coreBalances?.usdc?.tokenId?.toString() ?? '—',
+      balance: data?.coreBalances?.usdc?.balance ?? '—',
+    },
+    {
+      token: 'HYPE',
+      tokenId: data?.coreBalances?.hype?.tokenId?.toString() ?? '—',
+      balance: data?.coreBalances?.hype?.balance ?? '—',
+    },
+    {
+      token: 'BTC',
+      tokenId: data?.coreBalances?.btc?.tokenId?.toString() ?? '—',
+      balance: data?.coreBalances?.btc?.balance ?? '—',
+    },
+  ]
+
   return (
     <div className="container-custom py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">HYPE50 Defensive - Dashboard</h1>
-        <p className="text-muted-foreground">
-          Adresse connectée : {address ? truncateAddress(address) : 'Non connectée'}
-        </p>
-      </div>
+      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+        <aside className="space-y-6">
+          <section className="rounded-2xl border border-[var(--border-muted)] bg-[var(--surface)] p-6 shadow-sm">
+            <div className="space-y-2">
+              <h1 className="text-2xl font-semibold text-foreground">HYPE50 Defensive</h1>
+              <p className="text-sm text-[var(--text-secondary)]">
+                Dashboard opérationnel du vault HYPE50 Defensive.
+              </p>
+            </div>
+            <div className="mt-6 space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+                Adresse connectée
+              </p>
+              <p className="font-mono text-sm text-foreground">
+                {address ? truncateAddress(address) : 'Non connectée'}
+              </p>
+            </div>
+          </section>
 
-      <div className="grid gap-6">
-        {/* Section Compte */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Wallet className="h-5 w-5" />
-            Compte
-          </h2>
-          <Card>
-            <CardHeader>
-              <CardTitle>Balance HYPE</CardTitle>
-              <CardDescription>Solde natif HYPE sur HyperEVM</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-8 w-32" />
-              ) : (
-                <p className="text-2xl font-bold">
-                  {formatNumber(data?.hypeNativeBalance || '0', { decimals: 4 })} HYPE
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Section Vault */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Database className="h-5 w-5" />
-            Vault
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Vos parts du vault</CardTitle>
-                <CardDescription>Nombre de parts h50USD détenues</CardDescription>
-              </CardHeader>
-              <CardContent>
+          <section className="rounded-2xl border border-[var(--border-muted)] bg-[var(--surface)] p-6 shadow-sm">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+              <Wallet className="h-4 w-4" />
+              Compte
+            </div>
+            <div className="mt-6 space-y-2">
+              <p className="text-sm font-medium text-[var(--text-secondary)]">Balance HYPE</p>
+              <div className="text-3xl font-semibold text-foreground">
                 {isLoading ? (
                   <Skeleton className="h-8 w-32" />
                 ) : (
-                  <p className="text-2xl font-bold">
-                    {formatNumber(data?.vaultShares || '0', { decimals: 6 })}
-                  </p>
+                  <span>
+                    {formatNumber(data?.hypeNativeBalance || '0', { decimals: 4 })} <span className="text-lg">HYPE</span>
+                  </span>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+              <p className="text-xs text-[var(--text-secondary)]">Solde natif HYPE sur HyperEVM</p>
+            </div>
+          </section>
+        </aside>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Total Supply du Vault</CardTitle>
-                <CardDescription>Supply totale des parts h50USD</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-8 w-32" />
-                ) : (
-                  <p className="text-2xl font-bold">
+        <main className="space-y-6">
+          <section className="rounded-2xl border border-[var(--border-muted)] bg-[var(--surface)] p-6 shadow-sm">
+            <header className="flex flex-col gap-2 border-b border-[var(--border-muted)] pb-4">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+                <Database className="h-4 w-4" />
+                Vault
+              </div>
+              <p className="text-sm text-[var(--text-secondary)]">Performances et métriques du vault h50USD.</p>
+            </header>
+            <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <DashboardKpi
+                label="Vos parts du vault"
+                value={<span className="font-mono">{formatNumber(data?.vaultShares || '0', { decimals: 6 })}</span>}
+                isLoading={isLoading}
+              />
+              <DashboardKpi
+                label="Total supply du vault"
+                value={
+                  <span className="font-mono">
                     {formatNumber(data?.vaultTotalSupply || '0', { decimals: 2, compact: true })}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>PPS (Prix par part)</CardTitle>
-                <CardDescription>USD par part (1e18)</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-8 w-32" />
-                ) : (
-                  <p className="text-2xl font-bold">
-                    ${formatNumber(data?.pps || '0', { decimals: 6 })}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Core Equity (USD)</CardTitle>
-                <CardDescription>Valeur des positions Core (1e18)</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-8 w-32" />
-                ) : (
-                  <p className="text-2xl font-bold">
+                  </span>
+                }
+                isLoading={isLoading}
+              />
+              <DashboardKpi
+                label="PPS (Prix par part)"
+                value={<span className="font-mono">${formatNumber(data?.pps || '0', { decimals: 6 })}</span>}
+                isLoading={isLoading}
+              />
+              <DashboardKpi
+                label="Core equity (USD)"
+                value={
+                  <span className="font-mono">
                     ${formatNumber(data?.coreEquityUsd || '0', { decimals: 2, compact: true })}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                  </span>
+                }
+                isLoading={isLoading}
+              />
+            </div>
+          </section>
 
-        {/* Section Core */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Globe className="h-5 w-5" />
-            Balances Hypercore (Handler)
-          </h2>
-          <Card>
-            <CardHeader>
-              <CardTitle>Soldes du Handler sur Core</CardTitle>
-              <CardDescription>USDC, HYPE et BTC sur Hypercore (1e8)</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2">Token</th>
-                      <th className="text-left py-2">Token ID</th>
-                      <th className="text-right py-2">Balance</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {isLoading ? (
-                      <>
-                        <tr className="border-b">
-                          <td className="py-2">USDC</td>
-                          <td className="py-2"><Skeleton className="h-4 w-16" /></td>
-                          <td className="text-right py-2"><Skeleton className="h-4 w-24 ml-auto" /></td>
-                        </tr>
-                        <tr className="border-b">
-                          <td className="py-2">HYPE</td>
-                          <td className="py-2"><Skeleton className="h-4 w-16" /></td>
-                          <td className="text-right py-2"><Skeleton className="h-4 w-24 ml-auto" /></td>
-                        </tr>
-                        <tr>
-                          <td className="py-2">BTC</td>
-                          <td className="py-2"><Skeleton className="h-4 w-16" /></td>
-                          <td className="text-right py-2"><Skeleton className="h-4 w-24 ml-auto" /></td>
-                        </tr>
-                      </>
-                    ) : (
-                      <>
-                        <tr className="border-b">
-                          <td className="py-2 font-medium">USDC</td>
-                          <td className="py-2 text-muted-foreground">
-                            {data?.coreBalances.usdc.tokenId}
-                          </td>
-                          <td className="text-right py-2 font-mono">
-                            {data?.coreBalances.usdc.balance}
-                          </td>
-                        </tr>
-                        <tr className="border-b">
-                          <td className="py-2 font-medium">HYPE</td>
-                          <td className="py-2 text-muted-foreground">
-                            {data?.coreBalances.hype.tokenId}
-                          </td>
-                          <td className="text-right py-2 font-mono">
-                            {data?.coreBalances.hype.balance}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="py-2 font-medium">BTC</td>
-                          <td className="py-2 text-muted-foreground">
-                            {data?.coreBalances.btc.tokenId}
-                          </td>
-                          <td className="text-right py-2 font-mono">
-                            {data?.coreBalances.btc.balance}
-                          </td>
-                        </tr>
-                      </>
-                    )}
-                  </tbody>
-                </table>
+          <section className="rounded-2xl border border-[var(--border-muted)] bg-[var(--surface)] p-6 shadow-sm">
+            <header className="flex flex-col gap-2 border-b border-[var(--border-muted)] pb-4">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+                <Globe className="h-4 w-4" />
+                Balances Hypercore (Handler)
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <div>
-                  <div className="text-sm text-muted-foreground">Oracle BTC</div>
+              <p className="text-sm text-[var(--text-secondary)]">
+                Soldes USDC, HYPE et BTC sur Hypercore (1e8).
+              </p>
+            </header>
+            <div className="mt-6">
+              <CoreBalancesTable balances={coreBalanceRows} isLoading={isLoading} />
+            </div>
+            <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="rounded-xl border border-[var(--border-muted)] bg-[var(--surface)] p-4 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Oracle BTC</p>
+                <div className="mt-2 text-lg font-mono text-foreground">
                   {isLoading ? (
                     <Skeleton className="h-6 w-28" />
                   ) : (
-                    <div className="text-lg font-mono">{formatNumber(data?.oraclePxBtc || '0', { decimals: 2 })}</div>
-                  )}
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Oracle HYPE</div>
-                  {isLoading ? (
-                    <Skeleton className="h-6 w-28" />
-                  ) : (
-                    <div className="text-lg font-mono">{formatNumber(data?.oraclePxHype || '0', { decimals: 2 })}</div>
+                    formatNumber(data?.oraclePxBtc || '0', { decimals: 2 })
                   )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+              <div className="rounded-xl border border-[var(--border-muted)] bg-[var(--surface)] p-4 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Oracle HYPE</p>
+                <div className="mt-2 text-lg font-mono text-foreground">
+                  {isLoading ? (
+                    <Skeleton className="h-6 w-28" />
+                  ) : (
+                    formatNumber(data?.oraclePxHype || '0', { decimals: 2 })
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
       </div>
     </div>
   )
