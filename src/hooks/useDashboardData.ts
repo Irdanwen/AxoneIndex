@@ -6,6 +6,36 @@ import { l1readContract } from '@/contracts/l1read'
 import { coreInteractionHandlerContract } from '@/contracts/coreInteractionHandler'
 import { formatUnitsSafe, formatCoreBalance } from '@/lib/format'
 
+type SpotBalanceResult = {
+  total: bigint
+  hold: bigint
+  entryNtl: bigint
+}
+
+type TokenInfoResult = {
+  name: string
+  spots: bigint[]
+  deployerTradingFeeShare: bigint
+  deployer: `0x${string}`
+  evmContract: `0x${string}`
+  szDecimals: number
+  weiDecimals: number
+  evmExtraWeiDecimals: number
+}
+
+type CoreBalanceData = {
+  tokenId: number
+  balance: string
+  raw: bigint
+  normalized: bigint
+  decimals: {
+    szDecimals: number
+    weiDecimals: number
+    adjustmentPower: number
+    isInferred: boolean
+  }
+}
+
 export function useDashboardData() {
   const { address } = useAccount()
   const { config, isConfigured } = useVaultConfig()
@@ -51,17 +81,35 @@ export function useDashboardData() {
       functionName: 'spotBalance',
       args: [config.handlerAddress, BigInt(config.coreTokenIds.usdc)],
     },
+    // Core USDC token info
+    {
+      ...l1readContract(config.l1ReadAddress),
+      functionName: 'tokenInfo',
+      args: [BigInt(config.coreTokenIds.usdc)],
+    },
     // Core HYPE balance
     {
       ...l1readContract(config.l1ReadAddress),
       functionName: 'spotBalance',
       args: [config.handlerAddress, BigInt(config.coreTokenIds.hype)],
     },
+    // Core HYPE token info
+    {
+      ...l1readContract(config.l1ReadAddress),
+      functionName: 'tokenInfo',
+      args: [BigInt(config.coreTokenIds.hype)],
+    },
     // Core BTC balance
     {
       ...l1readContract(config.l1ReadAddress),
       functionName: 'spotBalance',
       args: [config.handlerAddress, BigInt(config.coreTokenIds.btc)],
+    },
+    // Core BTC token info
+    {
+      ...l1readContract(config.l1ReadAddress),
+      functionName: 'tokenInfo',
+      args: [BigInt(config.coreTokenIds.btc)],
     },
     // Handler core equity (USD 1e18)
     {
@@ -93,33 +141,72 @@ export function useDashboardData() {
   })
 
   // Formater les données
+  const adjustByDecimals = (value: bigint, weiDecimals: number, szDecimals: number) => {
+    const diff = weiDecimals - szDecimals
+    if (diff === 0) return value
+    if (diff > 0) {
+      return value * 10n ** BigInt(diff)
+    }
+
+    const divisor = 10n ** BigInt(Math.abs(diff))
+    if (divisor === 0n) return value
+    return value / divisor
+  }
+
+  const buildCoreBalance = (
+    tokenId: number | undefined,
+    spot: SpotBalanceResult | undefined,
+    info: TokenInfoResult | undefined
+  ): CoreBalanceData => {
+    const total = spot?.total ?? 0n
+    const szDecimals = typeof info?.szDecimals === 'number' ? info.szDecimals : undefined
+    const weiDecimals = typeof info?.weiDecimals === 'number' ? info.weiDecimals : undefined
+
+    const fallbackWeiDecimals = weiDecimals ?? 8
+    const fallbackSzDecimals = szDecimals ?? fallbackWeiDecimals
+    const normalized = adjustByDecimals(total, fallbackWeiDecimals, fallbackSzDecimals)
+
+    return {
+      tokenId: tokenId ?? 0,
+      balance: formatCoreBalance(total, fallbackWeiDecimals, fallbackSzDecimals),
+      raw: total,
+      normalized,
+      decimals: {
+        szDecimals: fallbackSzDecimals,
+        weiDecimals: fallbackWeiDecimals,
+        adjustmentPower: fallbackWeiDecimals - fallbackSzDecimals,
+        isInferred: typeof weiDecimals !== 'number' || typeof szDecimals !== 'number',
+      },
+    }
+  }
+
   const formattedData = data ? {
     usdcBalance: formatUnitsSafe(data[0]?.result as bigint, 6),
-    usdcDecimals: data[1]?.result as number || 6,
-    vaultShares: formatUnitsSafe(data[2]?.result as bigint, data[4]?.result as number || 18),
-    vaultTotalSupply: formatUnitsSafe(data[3]?.result as bigint, data[4]?.result as number || 18),
-    vaultDecimals: data[4]?.result as number || 18,
+    usdcDecimals: (data[1]?.result as number) || 6,
+    vaultShares: formatUnitsSafe(data[2]?.result as bigint, (data[4]?.result as number) || 18),
+    vaultTotalSupply: formatUnitsSafe(data[3]?.result as bigint, (data[4]?.result as number) || 18),
+    vaultDecimals: (data[4]?.result as number) || 18,
     coreBalances: {
-      usdc: {
-        tokenId: config?.coreTokenIds.usdc || 0,
-        balance: formatCoreBalance((data[5]?.result as { total: bigint })?.total || 0n),
-        raw: (data[5]?.result as { total: bigint })?.total || 0n,
-      },
-      hype: {
-        tokenId: config?.coreTokenIds.hype || 0,
-        balance: formatCoreBalance((data[6]?.result as { total: bigint })?.total || 0n),
-        raw: (data[6]?.result as { total: bigint })?.total || 0n,
-      },
-      btc: {
-        tokenId: config?.coreTokenIds.btc || 0,
-        balance: formatCoreBalance((data[7]?.result as { total: bigint })?.total || 0n),
-        raw: (data[7]?.result as { total: bigint })?.total || 0n,
-      },
+      usdc: buildCoreBalance(
+        config?.coreTokenIds.usdc,
+        data[5]?.result as SpotBalanceResult | undefined,
+        data[6]?.result as TokenInfoResult | undefined
+      ),
+      hype: buildCoreBalance(
+        config?.coreTokenIds.hype,
+        data[7]?.result as SpotBalanceResult | undefined,
+        data[8]?.result as TokenInfoResult | undefined
+      ),
+      btc: buildCoreBalance(
+        config?.coreTokenIds.btc,
+        data[9]?.result as SpotBalanceResult | undefined,
+        data[10]?.result as TokenInfoResult | undefined
+      ),
     },
-    coreEquityUsd: formatUnitsSafe(data[8]?.result as bigint, 18),
-    oraclePxBtc: formatUnitsSafe(data[9]?.result as bigint, 8),
-    oraclePxHype: formatUnitsSafe(data[10]?.result as bigint, 8),
-    pps: formatUnitsSafe(data[11]?.result as bigint, 18),
+    coreEquityUsd: formatUnitsSafe(data[11]?.result as bigint, 18),
+    oraclePxBtc: formatUnitsSafe(data[12]?.result as bigint, 8),
+    oraclePxHype: formatUnitsSafe(data[13]?.result as bigint, 8),
+    pps: formatUnitsSafe(data[14]?.result as bigint, 18),
     hypeNativeBalance: formatUnitsSafe(hypeNative?.value as bigint | undefined, hypeNative?.decimals ?? 18),
   } : null
 

@@ -57,9 +57,27 @@ export function truncateAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`
 }
 
-export function formatCoreBalance(value: bigint | number): string {
-  // Les balances Core sont en unités 1e8
-  const decimals = 8
-  const formatted = formatUnitsSafe(value, decimals)
+export function formatCoreBalance(
+  value: bigint | number | undefined,
+  weiDecimals: number,
+  szDecimals?: number
+): string {
+  if (value === undefined) return '0'
+
+  const bigintValue = typeof value === 'bigint' ? value : BigInt(value)
+  const sz = typeof szDecimals === 'number' ? szDecimals : weiDecimals
+  const diff = weiDecimals - sz
+
+  let normalized = bigintValue
+  if (diff > 0) {
+    normalized *= 10n ** BigInt(diff)
+  } else if (diff < 0) {
+    const divisor = 10n ** BigInt(Math.abs(diff))
+    if (divisor !== 0n) {
+      normalized /= divisor
+    }
+  }
+
+  const formatted = formatUnitsSafe(normalized, weiDecimals)
   return formatNumber(formatted, { decimals: 6 })
 }
