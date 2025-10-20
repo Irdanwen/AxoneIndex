@@ -252,7 +252,7 @@ export default function VaultPage() {
       </div>
 
       {/* Balances */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Balance HYPE (native)</CardTitle>
@@ -273,9 +273,9 @@ export default function VaultPage() {
       </div>
 
       {/* Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {/* Deposit */}
-        <Card>
+        <Card className="max-w-md mx-auto">
           <CardHeader>
             <CardTitle>Déposer HYPE (natif)</CardTitle>
             <CardDescription>
@@ -324,7 +324,7 @@ export default function VaultPage() {
         </Card>
 
         {/* Withdraw */}
-        <Card>
+        <Card className="max-w-md mx-auto">
           <CardHeader>
             <CardTitle>Retirer du Vault</CardTitle>
             <CardDescription>
