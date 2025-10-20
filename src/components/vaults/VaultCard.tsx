@@ -70,7 +70,7 @@ export function VaultCardSummary({
 
   return (
     <>
-      <Card className="vault-surface border border-vault shadow-vault-sm h-full">
+      <Card className="vault-surface border border-vault shadow-vault-sm h-full max-w-md mx-auto">
         <CardHeader className="pb-0">
           <div className="flex items-start justify-between gap-3">
             <CardTitle className="text-lg font-semibold text-vault-primary">
