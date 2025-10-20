@@ -134,18 +134,36 @@ export default function VaultPage() {
 
   // Estimation dépôt: shares attendues
   const depositEstimate = (() => {
-    const amt = parseFloat(depositAmount || '0')
-    if (!amt || amt <= 0) return null
-    const px = parseFloat(oraclePxHype1e8Str || '0')
-    if (!px) return null
-    const ppsNum = parseFloat(pps || '0') || 1
-    // USD notionnel (1e18) = amt(HYPE) * px(1e8)
-    const depositUsd = amt * (px / 1e8)
-    const sharesBeforeFee = totalSupplyRaw === 0n ? depositUsd : (depositUsd / ppsNum)
-    const sharesAfterFee = sharesBeforeFee * (1 - (depositFeeBps / 10000))
+    if (!depositAmount) return null
+
+    let amount1e18: bigint
+    try {
+      amount1e18 = parseUnits(depositAmount, hypeNative?.decimals ?? 18)
+    } catch {
+      return null
+    }
+
+    if (amount1e18 <= 0n || pxHype1e8Raw === 0n) return null
+
+    const ONE_E18 = 1000000000000000000n
+    const ONE_E8 = 100000000n
+    const scaleShares = 10n ** BigInt(vaultDecimals)
+
+    const depositUsd1e18 = (amount1e18 * pxHype1e8Raw) / ONE_E8
+
+    let sharesBeforeFeeRaw: bigint
+    if (totalSupplyRaw === 0n || ppsRaw === 0n) {
+      sharesBeforeFeeRaw = (depositUsd1e18 * scaleShares) / ONE_E18
+    } else {
+      sharesBeforeFeeRaw = (depositUsd1e18 * scaleShares) / ppsRaw
+    }
+
+    const feeBpsClamped = Math.min(Math.max(depositFeeBps, 0), 10000)
+    const sharesAfterFeeRaw = (sharesBeforeFeeRaw * BigInt(10000 - feeBpsClamped)) / 10000n
+
     return {
-      usd: depositUsd,
-      shares: sharesAfterFee,
+      usdFormatted: formatUnitsSafe(depositUsd1e18, 18),
+      sharesFormatted: formatUnitsSafe(sharesAfterFeeRaw, vaultDecimals),
     }
   })()
 
@@ -281,8 +299,8 @@ export default function VaultPage() {
               {depositEstimate && (
                 <div className="text-xs text-muted-foreground">
                   <div>Prix HYPE estimé: ~{formatNumber(oraclePxHype1e8Str, { decimals: 2 })} USD</div>
-                  <div>Montant USD estimé: ~{formatNumber(String(depositEstimate.usd), { decimals: 2 })} USD</div>
-                  <div>Parts estimées nettes (après frais {depositFeeBps} bps): ~{formatNumber(String(depositEstimate.shares), { decimals: 6 })}</div>
+                  <div>Montant USD estimé: ~{formatNumber(depositEstimate.usdFormatted, { decimals: 2 })} USD</div>
+                  <div>Parts estimées nettes (après frais {depositFeeBps} bps): ~{formatNumber(depositEstimate.sharesFormatted, { decimals: 6 })}</div>
                 </div>
               )}
               </div>
