@@ -16,6 +16,16 @@ const Header: React.FC = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isMobileAccountMenuOpen, setIsMobileAccountMenuOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [preferMobileNav, setPreferMobileNav] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('preferMobileNav') === 'true';
+  });
+  const [mobilePromptDismissed, setMobilePromptDismissed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('mobilePromptDismissed') === 'true';
+  });
+  const [showMobilePrompt, setShowMobilePrompt] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
 
   // wagmi
@@ -26,6 +36,23 @@ const Header: React.FC = () => {
   const { toast, toasts, dismiss } = useToast();
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(max-width: 1023px)');
+    const updateViewport = (event: MediaQueryList | MediaQueryListEvent) => {
+      setIsMobileViewport(event.matches);
+    };
+
+    updateViewport(mediaQuery);
+    const handler = (event: MediaQueryListEvent) => updateViewport(event);
+    mediaQuery.addEventListener('change', handler);
+    return () => {
+      mediaQuery.removeEventListener('change', handler);
+    };
+  }, []);
+
+  const shouldUseMobileNav = preferMobileNav && isMobileViewport;
+
+  useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 8);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -33,6 +60,11 @@ const Header: React.FC = () => {
 
   // Body scroll lock + Esc pour fermer le drawer
   useEffect(() => {
+    if (!shouldUseMobileNav) {
+      document.body.style.overflow = 'unset';
+      return;
+    }
+
     if (isMobileOpen) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -47,8 +79,39 @@ const Header: React.FC = () => {
       }
     };
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isMobileOpen]);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileOpen, shouldUseMobileNav]);
+
+  useEffect(() => {
+    if (!isMobileViewport) {
+      setIsMobileOpen(false);
+      setPreferMobileNav(false);
+      setShowMobilePrompt(false);
+      document.body.style.overflow = 'unset';
+      return;
+    }
+
+    const savedPreference = typeof window !== 'undefined' ? localStorage.getItem('preferMobileNav') : null;
+    if (savedPreference === 'true') {
+      setPreferMobileNav(true);
+      setShowMobilePrompt(false);
+      return;
+    }
+
+    if (!preferMobileNav && !mobilePromptDismissed) {
+      setShowMobilePrompt(true);
+    }
+  }, [isMobileViewport, mobilePromptDismissed, preferMobileNav]);
+
+  useEffect(() => {
+    if (!shouldUseMobileNav) {
+      setIsMobileOpen(false);
+      setIsMobileAccountMenuOpen(false);
+    }
+  }, [shouldUseMobileNav]);
 
   const navLinks = [
     { href: '/documentation', label: 'Documentation' },
@@ -92,6 +155,12 @@ const Header: React.FC = () => {
       }
     }
   };
+
+  useEffect(() => {
+    if (preferMobileNav) {
+      setShowMobilePrompt(false);
+    }
+  }, [preferMobileNav]);
 
   useEffect(() => {
     if (!isAccountMenuOpen) return;
@@ -138,7 +207,11 @@ const Header: React.FC = () => {
           </Link>
 
           {/* Nav desktop */}
-          <nav className="hidden lg:block" role="navigation" aria-label="Menu principal">
+          <nav
+            className={`${shouldUseMobileNav ? 'hidden' : 'block'} lg:block`}
+            role="navigation"
+            aria-label="Menu principal"
+          >
             <ul className="flex items-center justify-center gap-8">
               {navLinks.map((link) => {
                 const active = isActive(link.href);
@@ -163,7 +236,7 @@ const Header: React.FC = () => {
           {/* Actions droites */}
           <div className="flex items-center justify-end gap-3">
             <ThemeToggle />
-            <div className="hidden lg:flex items-center gap-3">
+            <div className={`${shouldUseMobileNav ? 'hidden' : 'flex'} items-center gap-3 lg:flex`}>
               {isConnected ? (
                 <>
                   <button
@@ -217,30 +290,85 @@ const Header: React.FC = () => {
                 </button>
               )}
             </div>
-            <button
-              onClick={() => setIsMobileOpen((v) => !v)}
-              className="inline-flex items-center justify-center rounded-full border border-slate-300 p-2 text-slate-700 transition hover:border-slate-400 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 lg:hidden"
-              aria-label="Menu de navigation"
-              aria-expanded={isMobileOpen}
-              aria-controls="mobile-menu"
-            >
-              <span className="sr-only">Menu</span>
-              <motion.div animate={{ rotate: isMobileOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
-                {isMobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </motion.div>
-            </button>
+            {shouldUseMobileNav ? (
+              <button
+                onClick={() => setIsMobileOpen((v) => !v)}
+                className="inline-flex items-center justify-center rounded-full border border-slate-300 p-2 text-slate-700 transition hover:border-slate-400 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 lg:hidden"
+                aria-label="Menu de navigation"
+                aria-expanded={isMobileOpen}
+                aria-controls="mobile-menu"
+              >
+                <span className="sr-only">Menu</span>
+                <motion.div animate={{ rotate: isMobileOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
+                  {isMobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                </motion.div>
+              </button>
+            ) : null}
           </div>
         </div>
       </header>
 
+      {showMobilePrompt ? (
+        <div className="fixed inset-x-0 top-16 z-40 px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-6xl">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-lg">
+              <div className="flex flex-col gap-3 text-sm text-slate-700">
+                <p className="font-semibold text-slate-900">Essayez notre navigation adaptée au mobile</p>
+                <p>
+                  Nous avons détecté que vous utilisez un écran plus petit. Souhaitez-vous passer à la navigation mobile optimisée ?
+                </p>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreferMobileNav(true);
+                      if (typeof window !== 'undefined') {
+                        localStorage.setItem('preferMobileNav', 'true');
+                        localStorage.setItem('mobilePromptDismissed', 'false');
+                      }
+                      setShowMobilePrompt(false);
+                      setMobilePromptDismissed(false);
+                      if (!isMobileOpen) {
+                        setIsMobileOpen(true);
+                      }
+                    }}
+                    className="inline-flex w-full items-center justify-center rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10 sm:w-auto"
+                  >
+                    Passer en version mobile
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreferMobileNav(false);
+                      setMobilePromptDismissed(true);
+                      if (typeof window !== 'undefined') {
+                        localStorage.setItem('preferMobileNav', 'false');
+                        localStorage.setItem('mobilePromptDismissed', 'true');
+                      }
+                      setShowMobilePrompt(false);
+                      setIsMobileOpen(false);
+                      setIsMobileAccountMenuOpen(false);
+                    }}
+                    className="inline-flex w-full items-center justify-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 sm:w-auto"
+                  >
+                    Rester en version desktop
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* Mobile Drawer */}
-      <AnimatePresence>
-        {isMobileOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 lg:hidden">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+      {shouldUseMobileNav ? (
+        <AnimatePresence>
+          {isMobileOpen && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 lg:hidden">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
               className="absolute inset-0 bg-slate-900/40"
               onClick={() => setIsMobileOpen(false)}
             />
@@ -334,8 +462,9 @@ const Header: React.FC = () => {
               </div>
             </motion.nav>
           </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
+      ) : null}
 
       {/* Toasts - local au Header */}
       <div className="fixed top-4 right-4 z-[60] flex flex-col items-end">
