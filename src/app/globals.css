@@ -26,7 +26,12 @@
   --warning-bg: rgba(245, 158, 11, 0.1);
   --danger: #EF4444;
   --danger-bg: rgba(239, 68, 68, 0.1);
-  
+
+  /* Dashboard shared surfaces */
+  --surface: var(--color-white-95);
+  --border-muted: rgba(1, 31, 38, 0.08);
+  --text-secondary: var(--color-black-60);
+
   /* UI elements */
   --ring: #1f3a40;
   --border: rgba(234, 242, 242, 0.08);
