@@ -4,6 +4,8 @@
   /* Professional Design System for Vaults Page */
   /* Base colors - Deep teal/green theme */
   --bg: #0E1A1C;         /* Deep teal/green backdrop (page) */
+  --surface: #0f1416;    /* Primary surface */
+  --surface-alt: #151c1f; /* Elevated surface */
   --card: #0f1416;       /* Near-black card */
   --card-hover: #111618; /* Card hover state */
   --muted: #172126;      /* Subtle separators */
@@ -12,10 +14,13 @@
   --text-dim: #6B7C7C;   /* Tertiary text */
   
   /* Brand colors */
-  --brand: #fab062;      /* Sandy Brown accent */
-  --brand-hover: #fbb878; /* Brand hover state */
+  --accent: #fab062;     /* Institutional accent */
+  --accent-strong: #fbb878;
+  --accent-soft: rgba(250, 176, 98, 0.12);
+  --brand: var(--accent);      /* Sandy Brown accent */
+  --brand-hover: var(--accent-strong); /* Brand hover state */
   --brand-2: #011f26;    /* Stellar Green accent (dark) */
-  --brand-muted: rgba(250, 176, 98, 0.1); /* Brand background */
+  --brand-muted: var(--accent-soft); /* Brand background */
   
   /* Semantic colors */
   --success: #17B26A;
@@ -1216,11 +1221,11 @@
   }
   
   .bg-vault-card {
-    background-color: var(--card);
+    background-color: var(--surface);
   }
-  
+
   .bg-vault-muted {
-    background-color: var(--muted);
+    background-color: var(--surface-alt);
   }
   
   /* Text utilities */
@@ -1238,15 +1243,59 @@
   
   /* Brand utilities */
   .text-vault-brand {
-    color: var(--brand);
+    color: var(--accent);
   }
-  
+
   .bg-vault-brand {
-    background-color: var(--brand);
+    background-color: var(--accent);
   }
-  
+
   .bg-vault-brand-muted {
-    background-color: var(--brand-muted);
+    background-color: var(--accent-soft);
+  }
+
+  .vaults-shell {
+    --surface: #0f1416;
+    --surface-alt: #151c1f;
+    --accent: #fab062;
+    --accent-strong: #fbb878;
+    --accent-soft: rgba(250, 176, 98, 0.12);
+    --brand: var(--accent);
+    --brand-hover: var(--accent-strong);
+    --brand-muted: var(--accent-soft);
+    --card: var(--surface);
+    --card-hover: #111618;
+  }
+
+  .vault-surface {
+    background-color: var(--surface);
+  }
+
+  .vault-surface-alt {
+    background-color: var(--surface-alt);
+  }
+
+  .vault-pane {
+    background-color: var(--surface);
+    border-radius: 1rem;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .vault-pane-alt {
+    background-color: var(--surface-alt);
+    border-radius: 1rem;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .vault-accent-text {
+    color: var(--accent);
+  }
+
+  .vault-accent-pill {
+    background-color: var(--accent-soft);
+    color: var(--accent);
   }
   
   /* Border utilities */

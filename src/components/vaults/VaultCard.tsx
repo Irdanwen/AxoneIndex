@@ -1,46 +1,178 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { Vault } from '@/lib/vaultTypes'
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Info, 
-  ArrowUpRight, 
-  ArrowDownRight,
-  Shield,
+import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
+import {
+  Activity,
   AlertTriangle,
-  Activity
+  Info,
+  Shield,
+  TrendingDown,
+  TrendingUp,
+  X
 } from 'lucide-react'
-import { Input } from '@/components/ui/input'
-import { useAccount, useReadContract, useWaitForTransactionReceipt, useWriteContract } from 'wagmi'
-import { parseUnits, formatUnits } from 'viem'
-import { vaultContractAbi } from '@/lib/abi/VaultContract'
+import {
+  useAccount,
+  useReadContract,
+  useWaitForTransactionReceipt,
+  useWriteContract
+} from 'wagmi'
+import { formatUnits, parseUnits } from 'viem'
 
-interface VaultCardProps {
+import { Input } from '@/components/ui/input'
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card'
+import { vaultContractAbi } from '@/lib/abi/VaultContract'
+import { Vault } from '@/lib/vaultTypes'
+
+interface VaultCardSummaryProps {
   vault: Vault
   onDeposit?: () => void
   onWithdraw?: () => void
   onInfo?: () => void
 }
 
-export function VaultCard({ vault, onDeposit, onWithdraw, onInfo }: VaultCardProps) {
+interface VaultCardActionsProps {
+  vault: Vault
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onDeposit?: () => void
+  onWithdraw?: () => void
+}
+
+const statusConfig = {
+  open: { label: 'Actif', tone: 'bg-green-400/10 text-green-400' },
+  paused: { label: 'En pause', tone: 'bg-yellow-400/10 text-yellow-400' },
+  closed: { label: 'Fermé', tone: 'bg-red-400/10 text-red-400' }
+} as const
+
+const riskConfig = {
+  low: { label: 'Faible', Icon: Shield },
+  medium: { label: 'Moyen', Icon: AlertTriangle },
+  high: { label: 'Élevé', Icon: Activity }
+} as const
+
+export function VaultCardSummary({
+  vault,
+  onDeposit,
+  onWithdraw,
+  onInfo
+}: VaultCardSummaryProps) {
+  const [isActionsOpen, setIsActionsOpen] = useState(false)
   const isPositive = vault.performance30d >= 0
   const hasDeposit = vault.userDeposit > 0
+  const RiskIcon = riskConfig[vault.risk].Icon
+
+  return (
+    <>
+      <Card className="vault-surface border border-vault shadow-vault-sm h-full">
+        <CardHeader className="pb-0">
+          <div className="flex items-start justify-between gap-3">
+            <CardTitle className="text-lg font-semibold text-vault-primary">
+              {vault.name}
+            </CardTitle>
+            <div className="flex flex-shrink-0 items-center gap-2">
+              <span
+                className={`rounded-full px-2 py-1 text-xs font-medium ${statusConfig[vault.status].tone}`}
+              >
+                {statusConfig[vault.status].label}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-vault px-2 py-1 text-xs font-medium text-vault-muted">
+                <RiskIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                {riskConfig[vault.risk].label}
+              </span>
+            </div>
+          </div>
+
+          <p className="mt-3 text-sm text-vault-muted">
+            {vault.tokens.map(token => `${token.symbol} ${token.percentage}%`).join(' • ')}
+          </p>
+        </CardHeader>
+
+        <CardContent className="space-y-4 pt-6">
+          <div className="flex items-baseline justify-between">
+            <span className="text-sm text-vault-muted">TVL</span>
+            <span className="text-2xl font-semibold text-vault-primary">
+              ${vault.tvl.toLocaleString('fr-FR')}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg vault-surface-alt px-4 py-3">
+            <div>
+              <p className="text-sm text-vault-muted">Performance 30 jours</p>
+              <p
+                className={`text-lg font-semibold ${
+                  isPositive ? 'text-green-400' : 'text-red-400'
+                }`}
+              >
+                {isPositive ? '+' : ''}{vault.performance30d.toFixed(2)}%
+              </p>
+            </div>
+            {isPositive ? (
+              <TrendingUp className="h-5 w-5 text-green-400" aria-hidden="true" />
+            ) : (
+              <TrendingDown className="h-5 w-5 text-red-400" aria-hidden="true" />
+            )}
+          </div>
+
+          {hasDeposit && (
+            <div className="rounded-lg border border-vault bg-vault-brand-muted px-4 py-3">
+              <p className="text-xs text-vault-muted">Mon dépôt</p>
+              <p className="text-sm font-semibold text-vault-primary">
+                ${vault.userDeposit.toLocaleString('fr-FR')} USDC
+              </p>
+            </div>
+          )}
+        </CardContent>
+
+        <CardFooter className="flex items-center gap-3 border-t border-vault p-6 pt-4">
+          <button
+            type="button"
+            onClick={() => setIsActionsOpen(true)}
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-vault bg-vault-muted px-4 py-2 text-sm font-medium text-vault-primary transition-colors hover:border-vault-strong"
+          >
+            Gérer
+          </button>
+          <button
+            type="button"
+            onClick={onInfo}
+            className="inline-flex items-center justify-center rounded-lg border border-vault px-3 py-2 text-sm text-vault-muted transition-colors hover:border-vault-strong hover:text-vault-primary"
+            aria-label="Plus d'informations"
+          >
+            <Info className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </CardFooter>
+      </Card>
+
+      <VaultCardActions
+        vault={vault}
+        open={isActionsOpen}
+        onOpenChange={setIsActionsOpen}
+        onDeposit={onDeposit}
+        onWithdraw={onWithdraw}
+      />
+    </>
+  )
+}
+
+export function VaultCardActions({
+  vault,
+  open,
+  onOpenChange,
+  onDeposit,
+  onWithdraw
+}: VaultCardActionsProps) {
   const { address: userAddress } = useAccount()
-  const [depositAmount, setDepositAmount] = useState<string>('')
-  const [withdrawAmount, setWithdrawAmount] = useState<string>('')
+  const [depositAmount, setDepositAmount] = useState('')
+  const [withdrawAmount, setWithdrawAmount] = useState('')
+  const [isMounted, setIsMounted] = useState(false)
 
   const vaultAddress = vault.contractAddress as `0x${string}` | undefined
-  // const usdcAddress = vault.usdcAddress as `0x${string}` | undefined
-
-  // Prix par share - pour usage futur
-  // const { data: pps } = useReadContract({
-  //   abi: vaultContractAbi,
-  //   address: vaultAddress,
-  //   functionName: 'pps1e18',
-  //   query: { enabled: Boolean(vaultAddress) }
-  // })
 
   const { data: userShares } = useReadContract({
     abi: vaultContractAbi,
@@ -52,10 +184,33 @@ export function VaultCard({ vault, onDeposit, onWithdraw, onInfo }: VaultCardPro
 
   const { writeContractAsync, data: txHash, isPending } = useWriteContract()
   const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash: txHash })
-
   const isBusy = isPending || isConfirming
-
   const canInteract = useMemo(() => Boolean(vaultAddress), [vaultAddress])
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!open) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onOpenChange(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+
+    const { style } = document.body
+    const previousOverflow = style.overflow
+    style.overflow = 'hidden'
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      style.overflow = previousOverflow
+    }
+  }, [open, onOpenChange])
 
   const handleDepositInternal = async () => {
     if (!canInteract || !userAddress) return
@@ -71,7 +226,7 @@ export function VaultCard({ vault, onDeposit, onWithdraw, onInfo }: VaultCardPro
       })
       setDepositAmount('')
     } catch {
-      // noop: erreurs visibles dans wallet/console
+      // Erreurs gérées par le wallet
     }
   }
 
@@ -91,177 +246,117 @@ export function VaultCard({ vault, onDeposit, onWithdraw, onInfo }: VaultCardPro
       })
       setWithdrawAmount('')
     } catch {
-      // noop
+      // Erreurs gérées par le wallet
     }
   }
-  
-  // Risk colors
-  const riskColors = {
-    low: 'text-green-400 bg-green-400/10',
-    medium: 'text-yellow-400 bg-yellow-400/10', 
-    high: 'text-red-400 bg-red-400/10'
-  }
-  
-  const riskIcons = {
-    low: <Shield className="w-3.5 h-3.5" />,
-    medium: <AlertTriangle className="w-3.5 h-3.5" />,
-    high: <Activity className="w-3.5 h-3.5" />
-  }
-  
-  // Status styles
-  const statusStyles = {
-    open: 'bg-green-400/10 text-green-400',
-    paused: 'bg-yellow-400/10 text-yellow-400',
-    closed: 'bg-red-400/10 text-red-400'
-  }
-  
-  const statusLabels = {
-    open: 'Actif',
-    paused: 'En pause',
-    closed: 'Fermé'
+
+  if (!isMounted || !open) {
+    return null
   }
 
-  return (
-    <div className="bg-vault-card border border-vault rounded-xl overflow-hidden hover-vault-card group h-full flex flex-col">
-      {/* Header */}
-      <div className="border-b border-vault" style={{ padding: '1rem' }}>
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <h3 className="text-lg font-semibold text-vault-primary truncate">
-            {vault.name}
-          </h3>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusStyles[vault.status]}`}>
-              {statusLabels[vault.status]}
-            </span>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${riskColors[vault.risk]}`}>
-              {riskIcons[vault.risk]}
-              {vault.risk === 'low' ? 'Faible' : vault.risk === 'medium' ? 'Moyen' : 'Élevé'}
-            </span>
+  const formattedShares = formatUnits(((userShares as bigint) || 0n), 18)
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-6 md:items-center">
+      <div
+        className="absolute inset-0"
+        onClick={() => onOpenChange(false)}
+        aria-hidden="true"
+      />
+
+      <Card
+        className="relative z-10 w-full max-w-lg vault-surface border border-vault shadow-vault-sm"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Actions pour ${vault.name}`}
+      >
+        <CardHeader className="pb-0">
+          <div className="flex items-start justify-between gap-3">
+            <CardTitle className="text-lg font-semibold text-vault-primary">
+              Gérer {vault.name}
+            </CardTitle>
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="rounded-full border border-vault p-2 text-vault-muted transition-colors hover:border-vault-strong hover:text-vault-primary"
+              aria-label="Fermer"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
           </div>
-        </div>
-
-        {/* Token composition */}
-        <div className="flex items-center gap-3">
-          <div className="flex -space-x-1 flex-shrink-0">
-            {vault.tokens.slice(0, 4).map((token, i) => (
-              <div 
-                key={i} 
-                className="w-6 h-6 rounded-full bg-vault-muted border border-vault flex items-center justify-center text-xs font-medium text-vault-muted"
-                style={{ zIndex: vault.tokens.length - i }}
-              >
-                {token.symbol.slice(0, 2)}
-              </div>
-            ))}
-          </div>
-          <span className="text-xs text-vault-dim truncate">
-            {vault.tokens.map(t => `${t.symbol} ${t.percentage}%`).join(' • ')}
-          </span>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="space-y-4 flex-1 flex flex-col" style={{ padding: '1rem' }}>
-        {/* TVL */}
-        <div className="flex items-center gap-2">
-          <p className="text-xs text-vault-muted">TVL:</p>
-          <p className="text-xl font-bold text-vault-primary">
-            ${vault.tvl.toLocaleString('fr-FR')}
+          <p className="mt-2 text-sm text-vault-muted">
+            Effectuez vos dépôts et retraits directement depuis cette interface.
           </p>
-        </div>
+        </CardHeader>
 
-        {/* Performance */}
-        <div className="flex items-center justify-between p-3 rounded-lg bg-vault-muted/30">
-          <div className="flex items-center gap-2">
-            <p className="text-xs text-vault-muted">Performance 30j:</p>
-            <span className={`text-lg font-semibold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-              {isPositive ? '+' : ''}{vault.performance30d.toFixed(2)}%
-            </span>
-            {isPositive ? (
-              <TrendingUp className="w-4 h-4 text-green-400" />
-            ) : (
-              <TrendingDown className="w-4 h-4 text-red-400" />
-            )}
-          </div>
-          {isPositive ? (
-            <ArrowUpRight className="w-5 h-5 text-green-400" />
-          ) : (
-            <ArrowDownRight className="w-5 h-5 text-red-400" />
-          )}
-        </div>
-
-        {/* User deposit if exists */}
-        {hasDeposit && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-vault-brand-muted border border-vault-brand/20">
-            <p className="text-xs text-vault-brand">Mon dépôt:</p>
-            <p className="text-lg font-semibold text-vault-brand">
-              ${vault.userDeposit.toLocaleString('fr-FR')} USDC
-            </p>
-          </div>
-        )}
-
-        {/* Spacer to push buttons to bottom */}
-        <div className="flex-1" />
-
-        {/* Inputs d'action */}
-        <div className="grid grid-cols-2 gap-2">
-          <div>
+        <CardContent className="space-y-6 pt-6">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-vault-primary" htmlFor={`deposit-${vault.id}`}>
+              Dépôt
+            </label>
             <Input
+              id={`deposit-${vault.id}`}
               type="number"
+              min="0"
               placeholder="Montant à déposer (HYPE)"
               value={depositAmount}
-              onChange={(e) => setDepositAmount(e.target.value)}
-              className="dark:bg-gray-800 dark:text-white"
+              onChange={event => setDepositAmount(event.target.value)}
             />
+            <p className="text-xs text-vault-dim">
+              Disponible uniquement si l&apos;adresse du contrat est renseignée.
+            </p>
+            <button
+              type="button"
+              onClick={onDeposit ? onDeposit : handleDepositInternal}
+              className="inline-flex w-full items-center justify-center rounded-lg bg-vault-brand px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-vault-brand/90 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={vault.status === 'closed' || !canInteract || isBusy}
+            >
+              Déposer
+            </button>
           </div>
-          <div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-vault-primary" htmlFor={`withdraw-${vault.id}`}>
+              Retrait
+            </label>
             <Input
+              id={`withdraw-${vault.id}`}
               type="number"
+              min="0"
               placeholder="Montant à retirer (shares)"
               value={withdrawAmount}
-              onChange={(e) => setWithdrawAmount(e.target.value)}
-              className="dark:bg-gray-800 dark:text-white"
+              onChange={event => setWithdrawAmount(event.target.value)}
             />
-            <div className="mt-1 text-[11px] text-vault-dim flex items-center gap-2">
-              <span>Max: {formatUnits(((userShares as bigint) || 0n), 18)}</span>
+            <div className="flex items-center justify-between text-xs text-vault-dim">
+              <span>Max: {formattedShares}</span>
               <button
                 type="button"
-                className="underline"
-                onClick={() => setWithdrawAmount(formatUnits(((userShares as bigint) || 0n), 18))}
+                className="text-vault-muted underline-offset-2 hover:underline"
+                onClick={() => setWithdrawAmount(formattedShares)}
               >
-                Tout
+                Tout retirer
               </button>
             </div>
+            <button
+              type="button"
+              onClick={onWithdraw ? onWithdraw : handleWithdrawInternal}
+              className="inline-flex w-full items-center justify-center rounded-lg border border-vault px-4 py-2 text-sm font-semibold text-vault-primary transition-colors hover:border-vault-strong disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={!canInteract || isBusy}
+            >
+              Retirer
+            </button>
           </div>
-        </div>
 
-        {/* Action buttons */}
-        <div className="flex gap-2 pt-2">
-          <button
-            onClick={onDeposit ? onDeposit : handleDepositInternal}
-            className="flex-1 px-4 py-2.5 bg-vault-brand hover:bg-vault-brand/90 text-black font-medium rounded-lg transition-colors"
-            disabled={vault.status === 'closed' || !canInteract || isBusy}
-          >
-            Déposer
-          </button>
-          <button
-            onClick={onWithdraw ? onWithdraw : handleWithdrawInternal}
-            className="flex-1 px-4 py-2.5 bg-vault-muted hover:bg-vault-muted/80 text-vault-primary font-medium rounded-lg transition-colors"
-            disabled={!canInteract || isBusy}
-          >
-            Retirer
-          </button>
-          <button
-            onClick={onInfo}
-            className="px-3 py-2.5 bg-vault-muted hover:bg-vault-muted/80 text-vault-primary rounded-lg transition-colors"
-            aria-label="Plus d'informations"
-          >
-            <Info className="w-4 h-4" />
-          </button>
-        </div>
-        {!canInteract && (
-          <div className="text-xs text-vault-dim">Renseignez les adresses dans la gestion du vault pour activer les actions.</div>
-        )}
-      </div>
-    </div>
+          {!canInteract && (
+            <p className="text-xs text-vault-dim">
+              Renseignez l&apos;adresse du smart contract pour activer les actions on-chain.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </div>,
+    document.body
   )
 }
+
+export { VaultCardSummary as VaultCard }
