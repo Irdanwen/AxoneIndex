@@ -1,0 +1,15 @@
+{
+  "name": "@wagmi/connectors",
+  "version": "5.9.4-axone.1",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    }
+  },
+  "peerDependencies": {
+    "@wagmi/core": "*"
+  }
+}
