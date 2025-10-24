@@ -1,5 +1,5 @@
 import { type Address } from 'viem'
-import { erc20Abi } from '@/lib/abi/erc20'
+import { erc20Abi } from '@/lib/abi/erc20.ts'
 
 export const erc20Contract = (address: Address) => ({
   address,
