@@ -300,12 +300,12 @@ contract CoreInteractionHandler is Pausable {
         uint64 szB = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenBTC, int256(halfUsd1e18), pxB);
         uint64 szH = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenHYPE, int256(halfUsd1e18), pxH);
         if (szB > 0) {
-            uint64 pxBLimit = _limitFromOracle(pxB, true);
+            uint64 pxBLimit = _marketLimitFromBbo(spotBTC, true);
             _sendSpotLimitOrderDirect(spotBTC, true, pxBLimit, szB, 0);
             emit SpotOrderPlaced(spotBTC, true, pxBLimit, szB, 0);
         }
         if (szH > 0) {
-            uint64 pxHLimit = _limitFromOracle(pxH, true);
+            uint64 pxHLimit = _marketLimitFromBbo(spotHYPE, true);
             _sendSpotLimitOrderDirect(spotHYPE, true, pxHLimit, szH, 0);
             emit SpotOrderPlaced(spotHYPE, true, pxHLimit, szH, 0);
         }
@@ -335,12 +335,12 @@ contract CoreInteractionHandler is Pausable {
         uint64 szB = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenBTC, int256(halfUsd1e18), pxB);
         uint64 szH = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenHYPE, int256(halfUsd1e18), pxH);
         if (szB > 0) {
-            uint64 pxBLimit = _limitFromOracle(pxB, true);
+            uint64 pxBLimit = _marketLimitFromBbo(spotBTC, true);
             _sendSpotLimitOrderDirect(spotBTC, true, pxBLimit, szB, 0);
             emit SpotOrderPlaced(spotBTC, true, pxBLimit, szB, 0);
         }
         if (szH > 0) {
-            uint64 pxHLimit = _limitFromOracle(pxH, true);
+            uint64 pxHLimit = _marketLimitFromBbo(spotHYPE, true);
             _sendSpotLimitOrderDirect(spotHYPE, true, pxHLimit, szH, 0);
             emit SpotOrderPlaced(spotHYPE, true, pxHLimit, szH, 0);
         }
@@ -444,20 +444,40 @@ contract CoreInteractionHandler is Pausable {
         emit Rebalanced(dB, dH);
     }
 
-    function _computeRebalanceDeltas() internal view returns (int256 dB, int256 dH, uint64 pxB, uint64 pxH) {
-        CoreHandlerLib.RebalanceContext memory ctx = CoreHandlerLib.RebalanceContext({
-            l1read: l1read,
-            usdcCoreTokenId: usdcCoreTokenId,
-            spotTokenBTC: spotTokenBTC,
-            spotTokenHYPE: spotTokenHYPE,
-            deadbandBps: deadbandBps,
-            maxSlippageBps: maxSlippageBps,
-            marketEpsilonBps: marketEpsilonBps,
-            spotBTC: spotBTC,
-            spotHYPE: spotHYPE
-        });
-        
-        (dB, dH, pxB, pxH) = CoreHandlerLib.computeRebalanceDeltas(ctx, address(this));
+    function _computeRebalanceDeltas() internal returns (int256 dB, int256 dH, uint64 pxB, uint64 pxH) {
+        // Balances spot convertis en weiDecimals
+        uint256 usdcBalWei = spotBalanceInWei(address(this), usdcCoreTokenId);
+        uint256 btcBalWei = spotBalanceInWei(address(this), spotTokenBTC);
+        uint256 hypeBalWei = spotBalanceInWei(address(this), spotTokenHYPE);
+
+        // Prix oracles normalisés 1e8 avec validation de déviation
+        pxB = _validatedOraclePx1e8(true);
+        pxH = _validatedOraclePx1e8(false);
+
+        // Infos de décimales pour conversion de valorisation
+        L1Read.TokenInfo memory usdcInfo = l1read.tokenInfo(uint32(usdcCoreTokenId));
+        L1Read.TokenInfo memory btcInfo = l1read.tokenInfo(uint32(spotTokenBTC));
+        L1Read.TokenInfo memory hypeInfo = l1read.tokenInfo(uint32(spotTokenHYPE));
+
+        // USDC en 1e18
+        uint256 usdc1e18 = usdcBalWei * (10 ** (18 - usdcInfo.weiDecimals));
+
+        // Positions en USD 1e18
+        int256 posB1e18;
+        int256 posH1e18;
+        if (btcInfo.weiDecimals + 8 <= 18) {
+            posB1e18 = int256(btcBalWei * uint256(pxB) * (10 ** (18 - btcInfo.weiDecimals - 8)));
+        } else {
+            posB1e18 = int256((btcBalWei * uint256(pxB)) / (10 ** (btcInfo.weiDecimals + 8 - 18)));
+        }
+        if (hypeInfo.weiDecimals + 8 <= 18) {
+            posH1e18 = int256(hypeBalWei * uint256(pxH) * (10 ** (18 - hypeInfo.weiDecimals - 8)));
+        } else {
+            posH1e18 = int256((hypeBalWei * uint256(pxH)) / (10 ** (hypeInfo.weiDecimals + 8 - 18)));
+        }
+
+        uint256 equity1e18 = usdc1e18 + uint256(posB1e18) + uint256(posH1e18);
+        (dB, dH) = Rebalancer50Lib.computeDeltas(equity1e18, posB1e18, posH1e18, deadbandBps);
     }
 
     function _placeRebalanceOrders(
@@ -473,11 +493,11 @@ contract CoreInteractionHandler is Pausable {
             _sendSpotLimitOrderDirect(
                 spotBTC,
                 dB > 0,
-                _limitFromOracle(pxB, dB > 0),
+                _marketLimitFromBbo(spotBTC, dB > 0),
                 szB,
                 cloidBtc
             );
-            emit SpotOrderPlaced(spotBTC, dB > 0, _limitFromOracle(pxB, dB > 0), szB, cloidBtc);
+            emit SpotOrderPlaced(spotBTC, dB > 0, _marketLimitFromBbo(spotBTC, dB > 0), szB, cloidBtc);
         }
 
         uint64 szH = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenHYPE, dH, pxH);
@@ -485,17 +505,51 @@ contract CoreInteractionHandler is Pausable {
             _sendSpotLimitOrderDirect(
                 spotHYPE,
                 dH > 0,
-                _limitFromOracle(pxH, dH > 0),
+                _marketLimitFromBbo(spotHYPE, dH > 0),
                 szH,
                 cloidHype
             );
-            emit SpotOrderPlaced(spotHYPE, dH > 0, _limitFromOracle(pxH, dH > 0), szH, cloidHype);
+            emit SpotOrderPlaced(spotHYPE, dH > 0, _marketLimitFromBbo(spotHYPE, dH > 0), szH, cloidHype);
         }
     }
 
     // Internal utils
     function _limitFromOracle(uint64 oraclePx1e8, bool isBuy) internal view returns (uint64) {
         return CoreHandlerLib.limitFromOracle(oraclePx1e8, isBuy, maxSlippageBps, marketEpsilonBps);
+    }
+
+    function _spotBboPx1e8(uint32 spotAsset) internal view returns (uint64 bid1e8, uint64 ask1e8) {
+        L1Read.Bbo memory b = l1read.bbo(spotAsset);
+        // Normaliser vers 1e8: BTC 1e3->1e8 (×1e5), HYPE 1e6->1e8 (×1e2)
+        if (spotAsset == spotBTC) {
+            bid1e8 = b.bid * 100000;
+            ask1e8 = b.ask * 100000;
+        } else if (spotAsset == spotHYPE) {
+            bid1e8 = b.bid * 100;
+            ask1e8 = b.ask * 100;
+        } else {
+            bid1e8 = b.bid;
+            ask1e8 = b.ask;
+        }
+    }
+
+    function _marketLimitFromBbo(uint32 asset, bool isBuy) internal view returns (uint64) {
+        (uint64 bid1e8, uint64 ask1e8) = _spotBboPx1e8(asset);
+        if (bid1e8 == 0 || ask1e8 == 0) {
+            // Fallback sur l'oracle normalisé si BBO indisponible
+            uint64 oracle = spotOraclePx1e8(asset);
+            return _limitFromOracle(oracle, isBuy);
+        }
+        if (isBuy) {
+            // Market buy: prendre l'ask (peut élargir avec marketEpsilonBps)
+            uint256 adj = (uint256(ask1e8) * uint256(marketEpsilonBps)) / 10_000;
+            return uint64(uint256(ask1e8) + adj);
+        } else {
+            // Market sell: prendre le bid
+            uint256 adj = (uint256(bid1e8) * uint256(marketEpsilonBps)) / 10_000;
+            uint256 lo = (uint256(bid1e8) > adj) ? (uint256(bid1e8) - adj) : 1;
+            return uint64(lo);
+        }
     }
 
     function _toSz1e8(int256 deltaUsd1e18, uint64 price1e8) internal pure returns (uint64) {
@@ -511,7 +565,7 @@ contract CoreInteractionHandler is Pausable {
         uint64 szBase = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenId, int256(targetUsd1e18), px);
         if (szBase == 0) return;
         // Sell with lower bound price
-        uint64 pxLimit = _limitFromOracle(px, false);
+        uint64 pxLimit = _marketLimitFromBbo(spotAsset, false);
         _sendSpotLimitOrderDirect(spotAsset, false, pxLimit, szBase, 0);
     }
 
