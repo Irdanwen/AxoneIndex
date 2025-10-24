@@ -222,6 +222,18 @@ contract CoreInteractionHandler is Pausable {
     function spotOraclePx1e8(uint32 spotAsset) public view returns (uint64) {
         uint64 px = l1read.spotPx(spotAsset);
         if (px == 0) revert OracleZero();
+        
+        // CORRECTION CRITIQUE: Normaliser les pxDecimals variables vers 1e8
+        // Selon Hyperliquid: BTC utilise typiquement 1e3, HYPE utilise 1e6
+        if (spotAsset == spotBTC) {
+            // BTC: convertir de 1e3 vers 1e8 (multiplier par 1e5)
+            return px * 100000; // px * 10^5
+        } else if (spotAsset == spotHYPE) {
+            // HYPE: convertir de 1e6 vers 1e8 (multiplier par 1e2)
+            return px * 100; // px * 10^2
+        }
+        
+        // Par défaut, supposer que le prix est déjà en 1e8
         return px;
     }
 

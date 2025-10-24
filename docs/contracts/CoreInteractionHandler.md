@@ -58,6 +58,20 @@ Le contrat utilise un système de rate limiting basé sur les **blocs** (et non 
 - Les vaults HYPE50 appellent `executeDepositHype{value: deployAmt}(true)` pour auto-déployer la fraction HYPE en 50/50 après conversion en USDC.
 - Les retraits HYPE utilisent `pullHypeFromCoreToEvm()` puis `sweepHypeToVault()` si nécessaire.
 
+## Gestion des Décimales (szDecimals vs weiDecimals + pxDecimals)
+
+### 🔧 Correction Critique - Prix Oracle (pxDecimals)
+
+**Problème identifié** : Les prix oracle Hyperliquid (`spotPx`) sont renvoyés avec des échelles variables selon l'actif :
+- BTC : 1e3 (ex: 45000000 = 45000 USD)  
+- HYPE : 1e6 (ex: 50000000 = 50 USD)
+
+**Solution implémentée** : La fonction `spotOraclePx1e8()` normalise automatiquement les prix vers 1e8 :
+- BTC : `px * 100000` (conversion 1e3 → 1e8)
+- HYPE : `px * 100` (conversion 1e6 → 1e8)
+
+Cette correction garantit que tous les calculs de valorisation et rebalancement utilisent des prix cohérents en 1e8.
+
 ## Gestion des Décimales (szDecimals vs weiDecimals)
 
 ### 🔍 Distinction Critique

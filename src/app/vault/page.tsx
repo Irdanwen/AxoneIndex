@@ -12,6 +12,12 @@ import { AlertCircle, Loader2, Wallet } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/components/ui/use-toast'
 
+// Mapping des décimales des prix oracle par actif selon Hyperliquid
+// HYPE utilise typiquement 1e6 (ex: 50000000 = 50 USD)
+const PX_DECIMALS = {
+  hype: 6,  // HYPE prix en 1e6
+} as const
+
 export default function VaultPage() {
   const { toast } = useToast()
   const { address, isConnected } = useAccount()
@@ -83,7 +89,8 @@ export default function VaultPage() {
   const pps = formatUnitsSafe(contractData?.[3]?.result as bigint, 18)
   const depositFeeBps = (contractData?.[4]?.result as number) || 0
   const withdrawFeeBpsDefault = (contractData?.[5]?.result as number) || 0
-  const oraclePxHype1e8Str = formatUnitsSafe(contractData?.[6]?.result as bigint, 8)
+  // CORRECTION: Utiliser pxDecimals réel HYPE (1e6) au lieu de 1e8
+  const oraclePxHype1e8Str = formatUnitsSafe(contractData?.[6]?.result as bigint, PX_DECIMALS.hype)
 
   // Valeurs brutes utiles pour calculs
   const ppsRaw = (contractData?.[3]?.result as bigint) || 0n
@@ -149,7 +156,8 @@ export default function VaultPage() {
     const ONE_E8 = 100000000n
     const scaleShares = 10n ** BigInt(vaultDecimals)
 
-    const depositUsd1e18 = (amount1e18 * pxHype1e8Raw) / ONE_E8
+    // CORRECTION: Utiliser le facteur de conversion basé sur pxDecimals HYPE (1e6)
+    const depositUsd1e18 = (amount1e18 * pxHype1e8Raw) / BigInt(10 ** PX_DECIMALS.hype)
 
     let sharesBeforeFeeRaw: bigint
     if (totalSupplyRaw === 0n || ppsRaw === 0n) {
@@ -174,7 +182,8 @@ export default function VaultPage() {
     const shares = sharesStr ? parseUnits(sharesStr, vaultDecimals) : 0n
     if (shares <= 0n || ppsRaw === 0n || pxHype1e8Raw === 0n) return undefined
     const dueUsd1e18 = (shares * ppsRaw) / 1000000000000000000n
-    const grossHype = (dueUsd1e18 * 100000000n) / pxHype1e8Raw
+    // CORRECTION: Utiliser le facteur de conversion basé sur pxDecimals HYPE (1e6)
+    const grossHype = (dueUsd1e18 * BigInt(10 ** PX_DECIMALS.hype)) / pxHype1e8Raw
     return grossHype
   })()
 
@@ -190,7 +199,8 @@ export default function VaultPage() {
     const shares = sharesStr ? parseUnits(sharesStr, vaultDecimals) : 0n
     if (shares <= 0n || ppsRaw === 0n || pxHype1e8Raw === 0n) return null
     const dueUsd1e18 = (shares * ppsRaw) / 1000000000000000000n
-    const grossHype1e18 = (dueUsd1e18 * 100000000n) / pxHype1e8Raw
+    // CORRECTION: Utiliser le facteur de conversion basé sur pxDecimals HYPE (1e6)
+    const grossHype1e18 = (dueUsd1e18 * BigInt(10 ** PX_DECIMALS.hype)) / pxHype1e8Raw
     const appliedFeeBps = (feeBpsForAmount as number | undefined) ?? withdrawFeeBpsDefault
     const fee = (grossHype1e18 * BigInt(appliedFeeBps)) / 10000n
     const net = grossHype1e18 - fee

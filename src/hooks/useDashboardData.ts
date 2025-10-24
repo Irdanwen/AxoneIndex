@@ -6,6 +6,14 @@ import { l1readContract } from '@/contracts/l1read'
 import { coreInteractionHandlerContract } from '@/contracts/coreInteractionHandler'
 import { formatUnitsSafe, formatCoreBalance } from '@/lib/format'
 
+// Mapping des décimales des prix oracle par actif selon Hyperliquid
+// Selon la documentation, les prix spotPx sont renvoyés avec pxDecimals variables
+// BTC utilise typiquement 1e3, HYPE utilise typiquement 1e6
+const PX_DECIMALS = {
+  btc: 3,   // BTC prix en 1e3 (ex: 45000000 = 45000 USD)
+  hype: 6,  // HYPE prix en 1e6 (ex: 50000000 = 50 USD)
+} as const
+
 type SpotBalanceResult = {
   total: bigint
   hold: bigint
@@ -207,8 +215,9 @@ export function useDashboardData() {
       ),
     },
     coreEquityUsd: formatUnitsSafe(data[11]?.result as bigint, 18),
-    oraclePxBtc: formatUnitsSafe(data[12]?.result as bigint, 8),
-    oraclePxHype: formatUnitsSafe(data[13]?.result as bigint, 8),
+    // CORRECTION: Utiliser les pxDecimals réels Hyperliquid au lieu de 1e8 fixe
+    oraclePxBtc: formatUnitsSafe(data[12]?.result as bigint, PX_DECIMALS.btc),
+    oraclePxHype: formatUnitsSafe(data[13]?.result as bigint, PX_DECIMALS.hype),
     pps: formatUnitsSafe(data[14]?.result as bigint, 18),
     hypeNativeBalance: formatUnitsSafe(hypeNative?.value as bigint | undefined, hypeNative?.decimals ?? 18),
   } : null
