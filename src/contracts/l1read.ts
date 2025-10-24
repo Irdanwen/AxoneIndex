@@ -1,5 +1,5 @@
 import { type Address } from 'viem'
-import { l1readAbi } from '@/lib/abi/l1read.ts'
+import { l1readAbi } from '@/lib/abi/l1read'
 
 export const l1readContract = (address: Address) => ({
   address,

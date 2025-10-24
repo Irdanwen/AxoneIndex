@@ -3,7 +3,7 @@
 .next/trace
 node_modules
 artifacts
-contracts/
+/contracts/
 rebalancingbot/
 monitoring/
 docs/

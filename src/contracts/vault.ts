@@ -1,5 +1,5 @@
 import { type Address } from 'viem'
-import { vaultContractAbiExtended } from '@/lib/abi/VaultContract.ts'
+import { vaultContractAbiExtended } from '@/lib/abi/VaultContract'
 
 export const vaultContract = (address: Address) => ({
   address,

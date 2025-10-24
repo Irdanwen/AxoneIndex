@@ -1,5 +1,5 @@
 import { type Address } from 'viem'
-import { coreInteractionHandlerAbi } from '@/lib/abi/coreInteractionHandler.ts'
+import { coreInteractionHandlerAbi } from '@/lib/abi/coreInteractionHandler'
 
 export const coreInteractionHandlerContract = (address: Address) => ({
   address,
