@@ -12,10 +12,11 @@ import { AlertCircle, Loader2, Wallet } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/components/ui/use-toast'
 
-// Mapping des décimales des prix oracle par actif selon Hyperliquid
-// HYPE utilise typiquement 1e6 (ex: 50000000 = 50 USD)
+// Mapping des décimales des prix oracle par actif
+// La fonction smart contract oraclePxHype1e8() normalise déjà le prix vers 1e8
+// HYPE : conversion de 1e6 → 1e8 (multiplie par 100)
 const PX_DECIMALS = {
-  hype: 6,  // HYPE prix en 1e6
+  hype: 8,  // HYPE prix normalisé en 1e8 (ex: 500000000 = 50 USD)
 } as const
 
 export default function VaultPage() {
@@ -89,7 +90,7 @@ export default function VaultPage() {
   const pps = formatUnitsSafe(contractData?.[3]?.result as bigint, 18)
   const depositFeeBps = (contractData?.[4]?.result as number) || 0
   const withdrawFeeBpsDefault = (contractData?.[5]?.result as number) || 0
-  // CORRECTION: Utiliser pxDecimals réel HYPE (1e6) au lieu de 1e8
+  // CORRECTION: Utiliser pxDecimals normalisé HYPE (1e8) car oraclePxHype1e8() normalise déjà
   const oraclePxHype1e8Str = formatUnitsSafe(contractData?.[6]?.result as bigint, PX_DECIMALS.hype)
 
   // Valeurs brutes utiles pour calculs
@@ -156,7 +157,7 @@ export default function VaultPage() {
     const ONE_E8 = 100000000n
     const scaleShares = 10n ** BigInt(vaultDecimals)
 
-    // CORRECTION: Utiliser le facteur de conversion basé sur pxDecimals HYPE (1e6)
+    // CORRECTION: Utiliser le facteur de conversion basé sur pxDecimals HYPE normalisé (1e8)
     const depositUsd1e18 = (amount1e18 * pxHype1e8Raw) / BigInt(10 ** PX_DECIMALS.hype)
 
     let sharesBeforeFeeRaw: bigint
@@ -182,7 +183,7 @@ export default function VaultPage() {
     const shares = sharesStr ? parseUnits(sharesStr, vaultDecimals) : 0n
     if (shares <= 0n || ppsRaw === 0n || pxHype1e8Raw === 0n) return undefined
     const dueUsd1e18 = (shares * ppsRaw) / 1000000000000000000n
-    // CORRECTION: Utiliser le facteur de conversion basé sur pxDecimals HYPE (1e6)
+    // CORRECTION: Utiliser le facteur de conversion basé sur pxDecimals HYPE normalisé (1e8)
     const grossHype = (dueUsd1e18 * BigInt(10 ** PX_DECIMALS.hype)) / pxHype1e8Raw
     return grossHype
   })()
@@ -199,7 +200,7 @@ export default function VaultPage() {
     const shares = sharesStr ? parseUnits(sharesStr, vaultDecimals) : 0n
     if (shares <= 0n || ppsRaw === 0n || pxHype1e8Raw === 0n) return null
     const dueUsd1e18 = (shares * ppsRaw) / 1000000000000000000n
-    // CORRECTION: Utiliser le facteur de conversion basé sur pxDecimals HYPE (1e6)
+    // CORRECTION: Utiliser le facteur de conversion basé sur pxDecimals HYPE normalisé (1e8)
     const grossHype1e18 = (dueUsd1e18 * BigInt(10 ** PX_DECIMALS.hype)) / pxHype1e8Raw
     const appliedFeeBps = (feeBpsForAmount as number | undefined) ?? withdrawFeeBpsDefault
     const fee = (grossHype1e18 * BigInt(appliedFeeBps)) / 10000n

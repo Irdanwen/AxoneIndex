@@ -6,12 +6,13 @@ import { l1readContract } from '@/contracts/l1read'
 import { coreInteractionHandlerContract } from '@/contracts/coreInteractionHandler'
 import { formatUnitsSafe, formatCoreBalance } from '@/lib/format'
 
-// Mapping des décimales des prix oracle par actif selon Hyperliquid
-// Selon la documentation, les prix spotPx sont renvoyés avec pxDecimals variables
-// BTC utilise typiquement 1e3, HYPE utilise typiquement 1e6
+// Mapping des décimales des prix oracle par actif
+// Les fonctions smart contract oraclePxHype1e8() et oraclePxBtc1e8() normalisent déjà les prix vers 1e8
+// BTC : conversion de 1e3 → 1e8 (multiplie par 100000)
+// HYPE : conversion de 1e6 → 1e8 (multiplie par 100)
 const PX_DECIMALS = {
-  btc: 3,   // BTC prix en 1e3 (ex: 45000000 = 45000 USD)
-  hype: 6,  // HYPE prix en 1e6 (ex: 50000000 = 50 USD)
+  btc: 8,   // BTC prix normalisé en 1e8 (ex: 4500000000 = 45000 USD)
+  hype: 8,  // HYPE prix normalisé en 1e8 (ex: 500000000 = 50 USD)
 } as const
 
 type SpotBalanceResult = {
