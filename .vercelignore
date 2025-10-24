@@ -1,0 +1,18 @@
+# Exclude heavy/unnecessary content from upload
+.next/cache
+.next/trace
+node_modules
+artifacts
+contracts/
+rebalancingbot/
+monitoring/
+docs/
+docsAgent/
+test/
+scripts/
+**/*.md
+**/*.xlsx
+**/*.test.*
+**/__tests__/
+.vscode/
+.git/
