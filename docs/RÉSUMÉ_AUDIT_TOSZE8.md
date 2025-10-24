@@ -16,8 +16,8 @@
 
 ### 2. ✅ Documentation Mise à Jour
 - ✅ `docs/contracts/CoreInteractionHandler.md` - Ajout de la correction dans la section "Corrections Implémentées" + Section rate limiting
-- ✅ `docsAgent/Smart_Contracts_Functions_Documentation.md` - Mise à jour des fonctions avec notes explicatives
-- ✅ `docsAgent/BTC50_Defensive_Deployment_Guide.md` - Clarification CRITIQUE du paramètre `epochLength`
+- ✅ `docs/_archive/Smart_Contracts_Functions_Documentation.md` - Archivé; contenu remplacé par docs/contracts/*
+- ✅ `docs/guides/deploiement/BTC50_Defensive_Deployment_Guide.md` - Clarification CRITIQUE du paramètre `epochLength`
 - ✅ `docs/AUDIT_CORRECTION_TOSZE8.md` - Rapport d'audit complet (35+ pages)
 - ✅ `CHANGELOG.md` - Entrée de changelog avec tous les détails
 
@@ -145,8 +145,8 @@ await vault.withdraw(shares);
 
 ### Documentation
 1. ✅ `docs/contracts/CoreInteractionHandler.md` (correction + rate limiting)
-2. ✅ `docsAgent/Smart_Contracts_Functions_Documentation.md`
-3. ✅ `docsAgent/BTC50_Defensive_Deployment_Guide.md` (clarification epochLength)
+2. ✅ `docs/_archive/Smart_Contracts_Functions_Documentation.md`
+3. ✅ `docs/guides/deploiement/BTC50_Defensive_Deployment_Guide.md` (clarification epochLength)
 4. ✅ `docs/AUDIT_CORRECTION_TOSZE8.md` (nouveau, rapport complet)
 5. ✅ `docs/RÉSUMÉ_AUDIT_TOSZE8.md` (nouveau, résumé exécutif)
 6. ✅ `CHANGELOG.md` (entrées détaillées)

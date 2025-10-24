@@ -13,7 +13,7 @@
 - **Protection contre les défaillances d'oracle** : Pause disponible en cas de manipulation ou de défaillance
 
 ### Corrections Implémentées
-- **Optimisation du rate limiting** : Sortie précoce si `amount1e6 == 0` dans `_rateLimit()`
+- **Optimisation du rate limiting** : Sortie précoce si `usdc1e8 == 0` dans `_rateLimit()`
 - **Période de grâce pour l'oracle** : Initialisation progressive de l'oracle sans blocage initial
 - **⚡ OPTIMISATION CRITIQUE** : **Migration vers block.number** - Remplacement de `block.timestamp` par `block.number` pour éviter la manipulation des validateurs
 - **🔒 SÉCURITÉ RENFORCÉE** : **Rate limiting basé sur les blocs** - Utilisation de `block.number` pour les époques au lieu de timestamps manipulables
@@ -100,3 +100,11 @@ Sans cette correction, si `weiDecimals - szDecimals > 0`, les actifs seraient **
 
 - Le `VaultContract` doit appeler `setHandler(handler)` après déploiement. USDC conserve une approval illimitée côté vault; HYPE50 n'utilise plus d'approvals (dépôts natifs payable).
 - Le `VaultContract` transmet désormais directement les montants en 1e8 au handler (`executeDeposit`, `pullFromCoreToEvm`, `sweepToVault`). Plus aucune conversion 1e8↔1e6 n'est nécessaire.
+
+## FAQ (résumé)
+
+- **Deadband**: la valeur de `deadbandBps` doit être ≤ 50.
+- **Rate limiting**: `epochLength` est en nombre de blocs; compteur remis à zéro quand l’epoch expire.
+- **Oracle**: `maxOracleDeviationBps` borne l’écart par rapport au dernier prix; période de grâce lors de l’initialisation.
+- **IDs Core**: `setSpotTokenIds` n’écrase pas un `usdcCoreTokenId` déjà défini; configurer `setUsdcCoreLink`/`setHypeCoreLink`/`setSpotIds` au préalable.
+- **Frais**: `setFeeConfig(feeVault, feeBps)` applique un prélèvement lors de `sweepToVault`/`sweepHypeToVault`.

@@ -404,11 +404,18 @@ export default function VaultPage() {
             </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">PPS (USD)</span>
-            <span className="font-mono">{formatNumber(pps, { decimals: 6 })}</span>
+            <span className="font-mono">{formatNumber(pps, { decimals: 4 })}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">NAV (USD)</span>
-            <span className="font-mono">{formatNumber(String((parseFloat(pps || '0') || 0) * (parseFloat(vaultTotalSupply || '0') || 0)), { decimals: 2, compact: true })}</span>
+            <span className="font-mono">{
+              (() => {
+                const ONE_E18 = 1000000000000000000n
+                const nav1e18 = (ppsRaw * totalSupplyRaw) / ONE_E18
+                const navUsd = formatUnitsSafe(nav1e18, 18)
+                return formatNumber(navUsd, { decimals: 2, compact: true })
+              })()
+            }</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Prix HYPE (oracle)</span>

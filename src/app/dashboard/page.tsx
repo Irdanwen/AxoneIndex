@@ -149,7 +149,7 @@ export default function DashboardPage() {
               />
               <DashboardKpi
                 label="PPS (Prix par part)"
-                value={<span className="font-mono">${formatNumber(data?.pps || '0', { decimals: 6 })}</span>}
+                value={<span className="font-mono">${formatNumber(data?.pps || '0', { decimals: 4 })}</span>}
                 isLoading={isLoading}
               />
               <DashboardKpi
@@ -179,7 +179,7 @@ export default function DashboardPage() {
             </div>
             <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="rounded-xl border border-[var(--border-muted)] bg-[var(--surface)] p-4 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Oracle BTC</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Oracle BTC (USD)</p>
                 <div className="mt-2 text-lg font-mono text-foreground">
                   {isLoading ? (
                     <Skeleton className="h-6 w-28" />
@@ -189,7 +189,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div className="rounded-xl border border-[var(--border-muted)] bg-[var(--surface)] p-4 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Oracle HYPE</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Oracle HYPE (USD)</p>
                 <div className="mt-2 text-lg font-mono text-foreground">
                   {isLoading ? (
                     <Skeleton className="h-6 w-28" />

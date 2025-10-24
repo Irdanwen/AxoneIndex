@@ -181,8 +181,11 @@ export function useDashboardData() {
   }
 
   const formattedData = data ? {
-    usdcBalance: formatUnitsSafe(data[0]?.result as bigint, 6),
-    usdcDecimals: (data[1]?.result as number) || 6,
+    usdcBalance: formatUnitsSafe(
+      data[0]?.result as bigint,
+      ((data[1]?.result as number) ?? 8)
+    ),
+    usdcDecimals: ((data[1]?.result as number) ?? 8),
     vaultShares: formatUnitsSafe(data[2]?.result as bigint, (data[4]?.result as number) || 18),
     vaultTotalSupply: formatUnitsSafe(data[3]?.result as bigint, (data[4]?.result as number) || 18),
     vaultDecimals: (data[4]?.result as number) || 18,

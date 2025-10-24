@@ -10,8 +10,7 @@ AxoneIndex/
 ├── contracts/            # Smart contracts (Hardhat)
 ├── monitoring/           # Service Node.js (PM2) pour monitorer les actions Core
 ├── rebalancingbot/       # Bot Python pour rebalance périodique
-├── docs/                 # Documentation technique (contrats, guides)
-├── docsAgent/            # Guides de déploiement (Remix, HyperCore, Staking)
+├── docs/                 # Documentation technique (contrats, guides, déploiement)
 ├── scripts/              # Scripts utiles (logs, images, checks…)
 └── package.json          # Workspace root
 ```
@@ -20,7 +19,7 @@ AxoneIndex/
 
 - Node.js 20 LTS recommandé (≥ 18.17 supporté par Next 15)
 - pnpm 9.x (recommandé et exigé en CI/CD)
-  - Remarque Vercel: fix réseau en forçant pnpm 9.x via `package.json → engines.pnpm` [[voir `docs/ops/VERCEL_BUILD_FIX_FINAL.md`]]
+  - Remarque Vercel: fix réseau en forçant pnpm 9.x via `package.json → engines.pnpm` [[voir `docs/troubleshooting/vercel.md`]]
 
 ## 🚀 Démarrage rapide (Frontend)
 
@@ -53,6 +52,7 @@ pnpm -C contracts install
 # Compiler / Tester
 pnpm -C contracts compile
 pnpm -C contracts test
+pnpm -C contracts test:referral
 
 # Nœud local et déploiement
 pnpm -C contracts node
@@ -68,12 +68,15 @@ pnpm -C contracts clean
 
 Configuration attendue: copier `contracts/env.example` → `contracts/.env` puis renseigner `PRIVATE_KEY`, `TESTNET_RPC_URL`, `MAINNET_RPC_URL`, `ETHERSCAN_API_KEY`.
 
+Note: pour utiliser `deploy:testnet` et `deploy:mainnet`, décommentez et complétez les blocs `networks.testnet` et `networks.mainnet` dans `contracts/hardhat.config.js` avec vos URLs et clé privée, ou adaptez-les à vos besoins.
+
 Références utiles:
 - `docs/contracts/ReferralRegistry.md`
 - `docs/contracts/VaultContract.md`
 - `docs/contracts/CoreInteractionHandler.md`
 - `docs/contracts/StakingSystem.md`
-- Guides Remix/HyperCore dans `docsAgent/`
+- Guides Remix/HyperCore dans `docs/guides/deploiement/`
+- Index complet de la doc: `docs/index.md`
 
 ## 📡 Monitoring Core (Node + PM2)
 
@@ -89,7 +92,23 @@ pnpm -C monitoring pm2:logs
 pnpm -C monitoring pm2:stop
 ```
 
-Variables d’environnement (fichier `.env` dans `monitoring/`, voir code): RPC/keys/adresses selon votre environnement.
+Variables d’environnement (fichier `.env` dans `monitoring/`):
+
+```
+RPC_URL=https://rpc.hyperliquid-testnet.xyz/evm
+HANDLER_ADDRESS=0xVotreAdresseHandler
+HL_API_URL=https://api.hyperliquid-testnet.xyz
+# START_BLOCK=0
+ORDER_VERIFY_DELAY_MS=10000
+INBOUND_VERIFY_DELAY_MS=8000
+VERIFY_INTERVAL_MS=30000
+MAX_VERIFY_ATTEMPTS=5
+# WEBHOOK_URL=https://discord.com/api/webhooks/xxx
+METRICS_PORT=3001
+LOG_LEVEL=info
+```
+
+Astuce: PM2 doit être installé (ex: `pnpm dlx pm2 -v` ou installation globale) et le service expose `/metrics` au format Prometheus.
 
 ## 🤖 Bot de Rebalancement (Python)
 
@@ -103,8 +122,18 @@ Démarrage rapide:
 ```bash
 cd rebalancingbot
 pip install -r requirements.txt
-cp .env.example .env   # puis éditer RPC_URL, PRIVATE_KEY, HANDLER_ADDRESS, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
+touch .env             # créez le fichier puis ajoutez les variables ci‑dessous
 python bot.py
+```
+
+Exemple de `.env` pour le bot:
+
+```
+RPC_URL=https://rpc.hyperliquid-testnet.xyz/evm
+PRIVATE_KEY=0x_votre_cle_privee
+HANDLER_ADDRESS=0x_adresse_du_contrat_handler
+TELEGRAM_TOKEN=token_bot_telegram
+TELEGRAM_CHAT_ID=chat_id_telegram
 ```
 
 Production: voir le README du dossier pour systemd, Docker ou PM2.
@@ -115,10 +144,11 @@ Pour la charte complète (couleurs, typographies, animations, conventions et exe
 
 ## 📚 Documentation liée
 
+- Index de la documentation: `docs/index.md`
 - Guides de vérification et déploiement HyperCore: `docs/HYPERCORE_VERIFICATION_GUIDE.md`, `docs/HYPERCORE_TESTNET_VERIFICATION_GUIDE.md`
 - Staking: `docs/contracts/StakingSystem.md`, `contracts/src/Staking/README.md`
 - Référencement/Parrainage: `docs/REFERRAL_GUIDE.md`, `docs/REFERRAL_MANAGEMENT_GUIDE.md`
-- Ops / CI: `docs/ops/VERCEL_BUILD_FIX_FINAL.md`, `VERCEL_BUILD_FIX_FINAL.md`, `VERCEL_CSS_FIX.md`
+- Ops / CI: `docs/troubleshooting/vercel.md`
 
 ## ⚙️ Personnalisation (Frontend)
 

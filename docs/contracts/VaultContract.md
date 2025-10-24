@@ -74,3 +74,11 @@ vault.setWithdrawFeeTiers(tiers);
 - Déployer `CoreInteractionHandler` puis `VaultContract`.
 - Appeler `vault.setHandler(handler)` pour initialiser l’approval illimitée.
 - Configurer les IDs Core (via l’handler) et, si besoin, les paliers de frais côté vault.
+
+## FAQ (résumé)
+
+- **Unités USDC**: utiliser strictement 1e8 pour tous les montants (EVM et Core).
+- **Paliers de frais**: définis en USDC 1e8; maximum 10 paliers, triés croissants.
+- **Retraits différés**: paiement exact requis dans `settleWithdraw`; utiliser `cancelWithdrawRequest` pour annuler avant règlement.
+- **PPS initiale**: `pps1e18()` retourne `1e18` si `totalSupply == 0`.
+- **Auto-déploiement**: `autoDeployBps` en bps; 9000 = 90%.

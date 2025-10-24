@@ -46,7 +46,7 @@ export function formatNumber(
   }
   
   const decimals = options?.decimals ?? 2
-  return num.toLocaleString('en-US', {
+  return num.toLocaleString('fr-FR', {
     minimumFractionDigits: 0,
     maximumFractionDigits: decimals
   })

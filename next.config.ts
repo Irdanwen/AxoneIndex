@@ -6,7 +6,6 @@ const nextConfig = {
       "**/rebalancingbot/**",
       "**/monitoring/**",
       "**/docs/**",
-      "**/docsAgent/**",
       "**/test/**",
       "**/scripts/**",
       "**/*.md",

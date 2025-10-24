@@ -1,5 +1,12 @@
 ### Guide de déploiement – BTC50 Defensive (VaultContract + CoreInteractionHandler)
 
+<!--
+title: "Déploiement BTC50 Defensive"
+lang: fr
+updated: 2025-10-24
+owner: Axone Team
+-->
+
 Ce document décrit l’architecture, les paramètres, et les étapes de déploiement des contrats BTC50 Defensive: `VaultContract` (parts du coffre) et `CoreInteractionHandler` (passerelle EVM/Core pour gestion spot et rééquilibrage 50/50 BTC/HYPE).
 
 ---

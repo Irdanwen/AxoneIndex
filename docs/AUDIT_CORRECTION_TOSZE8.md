@@ -245,7 +245,7 @@ Si le contrat avait été déployé avec ce bug :
 
 ### 2. Documentation Mise à Jour ✅
 - `docs/contracts/CoreInteractionHandler.md` : Ajout de la correction dans la section "Corrections Implémentées"
-- `docsAgent/Smart_Contracts_Functions_Documentation.md` : Mise à jour des fonctions impactées avec notes explicatives
+- `docs/_archive/Smart_Contracts_Functions_Documentation.md` : Archivé; contenu remplacé par docs/contracts/*
 
 ### 3. Tests Recommandés 🔄
 
@@ -345,7 +345,7 @@ Pour toute question concernant cette correction :
 - Fichier modifié : `contracts/src/BTC50 Defensive/CoreInteractionHandler.sol`
 - Fonction corrigée : `_toSz1e8` (ligne 351-358)
 - Documentation : `docs/contracts/CoreInteractionHandler.md`
-- Guide fonctions : `docsAgent/Smart_Contracts_Functions_Documentation.md`
+- Guide fonctions : `docs/_archive/Smart_Contracts_Functions_Documentation.md`
 
 ---
 
@@ -390,7 +390,7 @@ Si un développeur suivait l'ancienne documentation et utilisait `86400` (1 jour
 ### ✅ Corrections Appliquées
 
 #### 1. Guide de Déploiement Mis à Jour
-**Fichier**: `docsAgent/BTC50_Defensive_Deployment_Guide.md`
+**Fichier**: `docs/guides/deploiement/BTC50_Defensive_Deployment_Guide.md`
 
 **Nouveau contenu** (lignes 35-39):
 ```markdown

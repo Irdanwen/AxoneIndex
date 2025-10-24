@@ -1,5 +1,12 @@
 # Guide de Déploiement Complet - Smart Contracts Axone sur Remix
 
+<!--
+title: "Guide de Déploiement Complet — Remix"
+lang: fr
+updated: 2025-10-24
+owner: Axone Team
+-->
+
 ## Table des Matières
 
 1. [Prérequis et Configuration](#prérequis-et-configuration)

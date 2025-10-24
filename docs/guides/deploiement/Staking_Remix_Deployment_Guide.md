@@ -1,5 +1,12 @@
 ### Guide Remix — Déploiement et Utilisation des contrats de Staking (AXN, EmissionController, Vault)
 
+<!--
+title: "Déploiement Staking — Remix"
+lang: fr
+updated: 2025-10-24
+owner: Axone Team
+-->
+
 Ce guide explique comment déployer et utiliser les smart contracts suivants dans Remix IDE:
 - `AXN.sol` (ERC20 avec inflation continue et frappe contrôlée)
 - `EmissionController.sol` (distribution des récompenses en mode mint ou drip)
@@ -13,7 +20,7 @@ Ce guide est adapté à Remix: étapes concrètes, paramètres exacts, unités e
 
 - Navigateur avec Metamask connecté au réseau cible (testnet recommandé pour essais)
 - Remix IDE: `https://remix.ethereum.org`
-- Adresse du token USDC sur le réseau (6 décimales) si vous déployez le Vault
+- Adresse du token USDC sur le réseau (8 décimales) si vous déployez le Vault
 - Éventuels rôles: `owner`, `rewardsHub` (bénéficiaire des récompenses), `handler` (connecteur Core)
 
 ### Configuration Remix
@@ -111,7 +118,7 @@ Astuce unités: AXN a 18 décimales (1 AXN = 1e18).
 ## 4) Déployer Vault (parts ERC20 adossées à USDC)
 
 ### Constructor
-- `_usdc`: adresse du token USDC (6 décimales) sur le réseau cible
+- `_usdc`: adresse du token USDC (8 décimales) sur le réseau cible
 
 ### Étapes Remix
 1. Sélectionnez `VaultContract` (fichier `Vault.sol`)
@@ -132,7 +139,7 @@ Astuce unités: AXN a 18 décimales (1 AXN = 1e18).
     - Démarrer sans paliers (appel avec `[]`) puis mettre à jour hors Remix si besoin
 
 ### Unités et conversions
-- USDC (ERC20): 6 décimales (approve en 1e6)
+- USDC (ERC20): 8 décimales (approve en 1e8)
 - Vault.deposit/withdraw queue: USDC en 1e8
 - Parts du Vault: 18 décimales; PPS/NAV en 1e18
 
@@ -142,7 +149,7 @@ Astuce unités: AXN a 18 décimales (1 AXN = 1e18).
 
 ### A) Dépôt dans le Vault
 1. Dans l’ERC20 USDC (via “At Address” + ABI ERC20 standard), `approve(Vault.address, allowance)`
-   - Ex: 1,000 USDC → `1000000000` (1e3 × 1e6)
+   - Ex: 1,000 USDC → `100000000000` (1e3 × 1e8)
 2. Dans `Vault`, `deposit(amount1e8)`
    - Ex: 1,000 USDC → `100000000000` (1e3 × 1e8)
 
@@ -164,7 +171,7 @@ Effets:
 - Les paliers doivent être triés par `amount1e8` croissant, sinon `setWithdrawFeeTiers` revert
 
 ### D) Auto-deploy et recall Core
-- À chaque dépôt, une fraction `autoDeployBps` est envoyée au Core via `handler.executeDeposit(...)` (conversion 1e8 → 1e6)
+- À chaque dépôt, une fraction `autoDeployBps` est envoyée au Core via `handler.executeDeposit(...)` (montants strictement en 1e8)
 - Rappel: `recallFromCoreAndSweep(amount1e8)` → `pullFromCoreToEvm` puis `sweepToVault`
 
 ---
@@ -209,7 +216,7 @@ Effets:
 
 - Unités
   - AXN: 18 décimales
-  - USDC: 6 décimales
+  - USDC: 8 décimales
   - Vault: `deposit(amount1e8)` en 1e8; parts en 18 décimales
 
 - Paliers de frais (Vault)

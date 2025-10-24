@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Le contrat utilise `block.number` pour le rate limiting (résistant à la manipulation des validateurs)
   - **Erreur documentée évitée** : Utiliser `86400` (secondes) créerait une epoch de 86400 blocs ≈ 12-20 jours au lieu de 1 jour
   - **Fichiers mis à jour** :
-    - `docsAgent/BTC50_Defensive_Deployment_Guide.md` : Ajout d'exemples de calcul pour différentes chaînes (HyperEVM, Ethereum, Polygon)
+    - `docs/guides/deploiement/BTC50_Defensive_Deployment_Guide.md` : Ajout d'exemples de calcul pour différentes chaînes (HyperEVM, Ethereum, Polygon)
     - `docs/contracts/CoreInteractionHandler.md` : Nouvelle section "Rate Limiting et Epochs" avec avertissements
   - **Exemples ajoutés** :
     - HyperEVM (≈2 sec/bloc) : 1 jour = 43200 blocs
@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Documentation** : Mise à jour de `docs/contracts/CoreInteractionHandler.md`
-- **Documentation** : Mise à jour de `docsAgent/Smart_Contracts_Functions_Documentation.md`
+- **Documentation** : Archivage de `docsAgent/Smart_Contracts_Functions_Documentation.md` (remplacé par docs/contracts/*)
 
 ---
 

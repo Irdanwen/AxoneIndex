@@ -4,8 +4,8 @@
 AxoneIndex est une plateforme DeFi construite sur HyperEVM (Hyperliquid). Elle combine des contrats intelligents Solidity et une interface Next.js (App Router) pour offrir des coffres (vaults), une gestion de parrainages et une intégration wallet moderne.
 
 ## Configuration initiale
-- Guide de démarrage parrainage: [REFERRAL_GUIDE.md](../REFERRAL_GUIDE.md)
-- Implémentation des vaults: [VAULTS_IMPLEMENTATION.md](../VAULTS_IMPLEMENTATION.md)
+- Guide de démarrage parrainage: [REFERRAL_GUIDE.md](./REFERRAL_GUIDE.md)
+- Implémentation des vaults: voir [VaultContract](./contracts/VaultContract.md) et [CoreInteractionHandler](./contracts/CoreInteractionHandler.md)
 - Prérequis techniques:
   - Node.js ≥ 18 (LTS recommandée)
   - pnpm 9.x (aligné avec les déploiements CI/CD)
@@ -72,8 +72,8 @@ AxoneIndex est une plateforme DeFi construite sur HyperEVM (Hyperliquid). Elle c
   - `scripts/`: scripts utilitaires côté frontend (ex. optimisation d’images)
 
 ## Guides pratiques
-- [Gestion des parrainages](../REFERRAL_MANAGEMENT_GUIDE.md)
-- [Connexion wallet](../WALLET_CONNECTION_GUIDE.md)
+- [Gestion des parrainages](./REFERRAL_MANAGEMENT_GUIDE.md)
+- [Connexion wallet](./WALLET_CONNECTION_GUIDE.md)
 - Documentation des contrats (détails récents):
   - [ReferralRegistry — système de parrainage avec codes à usage unique](./contracts/ReferralRegistry.md)
   - [AxoneSale — vente publique USDC avec protection slippage](./contracts/AxoneSale.md)

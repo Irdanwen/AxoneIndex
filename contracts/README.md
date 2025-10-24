@@ -81,6 +81,9 @@ npm run test:referral  # Test complet du ReferralRegistry
   - Bootstrapping/gestion: `whitelistDirect(address)` et révocation d’un code (`revokeCode(bytes32)`) par l’owner
   - Gestion des permissions (Ownable)
 - **Sécurité** : ReentrancyGuard, Pausable, validation complète
+ - **Utilitaires** :
+   - `createCode(bytes32 codeHash)` pour enregistrer un code déterministe (avec protection de collision par créateur)
+   - `getUnusedCodes(address creator)` retourne la liste des codes on-chain non utilisés et non expirés (chaînes brutes)
 
 ### AxoneToken
 - **Type** : ERC20 Token
@@ -96,6 +99,10 @@ npm run test:referral  # Test complet du ReferralRegistry
   - `mintInflation()` (whenNotPaused, nonReentrant) frappe en fonction du temps écoulé depuis `lastMintTimestamp`
   - Intervalle par défaut 1 jour (min 1 heure); premier mint autorisé immédiatement
   - Suivi des adresses exclues via `excludedBalances` et `totalExcludedBalance` pour un `circulatingSupply()` exact
+ - **Administration** :
+   - `mint(address to, uint256 amount)` (onlyOwner)
+   - `rescueTokens(address token, uint256 amount, address to)` (sauf AXN)
+   - `pause()` / `unpause()` (onlyOwner)
 
 ### AxoneSale
 - **Type** : Contrat de vente publique USDC → AXN
@@ -103,10 +110,11 @@ npm run test:referral  # Test complet du ReferralRegistry
   - Détails clés:
     - Décimales: `AXN` 1e18, `USDC` 1e8
     - Prix initial: `PRICE_PER_AXN_IN_USDC = USDC_DECIMALS / 10` (0,1 USDC en 8 décimales), modifiable via `updatePrice(uint256)`
-    - Slippage: borne l’évolution du prix courant par `maxSlippageBps` entre deux blocs; `getCurrentPrice()` expose la valeur courante
+    - Slippage: augmentation graduelle plafonnée par `maxSlippageBps`, atteinte en ~100 blocs; `getCurrentPrice()` expose la valeur courante; `setMaxSlippageBps(bps)` ≤ 10%
     - Minimum d’achat: `MIN_PURCHASE = 1000 * 1e18`; Cap: `saleCap = 50_000_000 * 1e18`
     - Formule: `usdcAmount = (axnAmount * currentPrice) / AXN_DECIMALS`
     - Flux: `USDC.transferFrom(buyer→treasury)` puis `AXN.transfer(contract→buyer)`
+  - **Utilitaires** : `remainingTokens()`, `isSaleActive()`, `endSale()`, `withdrawUnsoldTokens(address)` (après fin de vente), `setTreasury(address)`
 
 ## Sécurité
 
@@ -118,6 +126,19 @@ Les artefacts compilés (ABI et adresses) peuvent être utilisés dans votre app
 
 ---
 
+## FAQ / erreurs communes
+
+- **USDC décimales (EVM/Core)**: USDC est en 1e8 sur EVM et côté Core. Les montants `amount1e8` sont attendus par `VaultContract` et `CoreInteractionHandler` (BTC50). Ne pas utiliser 1e6.
+- **Deadband ≤ 50 bps**: `CoreInteractionHandler.setParams(_, _, deadbandBps)` refuse les valeurs > 50. Valeur défaut: 50 bps.
+- **Slippage AxoneSale**: `getCurrentPrice()` augmente graduellement, borné par `maxSlippageBps` et convergent en ~100 blocs. Ajuster via `setMaxSlippageBps` (≤ 1000 = 10%).
+- **IDs Core (tokens/markets)**: `setSpotTokenIds` n’écrase pas un `usdcCoreTokenId` existant (revert en cas de conflit). Configurer `setUsdcCoreLink`/`setSpotIds`/`setSpotTokenIds` avec les bonnes valeurs réseau.
+- **Rebalanceur**: seul l’adresse configurée via `setRebalancer(address)` peut appeler `rebalancePortfolio`.
+- **Retraits différés (Vault)**: `settleWithdraw(id, pay, to)` exige `pay` égal au net dû calculé à partir du PPS courant et du BPS figé lors de la demande. Utiliser `cancelWithdrawRequest(id)` pour annuler avant règlement.
+- **Approvals USDC ↔ Handler**: `Vault.setHandler` tente une approbation illimitée; si l’approbation échoue, rappeler `setHandler` après reset.
+- **AxoneToken inflation**: `mintInflation()` exige un intervalle écoulé (par défaut 1 jour, min 1 heure). La frappe est basée sur `circulatingSupply()` (exclut les adresses marquées via `setExcludedFromCirculating`).
+- **Vente AXN — trésorerie**: définir `setTreasury(address)` avant `buyWithUSDC`, sinon revert "Treasury not set".
+
+
 ## BTC50 Defensive — Guide et Déploiement Remix
 
 > Remarque: Les instructions ci‑dessous s’appliquent également à **HYPE50 Defensive**. Le code et les interfaces de `VaultContract` et `CoreInteractionHandler` sont identiques; seules les valeurs d’IDs marché/token à configurer côté HYPE diffèrent. Voir aussi `contracts/src/HYPE50 Defensive/` et `docs/contracts/HYPE50_VaultContract.md`.
@@ -126,20 +147,26 @@ Les artefacts compilés (ABI et adresses) peuvent être utilisés dans votre app
 
 - **VaultContract** (`contracts/src/BTC50 Defensive/VaultContract.sol`)
   - Jeton de parts 18 décimales (PPS/NAV en 1e18).
+  - Shares ERC20-like: `name = "Core50 Vault Share"`, `symbol = "c50USD"`, `decimals = 18`.
   - Dépôt en USDC 1e8 via `deposit(uint256 amount1e8)` avec frais de dépôt optionnels (`depositFeeBps`).
   - Retrait immédiat si la trésorerie EVM est suffisante, sinon mise en file et règlement ultérieur via `settleWithdraw`.
   - Déploiement automatique d'une fraction du dépôt vers Core via `autoDeployBps` (par défaut 90%).
   - Frais de retrait dépendants du montant retiré (brut, USDC 1e8): configuration par paliers avec `setWithdrawFeeTiers(WithdrawFeeTier[])`. Si aucun palier ne correspond, fallback sur `withdrawFeeBps`.
   - Shares ERC20-like: support de `transfer`, `approve`, `transferFrom`, `allowance` et événements `Transfer`/`Approval`.
   - Sécurité: `ReentrancyGuard`, `paused`, `SafeERC20`, snapshot des frais (BPS) au moment de la demande pour les retraits différés.
+  - Utilitaires: `cancelWithdrawRequest(id)` (annule une demande en file non réglée).
+  - Détails:
+    - `pps1e18()` retourne `1e18` si `totalSupply == 0` (PPS initiale)
+    - `deposits[address]` suit la base de dépôts cumulée (USDC 1e8), consommée au paiement des retraits (brut)
 
 - **CoreInteractionHandler** (`contracts/src/BTC50 Defensive/CoreInteractionHandler.sol`)
   - Pont vers Core: envoi USDC spot, placements d'ordres IOC BTC/HYPE, rebalancement 50/50.
-  - Limitation de débit par epoch: `maxOutboundPerEpoch`, `epochLength` (obligatoirement non nuls).
+  - Limitation de débit par epoch: `maxOutboundPerEpoch`, `epochLength` (obligatoirement non nuls) via `setLimits(uint64, uint64)`.
   - Paramètres de marché: `maxSlippageBps`, `marketEpsilonBps`, `deadbandBps` (≤ 50 bps), garde d'écart oracle via `maxOracleDeviationBps` (par défaut 5%).
   - Sécurité: `onlyVault` pour les flux de fonds, `onlyRebalancer` pour `rebalancePortfolio`, validation de prix oracle avec mémoire du dernier prix.
   - Admin: `setRebalancer(address)` pour définir l'adresse autorisée à appeler le rééquilibrage.
   - Frais: configuration via `setFeeConfig(address feeVault, uint64 feeBps)` et prélèvement à la collecte (`sweepToVault`).
+  - Décimales/Valorisation: conversions précises `szDecimals → weiDecimals` pour le calcul de l’equity (`equitySpotUsd1e18`) et du rebalance.
 
 - **Librairies**
   - `Rebalancer50Lib.sol`: calcule les deltas USD pour revenir au 50/50 avec deadband.
@@ -244,7 +271,7 @@ vault.setWithdrawFeeTiers(tiers);
    - `handler.setRebalancer(0x...REBALANCER)`
 3. Paramétrez les frais (défauts):
    - `vault.setFees(depositFeeBps, withdrawFeeBps, autoDeployBps)`
-4. Configurez les paliers de frais de retrait (USDC 1e6):
+4. Configurez les paliers de frais de retrait (USDC 1e8):
    - Construire un tableau `WithdrawFeeTier[]` et appeler `vault.setWithdrawFeeTiers(tiers)`
 
 Exemple succinct (Remix/Script):

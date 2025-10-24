@@ -27,7 +27,7 @@ Les configurations sont sauvegardées dans le localStorage sous la clé `axone:v
 Affiche les informations suivantes :
 
 - **Section Compte**
-  - Balance USDC de l'utilisateur connecté
+  - Balance HYPE (natif) de l'utilisateur connecté
 
 - **Section Vault**
   - Parts du vault détenues par l'utilisateur
@@ -41,14 +41,12 @@ Affiche les informations suivantes :
 
 Permet d'effectuer les opérations suivantes :
 
-- **Approve USDC** : Autoriser le vault à utiliser vos USDC
-- **Deposit** : Déposer des USDC dans le vault (utilise `deposit(uint64)`)
-- **Withdraw** : Retirer des parts du vault (utilise `withdraw(uint256)`)
+- **Deposit** : Déposer des HYPE (natifs) dans le vault (utilise `deposit()` payable)
+- **Withdraw** : Retirer des parts du vault (utilise `withdraw(uint256)`), paiement en HYPE
 
 La page affiche en temps réel :
-- Balance USDC de l'utilisateur
+- Balance HYPE de l'utilisateur
 - Parts du vault détenues
-- Allowance USDC actuelle
 
 ## Configuration requise
 
@@ -100,8 +98,10 @@ La page affiche en temps réel :
 ## Notes importantes
 
 - Les transactions nécessitent des frais de gas sur HyperEVM
-- Les montants USDC sont en 6 décimales
-- Les parts du vault sont en 18 décimales par défaut
+- Les dépôts de la page Vault sont en HYPE natif (1e18); les parts du vault ont 18 décimales
+- Les montants USDC sont en 8 décimales (1e8) sur HyperEVM (Core et EVM)
+- PPS/NAV sont exprimés en USD 1e18; les oracles (BTC/HYPE) exposent des prix en 1e8
+- Le formatage numérique de l'application utilise la locale fr-FR
 - La configuration est persistée localement dans le navigateur
 
 ## Adresse USDC par défaut

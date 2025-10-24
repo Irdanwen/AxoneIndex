@@ -32,7 +32,7 @@ Le vault HYPE50 accepte des dépôts en HYPE (18 décimales), valorise la NAV en
 
 ## Intégration
 1. Déployer le handler HYPE50 (voir doc Handler HYPE50) et le vault HYPE50.
-2. `vault.setHandler(handler)` — approval HYPE illimitée.
+2. `vault.setHandler(handler)` — lie le handler; pas d'approval HYPE (dépôts natifs).
 3. Configurer côté handler: `setUsdcCoreLink`, `setHypeCoreLink`, `setSpotIds`, `setSpotTokenIds`.
 4. (Optionnel) Configurer frais et paliers.
 

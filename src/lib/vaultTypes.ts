@@ -14,6 +14,6 @@ export interface Vault {
   risk: 'low' | 'medium' | 'high'
   // Adresse du smart contract du vault (BTC50 Defensive)
   contractAddress?: string
-  // Adresse du token USDC utilisé pour les dépôts (6 décimales)
+  // Adresse du token USDC utilisé pour les dépôts (8 décimales)
   usdcAddress?: string
 }
