@@ -65,19 +65,10 @@ export function formatCoreBalance(
   if (value === undefined) return '0'
 
   const bigintValue = typeof value === 'bigint' ? value : BigInt(value)
-  const sz = typeof szDecimals === 'number' ? szDecimals : weiDecimals
-  const diff = weiDecimals - sz
-
-  let normalized = bigintValue
-  if (diff > 0) {
-    normalized *= 10n ** BigInt(diff)
-  } else if (diff < 0) {
-    const divisor = 10n ** BigInt(Math.abs(diff))
-    if (divisor !== 0n) {
-      normalized /= divisor
-    }
-  }
-
-  const formatted = formatUnitsSafe(normalized, weiDecimals)
+  
+  // CORRECTION: Ne pas faire de conversion ici car la valeur est déjà normalisée
+  // par adjustByDecimals() dans useDashboardData.ts
+  // La valeur reçue est déjà en weiDecimals
+  const formatted = formatUnitsSafe(bigintValue, weiDecimals)
   return formatNumber(formatted, { decimals: 6 })
 }
