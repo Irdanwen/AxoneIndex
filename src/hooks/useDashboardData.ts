@@ -1,9 +1,9 @@
 import { useAccount, useReadContracts, useBalance } from 'wagmi'
 import { useVaultConfig } from './useVaultConfig'
-import { erc20Contract } from '@/contracts/erc20'
-import { vaultContract } from '@/contracts/vault'
-import { l1readContract } from '@/contracts/l1read'
-import { coreInteractionHandlerContract } from '@/contracts/coreInteractionHandler'
+import { erc20Contract } from '@/contracts/erc20.ts'
+import { vaultContract } from '@/contracts/vault.ts'
+import { l1readContract } from '@/contracts/l1read.ts'
+import { coreInteractionHandlerContract } from '@/contracts/coreInteractionHandler.ts'
 import { formatUnitsSafe, formatCoreBalance } from '@/lib/format'
 
 type SpotBalanceResult = {
