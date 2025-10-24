@@ -1,9 +1,4 @@
 {
-  "functions": {
-    "src/pages/api/**/*.ts": {
-      "runtime": "nodejs20.x"
-    }
-  },
   "regions": ["iad1"],
   "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "pnpm run build"
