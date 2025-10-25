@@ -342,7 +342,7 @@ Pour toute question concernant cette correction :
 
 ## 🔗 Références
 
-- Fichier modifié : `contracts/src/BTC50 Defensive/CoreInteractionHandler.sol`
+- Fichier modifié : `contracts/src/HYPE50 Defensive/CoreInteractionHandler.sol`
 - Fonction corrigée : `_toSz1e8` (ligne 351-358)
 - Documentation : `docs/contracts/CoreInteractionHandler.md`
 - Guide fonctions : `docs/_archive/Smart_Contracts_Functions_Documentation.md`
@@ -390,7 +390,7 @@ Si un développeur suivait l'ancienne documentation et utilisait `86400` (1 jour
 ### ✅ Corrections Appliquées
 
 #### 1. Guide de Déploiement Mis à Jour
-**Fichier**: `docs/guides/deploiement/BTC50_Defensive_Deployment_Guide.md`
+**Fichier**: `docs/guides/deploiement/HYPE50_Defensive_Deployment_Guide.md`
 
 **Nouveau contenu** (lignes 35-39):
 ```markdown

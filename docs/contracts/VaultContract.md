@@ -1,7 +1,7 @@
 # VaultContract — Frais de Retrait par Paliers et Flux
 
 ## Résumé
-`VaultContract.sol` émet des parts (18 décimales) contre des dépôts en USDC (1e8 sur HyperEVM), gère la NAV/PPS, des retraits immédiats ou différés, et l'auto-déploiement partiel vers Core. Les frais de retrait dépendent du montant retiré (brut), via des paliers configurables. Le vault gère désormais automatiquement l'approval USDC pour l'`CoreInteractionHandler` et transmet directement les montants en 1e8 au Handler (plus de conversion 1e8 ↔ 1e6).
+`VaultContract.sol` émet des parts (18 décimales) contre des dépôts en HYPE natif (1e18 sur HyperEVM), gère la NAV/PPS, des retraits immédiats ou différés, et l'auto-déploiement partiel vers Core. Les frais de retrait dépendent du montant retiré (brut), via des paliers configurables. Le vault n'a pas besoin d'approval pour HYPE natif et transmet directement les montants en 1e18 au Handler.
 
 ## 🔒 Améliorations de Sécurité
 
@@ -17,32 +17,33 @@
 ## Frais de Retrait
 - `setFees(depositFeeBps, withdrawFeeBps, autoDeployBps)` fixe les valeurs par défaut.
 - `setWithdrawFeeTiers(WithdrawFeeTier[])` permet d'ajouter des paliers:
-  - `WithdrawFeeTier { uint256 amount1e8; uint16 feeBps; }`
-  - Les paliers sont interprétés dans l'ordre: le premier `amount1e8` supérieur ou égal au montant brut détermine `feeBps`.
+  - `WithdrawFeeTier { uint256 amount1e18; uint16 feeBps; }`
+  - Les paliers sont interprétés dans l'ordre: le premier `amount1e18` supérieur ou égal au montant brut détermine `feeBps`.
   - Si aucun palier ne correspond, fallback sur `withdrawFeeBps`.
   - **Sécurité** : Maximum 10 paliers, validation de l'ordre croissant des montants
-- `getWithdrawFeeBpsForAmount(uint256 amount1e8)` retourne le BPS applicable.
+- `getWithdrawFeeBpsForAmount(uint256 amount1e18)` retourne le BPS applicable.
 
 ## Retraits
 - `withdraw(uint256 shares)`:
   - **🚨 CORRECTION** : Calcule le NAV une seule fois et le réutilise pour optimiser le gaz
-  - Calcule le montant brut en USDC à partir du PPS courant.
-  - Applique `feeBps` déterminé par `getWithdrawFeeBpsForAmount(gross1e8)`.
+  - Calcule le montant brut en HYPE à partir du PPS courant.
+  - Applique `feeBps` déterminé par `getWithdrawFeeBpsForAmount(gross1e18)`.
   - **🚨 CORRECTION** : Si paiement immédiat → brûle les parts maintenant, sinon les garde pour l'annulation
   - Si la trésorerie EVM couvre le montant net → paiement immédiat et événement `WithdrawPaid`.
   - Sinon → mise en file avec snapshot du `feeBps` calculé à la demande.
-- `settleWithdraw(uint256 id, uint256 pay1e8, address to)`:
-  - **🚨 CORRECTION** : Calcule le NAV une seule fois et le réutilise pour optimiser le gaz
+- `settleWithdraw(uint256 id, address to)`:
+  - **✅ SIMPLIFICATION** : Le montant est calculé automatiquement dans le smart contract
+  - Calcule le NAV une seule fois et le réutilise pour optimiser le gaz
   - Recalcule le montant brut d'après le PPS courant.
-  - **🚨 CORRECTION** : Brûle les parts au moment du règlement final
-  - Utilise le `feeBpsSnapshot` stocké dans la file pour exiger un paiement net exact.
+  - Brûle les parts au moment du règlement final
+  - Utilise le `feeBpsSnapshot` stocké dans la file pour calculer le paiement net.
 - `cancelWithdrawRequest(uint256 id)`:
   - **🚨 CORRECTION** : Fonctionne maintenant correctement car les parts ne sont plus brûlées prématurément
   - Permet d'annuler une demande de retrait en file d'attente
 
 ## Événements
 - `WithdrawRequested(id, user, shares)`
-- `WithdrawPaid(id, to, amount1e8)`
+- `WithdrawPaid(id, to, amount1e18)`
 - `WithdrawCancelled(id, user, shares)`
 - `FeesSet(depositFeeBps, withdrawFeeBps, autoDeployBps)`
 - `WithdrawFeeTiersSet()`
@@ -79,6 +80,6 @@ vault.setWithdrawFeeTiers(tiers);
 
 - **Unités USDC**: utiliser strictement 1e8 pour tous les montants (EVM et Core).
 - **Paliers de frais**: définis en USDC 1e8; maximum 10 paliers, triés croissants.
-- **Retraits différés**: paiement exact requis dans `settleWithdraw`; utiliser `cancelWithdrawRequest` pour annuler avant règlement.
+- **Retraits différés**: le montant est calculé automatiquement dans `settleWithdraw`; utiliser `cancelWithdrawRequest` pour annuler avant règlement.
 - **PPS initiale**: `pps1e18()` retourne `1e18` si `totalSupply == 0`.
 - **Auto-déploiement**: `autoDeployBps` en bps; 9000 = 90%.

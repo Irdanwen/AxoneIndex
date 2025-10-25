@@ -163,8 +163,8 @@ Effets:
   - Sinon: création d’une demande en file (`WithdrawRequested` avec `id`)
 
 - Annuler (initiateur uniquement): `cancelWithdrawRequest(id)` → restaure les parts
-- Régler (owner/handler): `settleWithdraw(id, pay1e8Exact, to)`
-  - `pay1e8Exact` doit correspondre exactement au net dû (sinon revert)
+- Régler (owner/handler): `settleWithdraw(id, to)`
+  - Le montant est calculé automatiquement par le smart contract
 
 ### C) Calcul des frais de retrait
 - `getWithdrawFeeBpsForAmount(amount1e8)` renvoie le BPS qui s’applique à un brut en 1e8
@@ -199,7 +199,7 @@ Effets:
 4. Vault → `deposit(100000000000)` (1,000 en 1e8)
 5. `withdraw(“10e18”)` (ex: `10000000000000000000`)
    - Si insuffisant en USDC: file créée; noter `id`
-6. Owner/handler → `settleWithdraw(id, pay1e8Exact, user)` (net dû exact)
+6. Owner/handler → `settleWithdraw(id, user)` (montant calculé automatiquement)
 
 ---
 
@@ -226,7 +226,7 @@ Effets:
 - Erreurs fréquentes
   - Revert `auth`: fonction appelée par une mauvaise adresse (ex: `pull()` sans être `rewardsHub`)
   - Revert en `pull()` drip: réserve insuffisante → approvisionner le contrôleur
-  - Revert `pay!=due` dans `settleWithdraw`: calculer précisément le net dû off-chain
+  - Les montants sont maintenant calculés automatiquement dans `settleWithdraw`, plus besoin de calculer off-chain
 
 ---
 

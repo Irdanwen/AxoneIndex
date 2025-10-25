@@ -15,10 +15,9 @@
      - `setLimits(maxOutboundPerEpoch, epochLength)`
 
 2. Déployer `VaultContract`
-   - (BTC50) Constructeur: `IERC20 usdc`
    - (HYPE50) Aucun paramètre; dépôts en natif
    - Lier Vault ↔ Handler:
-     - `vault.setHandler(handler)` (approval USDC illimitée côté BTC50)
+     - `vault.setHandler(handler)` (pas d'approval nécessaire pour HYPE50)
      - `handler.setVault(vault)`
    - Configurer:
      - `vault.setFees(depositFeeBps, withdrawFeeBps, autoDeployBps)` (ex: 9000 pour 90%)
@@ -36,23 +35,22 @@
 
 ## Points de Vigilance
 
-- USDC en 1e8 (EVM et Core). Ne pas utiliser 1e6.
+- HYPE en 1e18 (EVM et Core). USDC en 1e8 (EVM et Core). Ne pas utiliser 1e6.
 - `deadbandBps ≤ 50` sinon revert dans `setParams`.
 - `epochLength` est en nombre de blocs (rate limiting par blocs).
-- `setSpotTokenIds` n’écrase pas un `usdcCoreTokenId` déjà défini (revert si conflit).
-- `settleWithdraw` doit payer exactement le net dû calculé avec le BPS figé.
+- `setSpotTokenIds` n'écrase pas un `hypeCoreTokenId` déjà défini (revert si conflit).
+- `settleWithdraw` calcule automatiquement le net dû avec le BPS figé.
 - `VaultContract.pps1e18()` vaut `1e18` à `totalSupply == 0`.
-- `CoreInteractionHandler.sweepToVault` applique des frais si `feeBps > 0` et `feeVault` non nul.
+- `CoreInteractionHandler.sweepHypeToVault` applique des frais si `feeBps > 0` et `feeVault` non nul.
 - (HYPE50) Dépôts natifs `deposit()` et sweeps `sweepHypeToVault(amount1e18)`.
 
 ## Tests Rapides Post‑Déploiement
 
 - Dépôt test:
-  - (BTC50) `USDC.approve(vault, amount1e8)` puis `vault.deposit(amount1e8)`
   - (HYPE50) `vault.deposit()` avec `msg.value`
-- Vérifier auto‑déploiement (`autoDeployBps`) et logs `SpotOrderPlaced` (HYPE50) ou envois IOC (BTC50).
+- Vérifier auto‑déploiement (`autoDeployBps`) et logs `SpotOrderPlaced` (HYPE50).
 - Retrait test immédiat (petite somme) puis retrait en file (grande somme) et `settleWithdraw`.
-- Rappel `handler.pullFromCoreToEvm` + `handler.sweepToVault` ou `sweepHypeToVault`.
+- Rappel `handler.pullHypeFromCoreToEvm` + `handler.sweepHypeToVault`.
 
 ## Rôles et Accès
 

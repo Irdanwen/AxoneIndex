@@ -20,7 +20,7 @@ AxoneIndex est une plateforme DeFi construite sur HyperEVM (Hyperliquid). Elle c
       - `ReferralRegistry.sol` : Système de parrainage avec codes à usage unique
       - `AxoneToken.sol` : Token natif AXN (18 décimales)
       - `AxoneSale.sol` : Vente publique d'AXN contre USDC avec protection slippage
-      - Modules vaults : BTC50 Defensive, HYPE50 Defensive (VaultContract + CoreInteractionHandler)
+      - Modules vaults : STRATEGY_1 (VaultContract + CoreInteractionHandler)
       - Système de staking : `RewardsHub.sol`, `EmissionController.sol` (voir [Staking/README.md](../contracts/src/Staking/README.md))
   - Interface utilisateur (Next.js / App Router)
     - Dossier `src/app/` pour les routes (ex. `referral/`, `vaults/`, `admin/`)
@@ -79,7 +79,7 @@ AxoneIndex est une plateforme DeFi construite sur HyperEVM (Hyperliquid). Elle c
   - [AxoneSale — vente publique USDC avec protection slippage](./contracts/AxoneSale.md)
   - [CoreInteractionHandler — rôle rebalancer et sécurité](./contracts/CoreInteractionHandler.md)
   - [VaultContract — frais de retrait par paliers](./contracts/VaultContract.md)
-  - [HYPE50 VaultContract — dépôts HYPE et NAV USD](./contracts/HYPE50_VaultContract.md)
+  - [STRATEGY_1 VaultContract — dépôts HYPE et NAV USD](./contracts/STRATEGY_1_VaultContract.md)
   - [Système de Staking — RewardsHub et EmissionController](./contracts/StakingSystem.md)
 
 ## Guide d’intégration rapide Vault + Handler
@@ -100,15 +100,15 @@ AxoneIndex est une plateforme DeFi construite sur HyperEVM (Hyperliquid). Elle c
 
 4) Paramétrer le vault
 - Définir `setFees(depositFeeBps, withdrawFeeBps, autoDeployBps)`.
-- Définir les paliers via `setWithdrawFeeTiers(...)` (USDC 1e8 pour USDC, HYPE 1e18 pour HYPE50).
+- Définir les paliers via `setWithdrawFeeTiers(...)` (USDC 1e8 pour USDC, HYPE 1e18 pour STRATEGY_1).
 
 5) Dépôts
 - USDC vault: `vault.deposit(amount1e8)` puis auto-deploy vers `executeDeposit(amount1e8, true)`.
-- HYPE50 vault: `vault.deposit()` (payable, montant via `msg.value`) puis auto-deploy vers `executeDepositHype{value: deployAmt}(true)`.
+- STRATEGY_1 vault: `vault.deposit()` (payable, montant via `msg.value`) puis auto-deploy vers `executeDepositHype{value: deployAmt}(true)`.
 
 6) Rappel de liquidités
 - USDC: `vault.recallFromCoreAndSweep(amount1e8)` → `pullFromCoreToEvm` + `sweepToVault`.
-- HYPE50: `vault.recallFromCoreAndSweep(amount1e18)` → `pullHypeFromCoreToEvm` + `sweepHypeToVault`.
+- STRATEGY_1: `vault.recallFromCoreAndSweep(amount1e18)` → `pullHypeFromCoreToEvm` + `sweepHypeToVault`.
 
 7) Vérifications rapides
 - Après `setHandler`, vérifier l’`allowance` illimitée du token de dépôt vers le handler (USDC uniquement).

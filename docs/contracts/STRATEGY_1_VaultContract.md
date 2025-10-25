@@ -1,7 +1,7 @@
-# HYPE50 VaultContract — Dépôts HYPE (18d), NAV USD, Retraits HYPE
+# STRATEGY_1 VaultContract — Dépôts HYPE (18d), NAV USD, Retraits HYPE
 
 ## Résumé
-Le vault HYPE50 accepte des dépôts en HYPE (18 décimales), valorise la NAV en USD via l'oracle HYPE, et paie les retraits en HYPE. Une fraction configurable (`autoDeployBps`) du dépôt peut être auto-déployée vers Core via le handler HYPE50 qui convertit 100% des HYPE en USDC puis alloue 50/50 BTC–HYPE.
+Le vault STRATEGY_1 accepte des dépôts en HYPE (18 décimales), valorise la NAV en USD via l'oracle HYPE, et paie les retraits en HYPE. Une fraction configurable (`autoDeployBps`) du dépôt peut être auto-déployée vers Core via le handler STRATEGY_1 qui convertit 100% des HYPE en USDC puis alloue 50/50 BTC–HYPE.
 
 ## API
 - `deposit()` (payable) — dépôt HYPE natif (montant via `msg.value`). Parts mintées en proportion de la NAV USD.
@@ -13,7 +13,7 @@ Le vault HYPE50 accepte des dépôts en HYPE (18 décimales), valorise la NAV en
 - NAV (USD 1e18) = HYPE EVM (solde natif) en USD + Equity spot Core en USD.
 - Parts (`decimals=18`) restent USD-dénominées pour l’équité inter-dépôts.
 - Retraits: montant brut HYPE dérivé du PPS USD courant; frais en HYPE.
-- Auto-deploy: `executeDepositHype{value: deployAmt}(true)` côté handler.
+- Auto-deploy: `executeDepositHype{value: deployAmt}(true)` côté handler. À partir de la version courante, le handler conserve une réserve d’USDC sur Core configurable (par défaut 1%) et n’alloue que 99% du notional aux achats BTC/HYPE.
 
 - Vérification `pxH > 0` dans `deposit()` et `settleWithdraw()`.
 - CEI respecté; envois natifs via `.call{value: ...}` avec vérification de succès.
@@ -31,14 +31,15 @@ Le vault HYPE50 accepte des dépôts en HYPE (18 décimales), valorise la NAV en
   - `grossHype1e18 = (shares * pps / 1e18) * 1e8 / oraclePxHype1e8`
 
 ## Intégration
-1. Déployer le handler HYPE50 (voir doc Handler HYPE50) et le vault HYPE50.
+1. Déployer le handler STRATEGY_1 (voir doc Handler STRATEGY_1) et le vault STRATEGY_1.
 2. `vault.setHandler(handler)` — lie le handler; pas d'approval HYPE (dépôts natifs).
 3. Configurer côté handler: `setUsdcCoreLink`, `setHypeCoreLink`, `setSpotIds`, `setSpotTokenIds`.
+4. (Optionnel) Réserve USDC Core: `setUsdcReserveBps(100)` pour 1% (plafonné à 10%).
 4. (Optionnel) Configurer frais et paliers.
 
 ## Références code
 - NAV USD HYPE EVM + Core:
-```116:122:contracts/src/HYPE50 Defensive/VaultContract.sol
+```116:122:contracts/src/STRATEGY_1/VaultContract.sol
 function nav1e18() public view returns (uint256) {
     uint64 pxH = address(handler) == address(0) ? uint64(0) : handler.oraclePxHype1e8();
     uint256 evmHypeUsd1e18 = pxH == 0 ? 0 : (address(this).balance * uint256(pxH)) / 1e8;
@@ -47,14 +48,14 @@ function nav1e18() public view returns (uint256) {
 }
 ```
 - Dépôt HYPE natif → auto-deploy:
-```144:175:contracts/src/HYPE50 Defensive/VaultContract.sol
+```144:175:contracts/src/STRATEGY_1/VaultContract.sol
 function deposit() external payable notPaused nonReentrant {
     ...
     handler.executeDepositHype{value: deployAmt}(true);
 }
 ```
 - Retrait HYPE et rappel si nécessaire:
-```177:225:contracts/src/HYPE50 Defensive/VaultContract.sol
+```177:225:contracts/src/STRATEGY_1/VaultContract.sol
 function withdraw(uint256 shares) external notPaused nonReentrant {
     ...
     try handler.pullHypeFromCoreToEvm(recallAmount1e8) { ... }

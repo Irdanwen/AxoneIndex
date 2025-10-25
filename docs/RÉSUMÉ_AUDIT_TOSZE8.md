@@ -9,7 +9,7 @@
 ## ✅ Travaux Réalisés
 
 ### 1. ✅ Correction Appliquée
-- **Fichier** : `contracts/src/BTC50 Defensive/CoreInteractionHandler.sol`
+- **Fichier** : `contracts/src/HYPE50 Defensive/CoreInteractionHandler.sol`
 - **Ligne** : 356
 - **Changement** : `/ 1e10` → `/ 100`
 - **Formule correcte** : `size1e8 = usd1e18 / price1e8 / 100`
@@ -17,12 +17,12 @@
 ### 2. ✅ Documentation Mise à Jour
 - ✅ `docs/contracts/CoreInteractionHandler.md` - Ajout de la correction dans la section "Corrections Implémentées" + Section rate limiting
 - ✅ `docs/_archive/Smart_Contracts_Functions_Documentation.md` - Archivé; contenu remplacé par docs/contracts/*
-- ✅ `docs/guides/deploiement/BTC50_Defensive_Deployment_Guide.md` - Clarification CRITIQUE du paramètre `epochLength`
+- ✅ `docs/guides/deploiement/HYPE50_Defensive_Deployment_Guide.md` - Clarification CRITIQUE du paramètre `epochLength`
 - ✅ `docs/AUDIT_CORRECTION_TOSZE8.md` - Rapport d'audit complet (35+ pages)
 - ✅ `CHANGELOG.md` - Entrée de changelog avec tous les détails
 
 ### 3. ✅ Audit Complet Effectué
-- ✅ Analysé toutes les conversions de décimales dans le dossier `BTC50 Defensive`
+- ✅ Analysé toutes les conversions de décimales dans le dossier `HYPE50 Defensive`
 - ✅ Vérifié `VaultContract.sol` - Aucun problème détecté
 - ✅ Vérifié `Rebalancer50Lib.sol` - Aucun problème détecté
 - ✅ Vérifié `interfaces/` et `utils/` - Aucun problème détecté
@@ -141,12 +141,12 @@ await vault.withdraw(shares);
 ## 📊 Fichiers Modifiés
 
 ### Code
-1. ✅ `contracts/src/BTC50 Defensive/CoreInteractionHandler.sol` (ligne 356)
+1. ✅ `contracts/src/HYPE50 Defensive/CoreInteractionHandler.sol` (ligne 356)
 
 ### Documentation
 1. ✅ `docs/contracts/CoreInteractionHandler.md` (correction + rate limiting)
 2. ✅ `docs/_archive/Smart_Contracts_Functions_Documentation.md`
-3. ✅ `docs/guides/deploiement/BTC50_Defensive_Deployment_Guide.md` (clarification epochLength)
+3. ✅ `docs/guides/deploiement/HYPE50_Defensive_Deployment_Guide.md` (clarification epochLength)
 4. ✅ `docs/AUDIT_CORRECTION_TOSZE8.md` (nouveau, rapport complet)
 5. ✅ `docs/RÉSUMÉ_AUDIT_TOSZE8.md` (nouveau, résumé exécutif)
 6. ✅ `CHANGELOG.md` (entrées détaillées)

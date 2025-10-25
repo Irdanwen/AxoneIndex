@@ -4,7 +4,7 @@ import { createPublicClient, http } from "viem";
 // Hyperliquid testnet RPC
 const RPC_URL = process.env.HL_TESTNET_RPC || "https://rpc.hyperliquid-testnet.xyz/evm";
 
-// Precompile spotInfo address (voir contracts/src/BTC50 Defensive/interfaces/L1Read.sol)
+// Precompile spotInfo address (voir contracts/src/HYPE50 Defensive/interfaces/L1Read.sol)
 const SPOT_INFO_PRECOMPILE = "0x000000000000000000000000000000000000080b" as const;
 
 // ABI minimal de spotInfo

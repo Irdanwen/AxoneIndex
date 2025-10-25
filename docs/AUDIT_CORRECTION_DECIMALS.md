@@ -369,14 +369,14 @@ Pour toute question concernant cette correction :
 
 ## 🔗 Références
 
-- Fichier modifié : `contracts/src/BTC50 Defensive/CoreInteractionHandler.sol`
+- Fichier modifié : `contracts/src/HYPE50 Defensive/CoreInteractionHandler.sol`
 - Fonctions ajoutées : 
   - `spotBalanceInWei()` (lignes 200-221)
 - Fonctions modifiées :
   - `equitySpotUsd1e18()` (lignes 229-265)
   - `_computeRebalanceDeltas()` (lignes 342-377)
 - Documentation : `docs/contracts/CoreInteractionHandler.md`
-- Interface L1Read : `contracts/src/BTC50 Defensive/interfaces/L1Read.sol`
+- Interface L1Read : `contracts/src/HYPE50 Defensive/interfaces/L1Read.sol`
 
 ---
 

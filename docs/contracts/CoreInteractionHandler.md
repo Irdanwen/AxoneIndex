@@ -1,7 +1,7 @@
 # CoreInteractionHandler — Rôle Rebalancer et Sécurité
 
 ## Résumé
-- `CoreInteractionHandler.sol` gère les interactions avec Core (Hyperliquid): transferts USDC/HYPE spot, ordres IOC SPOT BTC/HYPE, et rééquilibrage 50/50. Le rééquilibrage est restreint à une adresse `rebalancer` définie par l'owner. Pour HYPE50 Defensive, HYPE est traité comme le jeton de gaz natif: les dépôts se font en natif (payable), sont convertis 100% en USDC côté Core, puis alloués 50/50.
+- `CoreInteractionHandler.sol` gère les interactions avec Core (Hyperliquid): transferts HYPE natif, ordres IOC SPOT BTC/HYPE, et rééquilibrage 50/50. Le rééquilibrage est restreint à une adresse `rebalancer` définie par l'owner. Pour HYPE50 Defensive, HYPE est traité comme le jeton de gaz natif: les dépôts se font en natif (payable), sont convertis 100% en USDC côté Core, puis alloués 50/50.
 
 ## 🔒 Améliorations de Sécurité
 
@@ -24,9 +24,6 @@
 - `receive()` (payable): permet de recevoir le jeton natif HYPE en provenance du Core si nécessaire.
 - `setRebalancer(address rebalancer)` (onlyOwner): définit l'adresse autorisée à appeler `rebalancePortfolio`.
 - `rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype)` (onlyRebalancer, whenNotPaused): calcule les deltas via l'oracle et place des ordres IOC SPOT pour revenir vers 50/50 (avec deadband).
-- `executeDeposit(uint64 usdc1e8, bool forceRebalance)` (onlyVault, whenNotPaused): dépôt USDC → achats 50/50 BTC/HYPE avec ordres SPOT IOC et tailles en `szDecimals` corrects.
-- `pullFromCoreToEvm(uint64 usdc1e8)` (onlyVault, whenNotPaused): orchestre les ventes si nécessaire et crédite l'EVM en USDC.
-- `sweepToVault(uint64 amount1e8)` (onlyVault, whenNotPaused): calcule les frais en 1e8, puis transfère en EVM en 1e8 vers le vault.
 - `executeDepositHype(bool forceRebalance)` (payable, onlyVault, whenNotPaused): dépôt HYPE natif (`msg.value`) → envoi natif vers `hypeCoreSystemAddress` → vente 100% en USDC via ordre SPOT IOC → achats ~50% BTC et ~50% HYPE via ordres SPOT IOC. Le rate limit s'applique sur l'équivalent USD (1e8).
 - `pullHypeFromCoreToEvm(uint64 hype1e8)` (onlyVault, whenNotPaused): achète du HYPE si nécessaire puis crédite l'EVM en HYPE.
 - `sweepHypeToVault(uint256 amount1e18)` (onlyVault, whenNotPaused): calcule les frais en HYPE (1e18), puis transfère le net vers le vault.
@@ -123,7 +120,7 @@ Sans cette correction, si `weiDecimals - szDecimals > 0`, les actifs seraient **
 - **IDs Core**: `setSpotTokenIds` n’écrase pas un `usdcCoreTokenId` déjà défini; configurer `setUsdcCoreLink`/`setHypeCoreLink`/`setSpotIds` au préalable.
 - **Frais**: `setFeeConfig(feeVault, feeBps)` applique un prélèvement lors de `sweepToVault`/`sweepHypeToVault`.
 
-## Note d'implémentation BTC50 (encodage SPOT)
+## Note d'implémentation HYPE50 (encodage SPOT)
 
 - Pour les rééquilibrages et achats/ventes au comptant, utilisez l'encodage SPOT: `encodeSpotLimitOrder(asset, isBuy, limitPx1e8, szInSzDecimals, TIF_IOC, cloid)`.
 - Les tailles d'ordres doivent être exprimées en `szDecimals` du token base (voir `toSzInSzDecimals`).

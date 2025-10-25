@@ -17,7 +17,7 @@ Mise à jour complète de la documentation technique pour refléter les évoluti
 
 | Composant | Impact |
 |-----------|--------|
-| `contracts/src/BTC50 Defensive/VaultContract.sol` | Ajout de 8 fonctions ERC20 (lignes 235-262) et mise à jour des événements |
+| `contracts/src/HYPE50 Defensive/VaultContract.sol` | Ajout de 8 fonctions ERC20 (lignes 235-262) et mise à jour des événements |
 | `lib/abi/VaultContract.json` | Nécessite régénération après déploiement |
 | `src/lib/vaultTypes.ts` | À vérifier pour compatibilité ERC20 |
 

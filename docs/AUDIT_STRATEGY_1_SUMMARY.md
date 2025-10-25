@@ -1,4 +1,4 @@
-# Résumé Exécutif - Audit HYPE50 Defensive
+# Résumé Exécutif - Audit STRATEGY_1
 
 **Date**: 1er Octobre 2025  
 **Status**: ✅ **AUDIT COMPLET**  
@@ -8,7 +8,7 @@
 
 ## 🎯 Conclusion Principale
 
-Les smart contracts HYPE50 Defensive sont **architecturalement solides** et **conformes** au protocole Hyperliquid. L'audit révèle une **implémentation robuste** avec des **corrections critiques déjà appliquées**, mais identifie **4 points d'attention** nécessitant validation externe avant déploiement.
+Les smart contracts STRATEGY_1 sont **architecturalement solides** et **conformes** au protocole Hyperliquid. L'audit révèle une **implémentation robuste** avec des **corrections critiques déjà appliquées**, mais identifie **4 points d'attention** nécessitant validation externe avant déploiement.
 
 ### Status Global
 - ✅ **Architecture** : Conforme aux patterns Hyperliquid

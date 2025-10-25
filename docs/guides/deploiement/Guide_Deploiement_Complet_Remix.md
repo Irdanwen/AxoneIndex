@@ -13,7 +13,7 @@ owner: Axone Team
 2. [Ordre de Déploiement](#ordre-de-déploiement)
 3. [Déploiement des Contrats de Base](#déploiement-des-contrats-de-base)
 4. [Déploiement des Contrats de Staking](#déploiement-des-contrats-de-staking)
-5. [Déploiement des Contrats BTC50 Defensive](#déploiement-des-contrats-btc50-defensive)
+5. [Déploiement des Contrats HYPE50 Defensive](#déploiement-des-contrats-hype50-defensive)
 6. [Configuration Post-Déploiement](#configuration-post-déploiement)
 7. [Exemples d'Interactions](#exemples-dinteractions)
 8. [Dépannage](#dépannage)
@@ -51,12 +51,12 @@ owner: Axone Team
    - `contracts/src/Staking/interfaces/IMintable.sol`
    - `contracts/src/Staking/interfaces/IEmissionController.sol`
    - `contracts/src/Staking/interfaces/IRewarder.sol`
-   - `contracts/src/BTC50 Defensive/VaultContract.sol`
-   - `contracts/src/BTC50 Defensive/CoreInteractionHandler.sol`
-   - `contracts/src/BTC50 Defensive/interfaces/L1Read.sol`
-   - `contracts/src/BTC50 Defensive/interfaces/CoreWriter.sol`
-   - `contracts/src/BTC50 Defensive/Rebalancer50Lib.sol`
-   - `contracts/src/BTC50 Defensive/utils/HLConstants.sol`
+   - `contracts/src/HYPE50 Defensive/VaultContract.sol`
+   - `contracts/src/HYPE50 Defensive/CoreInteractionHandler.sol`
+   - `contracts/src/HYPE50 Defensive/interfaces/L1Read.sol`
+   - `contracts/src/HYPE50 Defensive/interfaces/CoreWriter.sol`
+   - `contracts/src/HYPE50 Defensive/Rebalancer50Lib.sol`
+   - `contracts/src/HYPE50 Defensive/utils/HLConstants.sol`
 
 5. **Configuration Metamask** :
    - Connecter au réseau cible (testnet recommandé)
@@ -76,7 +76,7 @@ owner: Axone Team
 5. **EmissionController** (contrôleur d'émission)
 6. **RewardsHub** (hub de staking)
 
-### Phase 3 : Contrats BTC50 Defensive (Optionnel)
+### Phase 3 : Contrats HYPE50 Defensive (Optionnel)
 7. **L1Read** (interface de lecture Core)
 8. **CoreWriter** (interface d'écriture Core)
 9. **CoreInteractionHandler** (gestionnaire d'interactions)
@@ -276,7 +276,7 @@ rewardsHub.setPoolRewarder(0, rewarderAddress);
 
 ---
 
-## Déploiement des Contrats BTC50 Defensive
+## Déploiement des Contrats HYPE50 Defensive
 
 ### 7. L1Read (Interface de Lecture Core)
 
@@ -299,7 +299,6 @@ rewardsHub.setPoolRewarder(0, rewarderAddress);
 constructor(
     L1Read _l1read,                    // Interface de lecture L1
     ICoreWriter _coreWriter,           // Interface d'écriture Core
-    IERC20 _usdc,                      // Token USDC
     uint64 _maxOutboundPerEpoch,       // Maximum de sortie par époque
     uint64 _epochLength,               // Longueur d'une époque
     address _feeVault,                 // Vault des frais
@@ -310,9 +309,8 @@ constructor(
 **Paramètres d'exemple** :
 - `_l1read` : adresse de L1Read
 - `_coreWriter` : adresse de CoreWriter
-- `_usdc` : adresse de MockUSDC
-- `_maxOutboundPerEpoch` : `100000000000` (100k USDC en 1e8)
-- `_epochLength` : `86400` (1 jour en secondes)
+- `_maxOutboundPerEpoch` : `100000000000` (100k USD équivalent en 1e8)
+- `_epochLength` : `43200` (1 jour en blocs sur HyperEVM)
 - `_feeVault` : adresse de trésorerie
 - `_feeBps` : `50` (0.5%)
 
@@ -328,18 +326,13 @@ constructor(
 
 **Constructor** :
 ```solidity
-constructor(IERC20 _usdc) // Adresse du token USDC
+constructor() // Aucun paramètre (HYPE natif)
 ```
-
-**Paramètres d'exemple** :
-- `_usdc` : adresse de MockUSDC
 
 **Étapes Remix** :
 1. Sélectionner `VaultContract`
-2. Remplir le paramètre :
-   - `_usdc` : adresse de MockUSDC
-3. Cliquer "Deploy"
-4. Noter l'adresse du contrat
+2. Cliquer "Deploy"
+3. Noter l'adresse du contrat
 
 ---
 
@@ -351,8 +344,8 @@ constructor(IERC20 _usdc) // Adresse du token USDC
 // Définir l'adresse du vault
 coreHandler.setVault(vaultAddress);
 
-// Configurer le lien USDC avec Core
-coreHandler.setUsdcCoreLink(coreSystemAddress, usdcTokenId);
+// Configurer le lien HYPE avec Core
+coreHandler.setHypeCoreLink(coreSystemAddress, hypeTokenId);
 
 // Définir les IDs des marchés spot
 coreHandler.setSpotIds(btcSpotId, hypeSpotId);

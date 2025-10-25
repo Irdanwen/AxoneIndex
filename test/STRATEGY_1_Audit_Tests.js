@@ -1,10 +1,10 @@
-// Tests d'Audit HYPE50 Defensive - Conformité Hyperliquid
+// Tests d'Audit STRATEGY_1 - Conformité Hyperliquid
 // Ces tests valident les points critiques identifiés lors de l'audit
 
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("HYPE50 Defensive - Audit Tests", function () {
+describe("STRATEGY_1 - Audit Tests", function () {
   let handler, vault, l1read, coreWriter, usdc;
   let owner, user1, user2;
   let spotBTC, spotHYPE, spotTokenBTC, spotTokenHYPE;

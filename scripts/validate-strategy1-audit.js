@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Script de Validation - Audit HYPE50 Defensive
+ * Script de Validation - Audit STRATEGY_1
  * 
  * Ce script valide les points critiques identifiés lors de l'audit
  * et génère un rapport de conformité avec le protocole Hyperliquid.
@@ -297,7 +297,7 @@ function generateAuditReport(results) {
  * Fonction principale
  */
 async function main() {
-  console.log("🚀 Démarrage de la validation d'audit HYPE50 Defensive\n");
+  console.log("🚀 Démarrage de la validation d'audit STRATEGY_1\n");
   
   const results = [];
   

@@ -87,9 +87,9 @@ export default function DashboardPage() {
         <aside className="space-y-6">
           <section className="rounded-2xl border border-[var(--border-muted)] bg-[var(--surface)] p-6 shadow-sm">
             <div className="space-y-2">
-              <h1 className="text-2xl font-semibold text-foreground">HYPE50 Defensive</h1>
+              <h1 className="text-2xl font-semibold text-foreground">STRATEGY_1</h1>
               <p className="text-sm text-[var(--text-secondary)]">
-                Dashboard opérationnel du vault HYPE50 Defensive.
+                Dashboard opérationnel du vault STRATEGY_1.
               </p>
             </div>
             <div className="mt-6 space-y-1">
@@ -130,7 +130,7 @@ export default function DashboardPage() {
                 <Database className="h-4 w-4" />
                 Vault
               </div>
-              <p className="text-sm text-[var(--text-secondary)]">Performances et métriques du vault h50USD.</p>
+              <p className="text-sm text-[var(--text-secondary)]">Performances et métriques du vault sAXN1.</p>
             </header>
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <DashboardKpi

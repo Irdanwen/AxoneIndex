@@ -11,7 +11,7 @@ Cette page permet de configurer les adresses des contrats et les IDs des tokens 
 **Configuration disponible :**
 - **Adresses des contrats**
   - USDC (ERC-20)
-  - Vault (BTC50 Defensive)
+  - Vault (HYPE50 Defensive)
   - CoreInteractionHandler
   - L1Read
 
@@ -62,7 +62,7 @@ La page affiche en temps réel :
 
 ### Contrats wrapper
 - `erc20.ts` : Wrapper pour les tokens ERC-20
-- `vault.ts` : Wrapper pour le vault BTC50 Defensive
+- `vault.ts` : Wrapper pour le vault HYPE50 Defensive
 - `l1read.ts` : Wrapper pour la lecture des balances Core
 - `coreInteractionHandler.ts` : Wrapper pour le handler
 
@@ -89,8 +89,7 @@ La page affiche en temps réel :
 
 1. Naviguer vers `/vault`
 2. Pour déposer :
-   - Approuver d'abord un montant suffisant d'USDC
-   - Entrer le montant à déposer et cliquer "Déposer"
+   - Entrer le montant HYPE à déposer et cliquer "Déposer"
 3. Pour retirer :
    - Entrer le nombre de parts à retirer
    - Cliquer "Retirer"

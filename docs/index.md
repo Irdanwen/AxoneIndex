@@ -24,7 +24,7 @@ Bienvenue dans la documentation unifiée (FR). Cette page sert de table des mati
 
 ## Guides de déploiement
 - `docs/guides/deploiement/Guide_Deploiement_Complet_Remix.md`
-- `docs/guides/deploiement/BTC50_Defensive_Deployment_Guide.md`
+- `docs/guides/deploiement/STRATEGY_1_Deployment_Guide.md`
 - `docs/guides/deploiement/Staking_Remix_Deployment_Guide.md`
 
 ## Ops & Runbooks
