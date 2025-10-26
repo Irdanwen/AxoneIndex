@@ -498,14 +498,19 @@ contract CoreInteractionHandler is Pausable {
     }
 
     function _computeRebalanceDeltas() internal returns (int256 dB, int256 dH, uint64 pxB, uint64 pxH) {
+        // Prix oracles normalisés 1e8 avec validation de déviation
+        pxB = _validatedOraclePx1e8(true);
+        pxH = _validatedOraclePx1e8(false);
+
+        // Calcul des positions directement dans l'appel à computeDeltas
+        (dB, dH) = _computeDeltasWithPositions(pxB, pxH);
+    }
+
+    function _computeDeltasWithPositions(uint64 pxB, uint64 pxH) internal view returns (int256 dB, int256 dH) {
         // Balances spot convertis en weiDecimals
         uint256 usdcBalWei = spotBalanceInWei(address(this), usdcCoreTokenId);
         uint256 btcBalWei = spotBalanceInWei(address(this), spotTokenBTC);
         uint256 hypeBalWei = spotBalanceInWei(address(this), spotTokenHYPE);
-
-        // Prix oracles normalisés 1e8 avec validation de déviation
-        pxB = _validatedOraclePx1e8(true);
-        pxH = _validatedOraclePx1e8(false);
 
         // Infos de décimales pour conversion de valorisation
         L1Read.TokenInfo memory usdcInfo = l1read.tokenInfo(uint32(usdcCoreTokenId));
