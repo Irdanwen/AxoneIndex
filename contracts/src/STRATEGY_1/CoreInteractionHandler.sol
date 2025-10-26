@@ -542,28 +542,65 @@ contract CoreInteractionHandler is Pausable {
         uint128 cloidBtc,
         uint128 cloidHype
     ) internal {
+        // Calcul des tailles (signées via dB/dH → tailles positives en décimales spot)
         uint64 szB = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenBTC, dB, pxB);
-        if (szB > 0) {
-            _sendSpotLimitOrderDirect(
-                spotBTC,
-                dB > 0,
-                _marketLimitFromBbo(spotBTC, dB > 0),
-                szB,
-                cloidBtc
-            );
-            emit SpotOrderPlaced(spotBTC, dB > 0, _marketLimitFromBbo(spotBTC, dB > 0), szB, cloidBtc);
+        uint64 szH = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenHYPE, dH, pxH);
+
+        bool buyB = dB > 0;
+        bool buyH = dH > 0;
+
+        // 1) Ventes d'abord (génèrent l'USDC nécessaire)
+        if (szH > 0 && !buyH) {
+            uint64 pxHLimitSell = _marketLimitFromBbo(spotHYPE, false);
+            _sendSpotLimitOrderDirect(spotHYPE, false, pxHLimitSell, szH, cloidHype);
+            emit SpotOrderPlaced(spotHYPE, false, pxHLimitSell, szH, cloidHype);
+        }
+        if (szB > 0 && !buyB) {
+            uint64 pxBLimitSell = _marketLimitFromBbo(spotBTC, false);
+            _sendSpotLimitOrderDirect(spotBTC, false, pxBLimitSell, szB, cloidBtc);
+            emit SpotOrderPlaced(spotBTC, false, pxBLimitSell, szB, cloidBtc);
         }
 
-        uint64 szH = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenHYPE, dH, pxH);
-        if (szH > 0) {
-            _sendSpotLimitOrderDirect(
-                spotHYPE,
-                dH > 0,
-                _marketLimitFromBbo(spotHYPE, dH > 0),
-                szH,
-                cloidHype
-            );
-            emit SpotOrderPlaced(spotHYPE, dH > 0, _marketLimitFromBbo(spotHYPE, dH > 0), szH, cloidHype);
+        // 2) Achats ensuite
+        // Cas où aucun ordre de vente n'est nécessaire: on plafonne l'achat à l'USDC disponible pour éviter un échec IOC
+        bool hasAnySell = (szH > 0 && !buyH) || (szB > 0 && !buyB);
+
+        if (szB > 0 && buyB) {
+            int256 dBToUse = dB;
+            if (!hasAnySell) {
+                // Limiter l'achat au solde USDC disponible (1e8) converti en 1e18
+                uint256 usdcBal1e8 = spotBalance(address(this), usdcCoreTokenId);
+                uint256 maxUsd1e18 = usdcBal1e8 * 1e10;
+                uint256 needUsd1e18 = uint256(dB);
+                if (needUsd1e18 > maxUsd1e18) {
+                    dBToUse = int256(maxUsd1e18); // réduire la taille cible
+                }
+            }
+            // Recalculer la taille si nous avons plafonné dB
+            uint64 szBbuy = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenBTC, dBToUse, pxB);
+            if (szBbuy > 0) {
+                uint64 pxBLimitBuy = _marketLimitFromBbo(spotBTC, true);
+                _sendSpotLimitOrderDirect(spotBTC, true, pxBLimitBuy, szBbuy, cloidBtc);
+                emit SpotOrderPlaced(spotBTC, true, pxBLimitBuy, szBbuy, cloidBtc);
+            }
+        }
+
+        if (szH > 0 && buyH) {
+            int256 dHToUse = dH;
+            if (!hasAnySell) {
+                uint256 usdcBal1e8 = spotBalance(address(this), usdcCoreTokenId);
+                uint256 maxUsd1e18 = usdcBal1e8 * 1e10;
+                uint256 needUsd1e18 = uint256(dH);
+                if (needUsd1e18 > maxUsd1e18) {
+                    dHToUse = int256(maxUsd1e18);
+                }
+            }
+            uint64 szHbuy = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenHYPE, dHToUse, pxH);
+            if (szHbuy > 0) {
+                uint64 pxHLimitBuy = _marketLimitFromBbo(spotHYPE, true);
+                _sendSpotLimitOrderDirect(spotHYPE, true, pxHLimitBuy, szHbuy, cloidHype);
+                emit SpotOrderPlaced(spotHYPE, true, pxHLimitBuy, szHbuy, cloidHype);
+            }
         }
     }
 
