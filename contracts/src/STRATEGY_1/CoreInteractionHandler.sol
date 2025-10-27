@@ -69,6 +69,7 @@ contract CoreInteractionHandler is Pausable {
     error NotRebalancer();
     error RateLimited();
     error OracleZero();
+    error OracleGradualCatchup();
 
     event LimitsSet(uint64 maxOutboundPerEpoch, uint64 epochLength);
     event ParamsSet(uint64 maxSlippageBps, uint64 marketEpsilonBps, uint64 deadbandBps);
@@ -692,17 +693,23 @@ contract CoreInteractionHandler is Pausable {
             maxOracleDeviationBps: maxOracleDeviationBps
         });
         
-        uint64 px = CoreHandlerLib.validatedOraclePx1e8(l1read, asset, oracle, isBtc);
+        CoreHandlerLib.OracleResult memory result = CoreHandlerLib.validatedOraclePx1e8(l1read, asset, oracle, isBtc);
         
-        // Update prices
+        // Toujours mettre à jour le prix (même en cas de déviation)
         if (isBtc) {
-            lastPxBtc1e8 = px;
+            lastPxBtc1e8 = result.adjustedPx1e8;
             pxInitB = true;
         } else {
-            lastPxHype1e8 = px;
+            lastPxHype1e8 = result.adjustedPx1e8;
             pxInitH = true;
         }
-        return px;
+        
+        // Revert APRÈS la mise à jour si nécessaire
+        if (result.shouldRevert) {
+            revert OracleGradualCatchup();
+        }
+        
+        return result.adjustedPx1e8;
     }
 
 

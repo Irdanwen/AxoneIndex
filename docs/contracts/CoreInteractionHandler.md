@@ -20,9 +20,66 @@
 - **🐛 CORRECTION CRITIQUE** : **Migration vers ordres SPOT** — Les ordres de rééquilibrage et de dépôt utilisent désormais un encodage SPOT dédié (`encodeSpotLimitOrder`) avec TIF=IOC. Les tailles sont converties selon `szDecimals` via `toSzInSzDecimals()`.
 - **💰 CORRECTION AUDIT** : **Valorisation correcte des soldes spot** - Implémentation de `spotBalanceInWei()` pour convertir les balances de `szDecimals` vers `weiDecimals` avant calcul de la valeur USD. Correction appliquée dans `equitySpotUsd1e18()` et `_computeRebalanceDeltas()` pour éviter la surévaluation/sous-évaluation des actifs.
 
+### 🔄 Mécanisme de Rattrapage Graduel Oracle
+
+Le contrat implémente un mécanisme de **rattrapage graduel par paliers** pour gérer les grandes variations de prix oracle tout en conservant une protection contre les manipulations.
+
+#### Fonctionnement
+
+Quand le prix oracle dévie de plus de `maxOracleDeviationBps` (défaut: 5%) :
+1. La transaction **échoue** avec l'erreur `OracleGradualCatchup`
+2. Mais `lastPx` est **quand même mis à jour** vers la limite de la fourchette (±5%)
+3. Les transactions suivantes progressent par paliers successifs jusqu'à convergence
+
+#### Exemple Concret
+
+Prix passe de 100 à 110 (10% de déviation) :
+
+**Transaction 1:**
+- `lastPx = 100`
+- Prix oracle = 110
+- Fourchette autorisée: 95-105
+- Prix ajusté: 105 (borne supérieure)
+- Mise à jour: `lastPx = 105` ✅
+- Transaction ÉCHOUE avec `OracleGradualCatchup` ❌
+
+**Transaction 2:**
+- `lastPx = 105` (mis à jour lors de la transaction précédente)
+- Prix oracle = 110
+- Fourchette autorisée: 99.75-110.25
+- Prix ajusté: 110 (dans la fourchette)
+- Mise à jour: `lastPx = 110` ✅
+- Transaction RÉUSSIT ✅
+
+#### Avantages
+
+- ✅ **Protection contre manipulations** : Changements limités par transaction
+- ✅ **Convergence automatique** : Pas de blocage permanent du système
+- ✅ **Feedback clair** : Erreur spécifique pour l'utilisateur
+- ✅ **Paramétrable** : Ajustable selon les conditions de marché
+
+#### Configuration
+
+```solidity
+// Définir une déviation stricte (1%)
+handler.setMaxOracleDeviationBps(100);
+
+// Définir une déviation modérée (3%)
+handler.setMaxOracleDeviationBps(300);
+
+// Valeur par défaut recommandée (5%)
+handler.setMaxOracleDeviationBps(500);
+
+// Déviation permissive pour haute volatilité (10%)
+handler.setMaxOracleDeviationBps(1000);
+```
+
+**Limites** : Entre 1 et 5000 bps (0.01% - 50%)
+
 ## API Clés
 - `receive()` (payable): permet de recevoir le jeton natif HYPE en provenance du Core si nécessaire.
 - `setRebalancer(address rebalancer)` (onlyOwner): définit l'adresse autorisée à appeler `rebalancePortfolio`.
+- `setMaxOracleDeviationBps(uint64 _maxDeviationBps)` (onlyOwner): Configure la déviation maximale autorisée par transaction (entre 1 et 5000 bps). Défaut: 500 bps (5%).
 - `rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype)` (onlyRebalancer, whenNotPaused): calcule les deltas via l'oracle et place des ordres IOC SPOT pour revenir vers 50/50 (avec deadband).
 - `executeDepositHype(bool forceRebalance)` (payable, onlyVault, whenNotPaused): dépôt HYPE natif (`msg.value`) → envoi natif vers `hypeCoreSystemAddress` → vente 100% en USDC via ordre SPOT IOC → achats ~50% BTC et ~50% HYPE via ordres SPOT IOC. Le rate limit s'applique sur l'équivalent USD (1e8).
 - `pullHypeFromCoreToEvm(uint64 hype1e8)` (onlyVault, whenNotPaused): achète du HYPE si nécessaire puis crédite l'EVM en HYPE.
@@ -35,7 +92,7 @@
 
 ## Paramètres et Contraintes
 - `deadbandBps ≤ 50`.
-- Garde oracle: `maxOracleDeviationBps` borne l'écart relatif par rapport au dernier prix.
+- **Garde oracle avec rattrapage graduel** : `maxOracleDeviationBps` borne l'écart relatif par rapport au dernier prix. Si dépassé, la transaction échoue avec `OracleGradualCatchup` mais `lastPx` est mis à jour vers la limite (±5%), permettant une convergence progressive. Configurable entre 1 et 5000 bps (défaut: 500 bps = 5%).
 - Limitation de débit par epoch via `maxOutboundPerEpoch` et `epochLength`.
 
 ### ⚠️ Rate Limiting et Epochs (IMPORTANT)
@@ -116,8 +173,9 @@ Sans cette correction, si `weiDecimals - szDecimals > 0`, les actifs seraient **
 
 - **Deadband**: la valeur de `deadbandBps` doit être ≤ 50.
 - **Rate limiting**: `epochLength` est en nombre de blocs; compteur remis à zéro quand l’epoch expire.
-- **Oracle**: `maxOracleDeviationBps` borne l’écart par rapport au dernier prix; période de grâce lors de l’initialisation.
-- **IDs Core**: `setSpotTokenIds` n’écrase pas un `usdcCoreTokenId` déjà défini; configurer `setUsdcCoreLink`/`setHypeCoreLink`/`setSpotIds` au préalable.
+- **Oracle**: `maxOracleDeviationBps` borne l'écart par rapport au dernier prix; période de grâce lors de l'initialisation.
+- **Rattrapage graduel oracle**: Si le prix oracle dévie de plus de `maxOracleDeviationBps`, la transaction échoue avec `OracleGradualCatchup` mais `lastPx` est mis à jour vers la limite. Les transactions suivantes convergent progressivement vers le prix réel. Ajustable via `setMaxOracleDeviationBps()` (limites: 1-5000 bps).
+- **IDs Core**: `setSpotTokenIds` n'écrase pas un `usdcCoreTokenId` déjà défini; configurer `setUsdcCoreLink`/`setHypeCoreLink`/`setSpotIds` au préalable.
 - **Frais**: `setFeeConfig(feeVault, feeBps)` applique un prélèvement lors de `sweepToVault`/`sweepHypeToVault`.
 
 ## Note d'implémentation HYPE50 (SPOT uniquement)
@@ -128,14 +186,13 @@ Sans cette correction, si `weiDecimals - szDecimals > 0`, les actifs seraient **
 
 ## Mode Market (IOC via BBO)
 
-- Définition: un ordre “market” est soumis en IOC avec un prix limite marketable calé sur le BBO (ask pour BUY, bid pour SELL) normalisé en 1e8.
+- Définition: un ordre "market" est soumis en IOC avec un prix limite marketable calé sur le BBO (ask pour BUY, bid pour SELL) normalisé en 1e8.
  - Implémentation HYPE50:
   - `_spotBboPx1e8(spotIndex)` lit `l1read.bbo(assetId)` où `assetId = spotIndex + 10000` (offset Hyperliquid pour les actifs spot), puis normalise: BTC ×1e5 (1e3→1e8), HYPE ×1e2 (1e6→1e8).
   - `_marketLimitFromBbo(asset, isBuy)`:
     - BUY: utilise `ask1e8` (+ `marketEpsilonBps`)
     - SELL: utilise `bid1e8` (− `marketEpsilonBps`)
     - Fallback: `_limitFromOracle(spotOraclePx1e8(asset), isBuy)` si BBO indisponible
-- EP prix SPOT: `spotPx`. Les endpoints `oraclePx` et `markPx` ne sont pas utilisés par le Handler SPOT.
 
 ## Asset IDs Spot (Offset 10000)
 

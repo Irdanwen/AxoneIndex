@@ -29,6 +29,11 @@ library CoreHandlerLib {
         uint64 maxOracleDeviationBps;
     }
 
+    struct OracleResult {
+        uint64 adjustedPx1e8;
+        bool shouldRevert;
+    }
+
     // Group inputs to reduce stack usage when calculating positions
     struct PositionInputs {
         L1Read l1read;
@@ -180,7 +185,7 @@ library CoreHandlerLib {
         uint32 spotAsset,
         OracleValidation memory oracle,
         bool isBtc
-    ) internal view returns (uint64) {
+    ) internal view returns (OracleResult memory) {
         // Read raw spot price (variable decimals per asset) then normalize to 1e8 for comparisons
         uint64 rawPx = l1read.spotPx(spotAsset);
         uint64 px1e8;
@@ -198,10 +203,27 @@ library CoreHandlerLib {
         if (init && lastPx1e8 != 0) {
             uint256 up = uint256(lastPx1e8) * (10_000 + oracle.maxOracleDeviationBps) / 10_000;
             uint256 down = uint256(lastPx1e8) * (10_000 - oracle.maxOracleDeviationBps) / 10_000;
-            require(uint256(px1e8) <= up && uint256(px1e8) >= down, "ORACLE_DEV");
+            
+            // Si le prix dépasse la borne supérieure
+            if (uint256(px1e8) > up) {
+                return OracleResult({
+                    adjustedPx1e8: uint64(up),
+                    shouldRevert: true
+                });
+            }
+            // Si le prix est en dessous de la borne inférieure
+            if (uint256(px1e8) < down) {
+                return OracleResult({
+                    adjustedPx1e8: uint64(down),
+                    shouldRevert: true
+                });
+            }
         }
         
-        return px1e8;
+        return OracleResult({
+            adjustedPx1e8: px1e8,
+            shouldRevert: false
+        });
     }
 
     function encodeSpotLimitOrder(
