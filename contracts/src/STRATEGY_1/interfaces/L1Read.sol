@@ -2,13 +2,7 @@
 pragma solidity ^0.8.0;
 
 contract L1Read {
-  struct Position {
-    int64 szi;
-    uint64 entryNtl;
-    int64 isolatedRawUsd;
-    uint32 leverage;
-    bool isIsolated;
-  }
+  
 
   struct SpotBalance {
     uint64 total;
@@ -38,13 +32,7 @@ contract L1Read {
     uint64 nPendingWithdrawals;
   }
 
-  struct PerpAssetInfo {
-    string coin;
-    uint32 marginTableId;
-    uint8 szDecimals;
-    uint8 maxLeverage;
-    bool onlyIsolated;
-  }
+  
 
   struct SpotInfo {
     string name;
@@ -80,18 +68,13 @@ contract L1Read {
     uint64 ask;
   }
 
-  struct AccountMarginSummary {
-    int64 accountValue;
-    uint64 marginUsed;
-    uint64 ntlPos;
-    int64 rawUsd;
-  }
+  
 
   struct CoreUserExists {
     bool exists;
   }
 
-  address constant POSITION_PRECOMPILE_ADDRESS = 0x0000000000000000000000000000000000000800;
+  
   address constant SPOT_BALANCE_PRECOMPILE_ADDRESS = 0x0000000000000000000000000000000000000801;
   address constant VAULT_EQUITY_PRECOMPILE_ADDRESS = 0x0000000000000000000000000000000000000802;
   address constant WITHDRAWABLE_PRECOMPILE_ADDRESS = 0x0000000000000000000000000000000000000803;
@@ -102,22 +85,15 @@ contract L1Read {
   address constant ORACLE_PX_PRECOMPILE_ADDRESS = 0x0000000000000000000000000000000000000807;
   address constant SPOT_PX_PRECOMPILE_ADDRESS = 0x0000000000000000000000000000000000000808;
   address constant L1_BLOCK_NUMBER_PRECOMPILE_ADDRESS = 0x0000000000000000000000000000000000000809;
-  address constant PERP_ASSET_INFO_PRECOMPILE_ADDRESS = 0x000000000000000000000000000000000000080a;
+  
   address constant SPOT_INFO_PRECOMPILE_ADDRESS = 0x000000000000000000000000000000000000080b;
   address constant TOKEN_INFO_PRECOMPILE_ADDRESS = 0x000000000000000000000000000000000000080C;
   address constant TOKEN_SUPPLY_PRECOMPILE_ADDRESS = 0x000000000000000000000000000000000000080D;
   address constant BBO_PRECOMPILE_ADDRESS = 0x000000000000000000000000000000000000080e;
-  address constant ACCOUNT_MARGIN_SUMMARY_PRECOMPILE_ADDRESS =
-    0x000000000000000000000000000000000000080F;
+  
   address constant CORE_USER_EXISTS_PRECOMPILE_ADDRESS = 0x0000000000000000000000000000000000000810;
 
-  function position(address user, uint16 perp) external view returns (Position memory) {
-    bool success;
-    bytes memory result;
-    (success, result) = POSITION_PRECOMPILE_ADDRESS.staticcall(abi.encode(user, perp));
-    require(success, "Position precompile call failed");
-    return abi.decode(result, (Position));
-  }
+  
 
   function spotBalance(address user, uint64 token) external view returns (SpotBalance memory) {
     bool success;
@@ -162,21 +138,9 @@ contract L1Read {
     return abi.decode(result, (DelegatorSummary));
   }
 
-  function markPx(uint32 index) external view returns (uint64) {
-    bool success;
-    bytes memory result;
-    (success, result) = MARK_PX_PRECOMPILE_ADDRESS.staticcall(abi.encode(index));
-    require(success, "MarkPx precompile call failed");
-    return abi.decode(result, (uint64));
-  }
+  
 
-  function oraclePx(uint32 index) external view returns (uint64) {
-    bool success;
-    bytes memory result;
-    (success, result) = ORACLE_PX_PRECOMPILE_ADDRESS.staticcall(abi.encode(index));
-    require(success, "OraclePx precompile call failed");
-    return abi.decode(result, (uint64));
-  }
+  
 
   function spotPx(uint32 index) external view returns (uint64) {
     bool success;
@@ -194,13 +158,7 @@ contract L1Read {
     return abi.decode(result, (uint64));
   }
 
-  function perpAssetInfo(uint32 perp) external view returns (PerpAssetInfo memory) {
-    bool success;
-    bytes memory result;
-    (success, result) = PERP_ASSET_INFO_PRECOMPILE_ADDRESS.staticcall(abi.encode(perp));
-    require(success, "PerpAssetInfo precompile call failed");
-    return abi.decode(result, (PerpAssetInfo));
-  }
+  
 
   function spotInfo(uint32 spot) external view returns (SpotInfo memory) {
     bool success;
@@ -234,18 +192,7 @@ contract L1Read {
     return abi.decode(result, (Bbo));
   }
 
-  function accountMarginSummary(
-    uint32 perp_dex_index,
-    address user
-  ) external view returns (AccountMarginSummary memory) {
-    bool success;
-    bytes memory result;
-    (success, result) = ACCOUNT_MARGIN_SUMMARY_PRECOMPILE_ADDRESS.staticcall(
-      abi.encode(perp_dex_index, user)
-    );
-    require(success, "Account margin summary precompile call failed");
-    return abi.decode(result, (AccountMarginSummary));
-  }
+  
 
   function coreUserExists(address user) external view returns (CoreUserExists memory) {
     bool success;

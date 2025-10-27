@@ -27,7 +27,7 @@ HyperLiquid utilise deux formats de décimales différents pour chaque token :
 
 1. **szDecimals** : Format pour les opérations de trading (taille des ordres, transfers)
    - Retourné par `SpotBalance.total` du precompile
-   - Utilisé pour `encodeLimitOrder()` et `encodeSpotSend()`
+   - Utilisé pour `encodeSpotLimitOrder()` et `encodeSpotSend()`
 
 2. **weiDecimals** : Format pour la représentation on-chain et valorisation
    - Utilisé pour calculer les valeurs correctement

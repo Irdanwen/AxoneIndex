@@ -3,9 +3,9 @@ pragma solidity ^0.8.24;
 
 library Rebalancer50Lib {
     // All values are expected in 1e18 USD notional for consistency.
-    // equity1e18: total equity of the portfolio (USDC + perp equity) in 1e18
-    // posBtc1e18: current BTC perp notional (signed) in 1e18
-    // posHype1e18: current HYPE perp notional (signed) in 1e18
+    // equity1e18: total equity of the portfolio (USDC + spot valuations) in 1e18
+    // posBtc1e18: current BTC spot valuation (signed) in 1e18
+    // posHype1e18: current HYPE spot valuation (signed) in 1e18
     // deadbandBps: basis points threshold around target 50/50
     // Returns deltas (signed) in 1e18 USD to reach 50/50. Positive => increase long exposure.
     function computeDeltas(

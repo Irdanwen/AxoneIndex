@@ -120,19 +120,33 @@ Sans cette correction, si `weiDecimals - szDecimals > 0`, les actifs seraient **
 - **IDs Core**: `setSpotTokenIds` n’écrase pas un `usdcCoreTokenId` déjà défini; configurer `setUsdcCoreLink`/`setHypeCoreLink`/`setSpotIds` au préalable.
 - **Frais**: `setFeeConfig(feeVault, feeBps)` applique un prélèvement lors de `sweepToVault`/`sweepHypeToVault`.
 
-## Note d'implémentation HYPE50 (encodage SPOT)
+## Note d'implémentation HYPE50 (SPOT uniquement)
 
-- Pour les rééquilibrages et achats/ventes au comptant, utilisez l'encodage SPOT: `encodeSpotLimitOrder(asset, isBuy, limitPx1e8, szInSzDecimals, TIF_IOC, cloid)`.
+- Pour les rééquilibrages et achats/ventes au comptant, utilisez l'encodage SPOT: `encodeSpotLimitOrder(assetId, isBuy, limitPx1e8, szInSzDecimals, TIF_IOC, cloid)`.
 - Les tailles d'ordres doivent être exprimées en `szDecimals` du token base (voir `toSzInSzDecimals`).
-- Éviter d'utiliser `encodeLimitOrder` (perps) pour les marchés spot BTC/USDC et HYPE/USDC.
+- Le Handler est strictement SPOT: aucun encodage perps n'est exposé (helpers perps supprimés).
 
 ## Mode Market (IOC via BBO)
 
 - Définition: un ordre “market” est soumis en IOC avec un prix limite marketable calé sur le BBO (ask pour BUY, bid pour SELL) normalisé en 1e8.
-- Implémentation HYPE50:
-  - `_spotBboPx1e8(spot)` lit `l1read.bbo(spot)` et normalise: BTC ×1e5 (1e3→1e8), HYPE ×1e2 (1e6→1e8).
+ - Implémentation HYPE50:
+  - `_spotBboPx1e8(spotIndex)` lit `l1read.bbo(assetId)` où `assetId = spotIndex + 10000` (offset Hyperliquid pour les actifs spot), puis normalise: BTC ×1e5 (1e3→1e8), HYPE ×1e2 (1e6→1e8).
   - `_marketLimitFromBbo(asset, isBuy)`:
     - BUY: utilise `ask1e8` (+ `marketEpsilonBps`)
     - SELL: utilise `bid1e8` (− `marketEpsilonBps`)
     - Fallback: `_limitFromOracle(spotOraclePx1e8(asset), isBuy)` si BBO indisponible
-- EP prix SPOT: `spotPx`. Les endpoints `oraclePx` et `markPx` concernent les perps.
+- EP prix SPOT: `spotPx`. Les endpoints `oraclePx` et `markPx` ne sont pas utilisés par le Handler SPOT.
+
+## Asset IDs Spot (Offset 10000)
+
+- Les APIs qui attendent un "asset ID spot" utilisent un offset: `assetId = 10000 + spotIndex`.
+- À utiliser pour: `bbo(assetId)`, `encodeSpotLimitOrder(assetId, ...)`.
+- À ne PAS utiliser pour: `spotPx(spotIndex)`, `spotInfo(spotIndex)`, `tokenInfo(tokenId)`, `spotBalance(user, tokenId)`, `encodeSpotSend(destination, tokenId, amount)`.
+
+Exemple:
+```solidity
+uint32 assetId = spotBTC + 10000; // BTC/USDC spot
+L1Read.Bbo memory b = l1read.bbo(assetId);
+// Ordre SPOT IOC
+_send(coreWriter, CoreHandlerLib.encodeSpotLimitOrder(assetId, true, limitPx1e8, szInSzDecimals, 0));
+```

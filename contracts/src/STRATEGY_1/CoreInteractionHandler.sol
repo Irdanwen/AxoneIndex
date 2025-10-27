@@ -615,7 +615,8 @@ contract CoreInteractionHandler is Pausable {
     }
 
     function _spotBboPx1e8(uint32 spotAsset) internal view returns (uint64 bid1e8, uint64 ask1e8) {
-        L1Read.Bbo memory b = l1read.bbo(spotAsset);
+        uint32 assetId = spotAsset + HLConstants.SPOT_ASSET_OFFSET;
+        L1Read.Bbo memory b = l1read.bbo(assetId);
         // Normaliser vers 1e8: BTC 1e3->1e8 (×1e5), HYPE 1e6->1e8 (×1e2)
         if (spotAsset == spotBTC) {
             bid1e8 = b.bid * 100000;
@@ -713,7 +714,8 @@ contract CoreInteractionHandler is Pausable {
         uint64 szInSzDecimals,
         uint128 cloid
     ) internal {
-        _send(coreWriter, CoreHandlerLib.encodeSpotLimitOrder(asset, isBuy, limitPx1e8, szInSzDecimals, cloid));
+        uint32 assetId = asset + HLConstants.SPOT_ASSET_OFFSET;
+        _send(coreWriter, CoreHandlerLib.encodeSpotLimitOrder(assetId, isBuy, limitPx1e8, szInSzDecimals, cloid));
     }
 }
 

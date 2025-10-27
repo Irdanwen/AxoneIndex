@@ -181,35 +181,27 @@ library CoreHandlerLib {
         OracleValidation memory oracle,
         bool isBtc
     ) internal view returns (uint64) {
-        uint64 px = l1read.spotPx(spotAsset);
-        uint64 lastPx = isBtc ? oracle.lastPxBtc1e8 : oracle.lastPxHype1e8;
+        // Read raw spot price (variable decimals per asset) then normalize to 1e8 for comparisons
+        uint64 rawPx = l1read.spotPx(spotAsset);
+        uint64 px1e8;
+        if (isBtc) {
+            // BTC spot px typically 1e3 → normalize to 1e8 (×1e5)
+            px1e8 = rawPx * 100000;
+        } else {
+            // HYPE spot px typically 1e6 → normalize to 1e8 (×1e2)
+            px1e8 = rawPx * 100;
+        }
+
+        uint64 lastPx1e8 = isBtc ? oracle.lastPxBtc1e8 : oracle.lastPxHype1e8;
         bool init = isBtc ? oracle.pxInitB : oracle.pxInitH;
         
-        if (init && lastPx != 0) {
-            uint256 up = uint256(lastPx) * (10_000 + oracle.maxOracleDeviationBps) / 10_000;
-            uint256 down = uint256(lastPx) * (10_000 - oracle.maxOracleDeviationBps) / 10_000;
-            require(uint256(px) <= up && uint256(px) >= down, "ORACLE_DEV");
+        if (init && lastPx1e8 != 0) {
+            uint256 up = uint256(lastPx1e8) * (10_000 + oracle.maxOracleDeviationBps) / 10_000;
+            uint256 down = uint256(lastPx1e8) * (10_000 - oracle.maxOracleDeviationBps) / 10_000;
+            require(uint256(px1e8) <= up && uint256(px1e8) >= down, "ORACLE_DEV");
         }
         
-        return px;
-    }
-
-    function encodeLimitOrder(
-        uint32 asset,
-        bool isBuy,
-        uint64 limitPx1e8,
-        uint64 sz1e8,
-        uint128 cloid
-    ) internal pure returns (bytes memory) {
-        return HLConstants.encodeLimitOrder(
-            asset,
-            isBuy,
-            limitPx1e8,
-            sz1e8,
-            false,
-            HLConstants.TIF_IOC,
-            cloid
-        );
+        return px1e8;
     }
 
     function encodeSpotLimitOrder(
