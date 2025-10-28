@@ -188,15 +188,15 @@ const Header: React.FC = () => {
   return (
     <>
       <header
-        className={`fixed inset-x-0 top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur transition-shadow ${
+        className={`fixed inset-x-0 top-0 z-50 border-b border-slate-200 bg-axone-dark/90 backdrop-blur-lg transition-shadow ${
           isScrolled ? 'shadow-sm' : ''
         }`}
         role="banner"
         aria-label="Navigation principale"
       >
-        <div className="grid h-16 w-full grid-cols-[auto,1fr,auto] items-center gap-6 px-4 sm:px-6 lg:px-10">
+        <div className="grid h-16 w-full max-w-full grid-cols-[auto,1fr,auto] items-center gap-6 px-4 sm:px-6 lg:px-10">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3 max-w-full">
             <span className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-900">
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M12 3L21 12L12 21L3 12L12 3Z" stroke="currentColor" strokeWidth="1.5" />
@@ -212,7 +212,7 @@ const Header: React.FC = () => {
             role="navigation"
             aria-label="Menu principal"
           >
-            <ul className="flex items-center justify-center gap-8">
+            <ul className="header-nav list-none">
               {navLinks.map((link) => {
                 const active = isActive(link.href);
                 return (
