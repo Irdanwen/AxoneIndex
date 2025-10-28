@@ -95,7 +95,7 @@ export default function DashboardPage() {
         <aside className="[&>*+*]:mt-6">
           <section className="rounded-2xl border border-[var(--border-muted)] bg-[var(--surface)] p-6 shadow-sm">
             <div className="[&>*+*]:mt-2">
-              <h1 className="text-2xl font-semibold text-foreground">STRATEGY_1</h1>
+              <h1 className="text-2xl font-semibold text-[var(--text-secondary)]">STRATEGY_1</h1>
               <p className="text-sm text-[var(--text-secondary)]">
                 Dashboard opérationnel du vault STRATEGY_1.
               </p>
@@ -104,7 +104,7 @@ export default function DashboardPage() {
               <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
                 Adresse connectée
               </p>
-              <p className="font-mono text-sm text-foreground">
+              <p className="font-mono text-sm text-[var(--text-secondary)]">
                 {address ? truncateAddress(address) : 'Non connectée'}
               </p>
             </div>
@@ -117,7 +117,7 @@ export default function DashboardPage() {
             </div>
             <div className="mt-6 [&>*+*]:mt-2">
               <p className="text-sm font-medium text-[var(--text-secondary)]">Balance HYPE</p>
-              <div className="text-3xl font-semibold text-foreground">
+              <div className="text-3xl font-semibold text-[var(--text-secondary)]">
                 {isLoading ? (
                   <Skeleton className="h-8 w-32" />
                 ) : (
@@ -188,7 +188,7 @@ export default function DashboardPage() {
             <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="rounded-xl border border-[var(--border-muted)] bg-[var(--surface)] p-4 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Oracle BTC (USD)</p>
-                <div className="mt-2 text-lg font-mono text-foreground">
+                <div className="mt-2 text-lg font-mono text-[var(--text-secondary)]">
                   {isLoading ? (
                     <Skeleton className="h-6 w-28" />
                   ) : (
@@ -198,7 +198,7 @@ export default function DashboardPage() {
               </div>
               <div className="rounded-xl border border-[var(--border-muted)] bg-[var(--surface)] p-4 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Oracle HYPE (USD)</p>
-                <div className="mt-2 text-lg font-mono text-foreground">
+                <div className="mt-2 text-lg font-mono text-[var(--text-secondary)]">
                   {isLoading ? (
                     <Skeleton className="h-6 w-28" />
                   ) : (

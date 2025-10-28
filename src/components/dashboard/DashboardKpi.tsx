@@ -27,7 +27,7 @@ export function DashboardKpi({
     >
       <div className="text-sm font-medium text-[var(--text-secondary)]">{label}</div>
       <div className="mt-3 flex items-baseline justify-between gap-3">
-        <div className="min-h-[2rem] text-2xl font-semibold text-foreground">
+        <div className="min-h-[2rem] text-2xl font-semibold text-[var(--text-secondary)]">
           {isLoading ? <Skeleton className="h-8 w-28" /> : value}
         </div>
         {variation && !isLoading ? (

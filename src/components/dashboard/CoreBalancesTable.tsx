@@ -46,7 +46,7 @@ export function CoreBalancesTable({ balances, isLoading }: CoreBalancesTableProp
                       </span>
                     </td>
                     <td className="px-5 py-4 font-mono text-sm text-[var(--text-secondary)]">{row.tokenId}</td>
-                    <td className="px-5 py-4 text-right font-mono text-sm text-foreground">{row.balance}</td>
+                    <td className="px-5 py-4 text-right font-mono text-sm text-[var(--text-secondary)]">{row.balance}</td>
                   </tr>
                 ))}
           </tbody>
