@@ -131,10 +131,10 @@ export default function VaultPage() {
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Erreur inconnue'
       let description = 'La transaction a échoué.'
-      if (message.includes('User rejected')) description = 'Transaction rejetée par l’utilisateur.'
+      if (message.includes('User rejected')) description = 'Transaction rejetée par l\'utilisateur.'
       if (message.includes('insufficient funds')) description = 'Fonds insuffisants pour les frais.'
       if (message.includes('chain mismatch') || message.includes('wrong network')) description = 'Mauvais réseau, passez sur HyperEVM.'
-      toast({ title: 'Échec du dépôt', description, variant: 'destructive' })
+      toast({ title: 'Échec du dépôt', description })
     }
   }
 
@@ -152,10 +152,10 @@ export default function VaultPage() {
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Erreur inconnue'
       let description = 'La transaction a échoué.'
-      if (message.includes('User rejected')) description = 'Transaction rejetée par l’utilisateur.'
+      if (message.includes('User rejected')) description = 'Transaction rejetée par l\'utilisateur.'
       if (message.includes('insufficient funds')) description = 'Fonds insuffisants pour les frais.'
       if (message.includes('chain mismatch') || message.includes('wrong network')) description = 'Mauvais réseau, passez sur HyperEVM.'
-      toast({ title: 'Échec du retrait', description, variant: 'destructive' })
+      toast({ title: 'Échec du retrait', description })
     }
   }
 
@@ -173,7 +173,6 @@ export default function VaultPage() {
     if (amount1e18 <= 0n || pxHype1e8Raw === 0n) return null
 
     const ONE_E18 = 1000000000000000000n
-    const ONE_E8 = 100000000n
     const scaleShares = 10n ** BigInt(vaultDecimals)
 
     // CORRECTION: Utiliser le facteur de conversion basé sur pxDecimals HYPE normalisé (1e8)

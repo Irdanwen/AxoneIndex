@@ -384,7 +384,7 @@ const Header: React.FC = () => {
             >
               <div className="flex h-full flex-col gap-8 overflow-auto px-6 pb-10 pt-24">
                 <nav>
-                  <ul className="text-lg font-semibold [&>*+*]:mt-2">
+                  <ul className="space-y-2 text-lg font-semibold">
                     {navLinks.map((link) => (
                       <li key={link.href}>
                         <Link
@@ -401,7 +401,7 @@ const Header: React.FC = () => {
                   </ul>
                 </nav>
 
-                <div className="mt-auto [&>*+*]:mt-4">
+                <div className="mt-auto space-y-4">
                   {isConnected ? (
                     <>
                       <button

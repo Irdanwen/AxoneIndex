@@ -65,15 +65,15 @@ export function VaultDashboard({
   ]
 
   return (
-    <div>
-      <header className="flex flex-col gap-2 mb-4 md:mb-6">
+    <div className={isDense ? 'space-y-6' : 'space-y-8'}>
+      <header className="flex flex-col gap-2">
         <h1 className={headerTitleClass}>Tableau de bord</h1>
         <p className={headerDescriptionClass}>
           Vue d&apos;ensemble synthétique de vos positions et performances
         </p>
       </header>
 
-      <div className={`grid sm:grid-cols-2 lg:grid-cols-3 ${isDense ? 'gap-3' : 'gap-4'}`}>
+      <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 ${isDense ? 'gap-3' : 'gap-4'}`}>
         {stats.map(({ label, value, helper, icon: Icon }) => (
           <Card key={label} className="vault-surface border border-vault shadow-vault-sm">
             <CardContent className={`flex items-center gap-4 ${cardPadding}`}>

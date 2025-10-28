@@ -44,7 +44,7 @@ export default function VaultsPage() {
     return () => { cancelled = true }
   }, [])
 
-  const handleInfo = (vaultId: string) => {
+  const handleInfo = (_vaultId: string) => {
     // Informations détaillées du vault disponibles via la page dédiée
   }
 

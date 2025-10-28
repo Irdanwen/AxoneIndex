@@ -63,6 +63,16 @@ export default function ReferralManagement() {
 
   // Gestionnaires d'actions
   const handleCreateCode = () => {
+    console.log('handleCreateCode appelé')
+    console.log('isConnected:', isConnected)
+    console.log('chainId:', chainId)
+    console.log('HYPEREVM_CHAIN_ID:', HYPEREVM_CHAIN_ID)
+    console.log('address:', address)
+    console.log('isWhitelisted:', isWhitelisted)
+    console.log('hasReferrer:', hasReferrer)
+
+    console.log('isCreatingCodePending:', isCreatingCodePending)
+    
     if (!isConnected) {
       setError('Veuillez vous connecter à votre wallet')
       return
@@ -84,10 +94,13 @@ export default function ReferralManagement() {
     }
 
 
+
     if (isCreatingCodePending) {
+      console.log('Transaction en cours...')
       return
     }
 
+    console.log('Appel de writeContract pour createCode()...')
     try {
       writeContract({
         address: REFERRAL_REGISTRY_ADDRESS as `0x${string}`,
@@ -95,7 +108,8 @@ export default function ReferralManagement() {
         functionName: 'createCode',
         args: [], // Version sans arguments qui génère automatiquement un code
       }, {
-        onSuccess: (data) => {
+        onSuccess: () => {
+          console.log('Code créé avec succès')
           setSuccess('Code de parrainage créé avec succès !')
           setError('')
           setIsLoading(true)
@@ -107,11 +121,13 @@ export default function ReferralManagement() {
           }, 2000)
         },
         onError: (error) => {
+          console.error('Erreur création code:', error)
           setError(`Erreur lors de la création: ${error.message}`)
           setSuccess('')
         }
       })
     } catch (error) {
+      console.error('Erreur lors de l\'appel writeContract:', error)
       setError(`Erreur lors de l'appel: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     }
   }
@@ -196,7 +212,7 @@ export default function ReferralManagement() {
       {/* Section Hero avec tous les éléments */}
       <section className="hero-gradient min-h-screen flex items-center relative overflow-hidden">
         <div className="container-custom relative z-10">
-          <div className="text-center [&>*+*]:mt-12">
+          <div className="text-center space-y-12">
             {/* Titre et sous-titre */}
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
@@ -282,7 +298,7 @@ export default function ReferralManagement() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8 }}
-              className="[&>*+*]:mt-6"
+              className="space-y-6"
             >
               <h2 className="text-2xl font-bold text-white-pure mb-6 text-center">Vos codes de parrainage</h2>
               
@@ -309,8 +325,8 @@ export default function ReferralManagement() {
                       <span className="font-mono bg-axone-dark-light px-3 py-1 rounded break-all text-white-pure mb-4">
                         {code}
                       </span>
-              <div className="flex gap-2">
-                <button 
+                      <div className="flex gap-2">
+                        <button 
                           onClick={() => {
                             navigator.clipboard.writeText(code)
                             setCopiedCode(code)
@@ -320,7 +336,7 @@ export default function ReferralManagement() {
                         >
                           {copiedCode === code ? 'Copié !' : 'Copier'}
                         </button>
-                <button 
+                        <button 
                           onClick={() => {
                             setError('Cette fonction nécessite les droits administrateur')
                           }}

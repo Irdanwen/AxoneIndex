@@ -70,7 +70,7 @@ export function VaultCardSummary({
 
   return (
     <>
-      <Card className="vault-surface border border-vault shadow-vault-sm h-full w-full">
+      <Card className="vault-surface border border-vault shadow-vault-sm h-full max-w-md mx-auto">
         <CardHeader className="pb-0">
           <div className="flex items-start justify-between gap-3">
             <CardTitle className="text-lg font-semibold text-vault-primary">
@@ -94,7 +94,7 @@ export function VaultCardSummary({
           </p>
         </CardHeader>
 
-        <CardContent className="[&>*+*]:mt-4 pt-6">
+        <CardContent className="space-y-4 pt-6">
           <div className="flex items-baseline justify-between">
             <span className="text-sm text-vault-muted">TVL</span>
             <span className="text-2xl font-semibold text-vault-primary">
@@ -289,8 +289,8 @@ export function VaultCardActions({
           </p>
         </CardHeader>
 
-        <CardContent className="[&>*+*]:mt-6 pt-6">
-          <div className="[&>*+*]:mt-2">
+        <CardContent className="space-y-6 pt-6">
+          <div className="space-y-2">
             <label className="text-sm font-medium text-vault-primary" htmlFor={`deposit-${vault.id}`}>
               Dépôt
             </label>
@@ -315,7 +315,7 @@ export function VaultCardActions({
             </button>
           </div>
 
-          <div className="[&>*+*]:mt-2">
+          <div className="space-y-2">
             <label className="text-sm font-medium text-vault-primary" htmlFor={`withdraw-${vault.id}`}>
               Retrait
             </label>

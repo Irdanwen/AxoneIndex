@@ -65,10 +65,10 @@ export default function DocumentationPage() {
               </h2>
               
               <div className="hidden group-hover:block transition-all duration-300 ease-out">
-                <nav className="[&>*+*]:mt-4">
+                <nav className="space-y-4">
                   <div>
                     <div className="text-xs font-semibold tracking-wide text-white-60 mb-2">PROTOCOL CONCEPTS</div>
-                    <div className="[&>*+*]:mt-1">
+                    <div className="space-y-1">
                       <a href="#overview-index" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'overview-index' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🎯 Overview</a>
                       <a href="#rebalancing" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'rebalancing' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>⚖️ Smart Rebalancing</a>
                       <a href="#hypercore" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'hypercore' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🌊 Axone x Hypercore</a>
@@ -78,7 +78,7 @@ export default function DocumentationPage() {
 
                   <div>
                     <div className="text-xs font-semibold tracking-wide text-white-60 mb-2">TOKEN DESIGN</div>
-                    <div className="[&>*+*]:mt-1">
+                    <div className="space-y-1">
                       <a href="#token" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'token' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>⭐ Le Token Axone</a>
                       <a href="#launch" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'launch' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🚀 Lancement</a>
                       <a href="#revenue" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'revenue' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>💠 Revenue</a>
@@ -91,7 +91,7 @@ export default function DocumentationPage() {
 
                   <div>
                     <div className="text-xs font-semibold tracking-wide text-white-60 mb-2">STRATEGIE DE CROISSANCE</div>
-                    <div className="[&>*+*]:mt-1">
+                    <div className="space-y-1">
                       <a href="#introduction" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'introduction' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🌾 Introduction</a>
                       <a href="#epoch0" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'epoch0' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🌟 Époque 0</a>
                       <a href="#epoch1" className={`nav-link block py-2 px-3 rounded-lg transition-colors ${selectedSection === 'epoch1' ? 'bg-axone-flounce-10' : 'hover:bg-axone-flounce-10'}`}>🌍 Époque 1</a>
@@ -114,17 +114,17 @@ export default function DocumentationPage() {
           
           {/* Contenu principal */}
           <div className="lg:col-span-3">
-            <div>
+            <div className="space-y-0">
               {/* Section Axone */}
               {selectedSection === 'overview' && (
-              <section id="overview" className="scroll-mt-20 px-8 [&>*+*]:mt-8">
+              <section id="overview" className="scroll-mt-20 px-8 space-y-8">
                 <SectionTitle 
                   title="Axone" 
                   subtitle="Comprendre le système AxoneIndex" 
                 />
                 
                 <GlassCard className="p-[2rem] mb-[2rem]">
-                  <div className="[&>*+*]:mt-8 text-white-85 text-lg">
+                  <div className="space-y-8 text-white-85 text-lg">
                     <p>🚀 Bienvenue dans l’univers d’Axone</p>
                     <p>
                       Dans un monde où les opportunités Web3 se multiplient à une vitesse vertigineuse, investir devient à la fois plus prometteur… et plus complexe.
@@ -147,14 +147,14 @@ export default function DocumentationPage() {
               )}
 
               {/* Section Overview */}
-              <section id="overview-index" className={`scroll-mt-20 [&>*+*]:mt-8 ${selectedSection !== 'overview-index' ? 'hidden' : ''}`}>
+              <section id="overview-index" className={`scroll-mt-20 space-y-8 ${selectedSection !== 'overview-index' ? 'hidden' : ''}`}>
                 <SectionTitle 
                   title="🎯 Overview" 
                   subtitle="Axone Index – L’investissement Web3, réinventé" 
                 />
                 
                 <GlassCard className="p-[2rem] mb-[2rem]">
-                  <div className="[&>*+*]:mt-6 text-white-85">
+                  <div className="space-y-6 text-white-85">
                     <h3 className="text-xl font-bold text-axone-accent">🌐 Axone Index – L’investissement Web3, réinventé</h3>
                     <p>
                       L’univers crypto évolue vite, mais investir intelligemment ne devrait pas être un casse-tête.
@@ -169,7 +169,7 @@ export default function DocumentationPage() {
                 </GlassCard>
 
                 <GlassCard className="p-[2rem]">
-                  <div className="[&>*+*]:mt-8 text-white-85">
+                  <div className="space-y-8 text-white-85">
                     <p className="font-semibold">Nos indices vous permettent de :</p>
                     <ul className="list-disc pl-6 space-y-2">
                       <li>Simplifier vos investissements, en un clic.</li>
@@ -187,20 +187,20 @@ export default function DocumentationPage() {
 
               {/* Section Introduction */}
               {selectedSection === 'introduction' && (
-              <section id="introduction" className="scroll-mt-20 [&>*+*]:mt-8">
+              <section id="introduction" className="scroll-mt-20 space-y-8">
                 <SectionTitle 
                   title="🌾 Introduction" 
                   subtitle="Lancement progressif, communautaire"
                 />
                 
                 <GlassCard className="p-[2rem] mb-[2rem]">
-                  <div className="[&>*+*]:mt-8 text-white-85">
+                  <div className="space-y-8 text-white-85">
                     <h3 className="text-xl font-bold text-axone-accent">🌱 Un lancement progressif, pensé pour la communauté</h3>
                     <p>
                       Axone est avant tout un projet communautaire et innovant, conçu pour durer et croître avec son écosystème.
                       Plutôt qu’un lancement unique et précipité, nous avons choisi une approche progressive et inclusive, afin d’aligner au mieux les intérêts de tous les participants.
                     </p>
-                    <div className="[&>*+*]:mt-3">
+                    <div className="space-y-3">
                       <p className="leading-relaxed font-semibold">🔹 Un déploiement en plusieurs époques, chacune jouant un rôle stratégique dans :</p>
                       <ul className="list-disc pl-6 space-y-2">
                         <li>La montée en puissance du protocole, étape par étape.</li>
@@ -222,20 +222,20 @@ export default function DocumentationPage() {
 
               {/* Section Époque 0 */}
               {selectedSection === 'epoch0' && (
-              <section id="epoch0" className="scroll-mt-20 [&>*+*]:mt-8">
+              <section id="epoch0" className="scroll-mt-20 space-y-8">
                 <SectionTitle 
                   title="🌟 Époque 0" 
                   subtitle="Les premiers bâtisseurs d’Axone"
                 />
                 
                 <GlassCard className="p-[2rem] mb-[2rem]">
-                  <div className="[&>*+*]:mt-8 text-white-85">
+                  <div className="space-y-8 text-white-85">
                     <h3 className="text-xl font-bold text-axone-accent">🌟 Époque 0 – Les premiers bâtisseurs d’Axone</h3>
                     <p>
                       L’Époque 0 marque les premiers pas d’Axone, une phase pionnière où chaque membre de la communauté joue un rôle clé dans la construction du protocole.
                       C’est le moment où le soutien des premiers utilisateurs a le plus d’impact et de valeur, posant les bases de tout ce qui suivra.
                     </p>
-                    <div className="[&>*+*]:mt-3">
+                    <div className="space-y-3">
                       <p className="leading-relaxed font-semibold">🚀 Stratégie de l’Époque 0 :</p>
                       <ul className="list-disc pl-6 space-y-2">
                         <li>Accès exclusif à la plateforme via invitation et code de parrainage.</li>
@@ -259,20 +259,20 @@ export default function DocumentationPage() {
 
               {/* Section Époque 1 */}
               {selectedSection === 'epoch1' && (
-              <section id="epoch1" className="scroll-mt-20 [&>*+*]:mt-8">
+              <section id="epoch1" className="scroll-mt-20 space-y-8">
                 <SectionTitle 
                   title="🌍 Époque 1" 
                   subtitle="L’ouverture d’Axone au monde"
                 />
                 
                 <GlassCard className="p-[2rem] mb-[2rem]">
-                  <div className="[&>*+*]:mt-8 text-white-85">
+                  <div className="space-y-8 text-white-85">
                     <h3 className="text-xl font-bold text-axone-accent">🌍 Époque 1 – L’ouverture d’Axone au monde</h3>
                     <p>
                       L’Époque 1 marque une étape clé dans l’histoire d’Axone : la fin de la phase confidentielle et l’entrée dans une ère d’expansion ouverte et transparente.
                       C’est le moment où la communauté s’agrandit, la réputation se forge, et où Axone s’affirme comme un acteur incontournable de l’investissement Web3.
                     </p>
-                    <div className="[&>*+*]:mt-3">
+                    <div className="space-y-3">
                       <p className="leading-relaxed font-semibold">🚀 Stratégie de l’Époque 1 :</p>
                       <ul className="list-disc pl-6 space-y-2">
                         <li>Ouverture complète de la plateforme, accessible à tous les utilisateurs sans restriction.</li>
@@ -302,7 +302,7 @@ export default function DocumentationPage() {
                 />
                 
                 <GlassCard className="p-[2rem] mb-[2rem]">
-                  <div className="[&>*+*]:mt-6 text-white-85">
+                  <div className="space-y-6 text-white-85">
                     <h3 className="text-xl font-bold text-axone-accent">🚀 Époque 2 – L’accomplissement de la vision Axone</h3>
                     <p>
                       L’Époque 2 marque le moment décisif où Axone passe du stade de la promesse à celui de la pleine réalisation de son potentiel.
@@ -334,14 +334,14 @@ export default function DocumentationPage() {
 
               {/* Section Smart Rebalancing */}
               {selectedSection === 'rebalancing' && (
-              <section id="rebalancing" className="scroll-mt-20 [&>*+*]:mt-8">
+              <section id="rebalancing" className="scroll-mt-20 space-y-8">
                 <SectionTitle 
                   title="⚖️ Smart Rebalancing" 
                   subtitle="Rééquilibrage automatique et dynamique" 
                 />
                 
                 <GlassCard className="p-[2rem] mb-[2rem]">
-                  <div className="[&>*+*]:mt-8 text-white-85">
+                  <div className="space-y-8 text-white-85">
                     <h3 className="text-xl font-bold text-axone-accent">⚡ Smart Rebalancing – L’intelligence derrière nos Index</h3>
                     <p>
                       Les marchés crypto évoluent vite, et vos investissements doivent suivre le rythme.
@@ -370,7 +370,7 @@ export default function DocumentationPage() {
 
               {/* Section Axone x Hypercore */}
               {selectedSection === 'hypercore' && (
-              <section id="hypercore" className="scroll-mt-20 [&>*+*]:mt-8">
+              <section id="hypercore" className="scroll-mt-20 space-y-8">
                 <SectionTitle 
                   title="🌊 Axone x Hypercore" 
                   subtitle="Liquidité native via Hyperliquid Hypercore" 
