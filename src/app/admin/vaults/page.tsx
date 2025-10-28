@@ -6,8 +6,10 @@ import { useVaultConfig } from '@/hooks/useVaultConfig'
 import { getDefaultConfig, type VaultUiConfig } from '@/lib/vaultConfig'
 import { Button, Input, Label, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui'
 import { AlertCircle, CheckCircle2, Save, RefreshCw } from 'lucide-react'
+import { useChainId } from 'wagmi'
 
 export default function AdminVaultsPage() {
+  const chainId = useChainId()
   const { config, updateConfig, resetConfig, isConfigured } = useVaultConfig()
   const [formData, setFormData] = useState<VaultUiConfig>({
     chainId: 998,
@@ -99,6 +101,13 @@ export default function AdminVaultsPage() {
 
   return (
     <div className="container mx-auto py-8 max-w-4xl">
+      {chainId !== 998 && (
+        <div className="mb-6 rounded-xl border border-[var(--border-muted)] bg-[var(--surface)] p-4">
+          <p className="text-sm text-[var(--text-secondary)]">
+            Vous n’êtes pas connecté au réseau HyperEVM Testnet (998). La configuration doit être effectuée sur le bon réseau.
+          </p>
+        </div>
+      )}
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">Configuration des Vaults</CardTitle>

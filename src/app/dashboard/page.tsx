@@ -5,13 +5,14 @@ import { formatNumber, truncateAddress } from '@/lib/format'
 import { Card, CardContent, Button, Skeleton } from '@/components/ui'
 import { AlertCircle, Wallet, Database, Globe } from 'lucide-react'
 import Link from 'next/link'
-import { useAccount } from 'wagmi'
+import { useAccount, useChainId } from 'wagmi'
 import { DashboardKpi } from '@/components/dashboard/DashboardKpi'
 import { CoreBalancesTable } from '@/components/dashboard/CoreBalancesTable'
 
 export default function DashboardPage() {
   const { data, isLoading, isError, error, isConfigured, address } = useDashboardData()
   const { isConnected } = useAccount()
+  const chainId = useChainId()
 
   // Si pas de wallet connecté
   if (!isConnected) {
@@ -83,16 +84,23 @@ export default function DashboardPage() {
 
   return (
     <div className="container-custom py-8">
+      {chainId !== 998 && (
+        <div className="mb-6 rounded-xl border border-[var(--border-muted)] bg-[var(--surface)] p-4">
+          <p className="text-sm text-[var(--text-secondary)]">
+            Vous n’êtes pas connecté au réseau HyperEVM Testnet (998). Certaines données peuvent être indisponibles.
+          </p>
+        </div>
+      )}
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        <aside className="space-y-6">
+        <aside className="[&>*+*]:mt-6">
           <section className="rounded-2xl border border-[var(--border-muted)] bg-[var(--surface)] p-6 shadow-sm">
-            <div className="space-y-2">
+            <div className="[&>*+*]:mt-2">
               <h1 className="text-2xl font-semibold text-foreground">STRATEGY_1</h1>
               <p className="text-sm text-[var(--text-secondary)]">
                 Dashboard opérationnel du vault STRATEGY_1.
               </p>
             </div>
-            <div className="mt-6 space-y-1">
+            <div className="mt-6 [&>*+*]:mt-1">
               <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
                 Adresse connectée
               </p>
@@ -107,7 +115,7 @@ export default function DashboardPage() {
               <Wallet className="h-4 w-4" />
               Compte
             </div>
-            <div className="mt-6 space-y-2">
+            <div className="mt-6 [&>*+*]:mt-2">
               <p className="text-sm font-medium text-[var(--text-secondary)]">Balance HYPE</p>
               <div className="text-3xl font-semibold text-foreground">
                 {isLoading ? (
@@ -123,7 +131,7 @@ export default function DashboardPage() {
           </section>
         </aside>
 
-        <main className="space-y-6">
+        <main className="[&>*+*]:mt-6">
           <section className="rounded-2xl border border-[var(--border-muted)] bg-[var(--surface)] p-6 shadow-sm">
             <header className="flex flex-col gap-2 border-b border-[var(--border-muted)] pb-4">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">

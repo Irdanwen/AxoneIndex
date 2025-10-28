@@ -12,9 +12,10 @@ import { AlertCircle, Loader2, Wallet } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/components/ui/use-toast'
 
-// Mapping des décimales des prix oracle par actif
-// La fonction smart contract oraclePxHype1e8() normalise déjà le prix vers 1e8
-// HYPE : conversion de 1e6 → 1e8 (multiplie par 100)
+// Conversions décimales HYPE 1e18 ↔ prix oracle 1e8
+// oraclePxHype1e8() renvoie un prix USD en 1e8 (ex: 50 USD => 500000000)
+// Conversion vers USD 1e18: usd1e18 = (hype1e18 * px1e8) / 1e8
+// Conversion inverse: hype1e18 = (usd1e18 * 1e8) / px1e8
 const PX_DECIMALS = {
   hype: 8,  // HYPE prix normalisé en 1e8 (ex: 500000000 = 50 USD)
 } as const
@@ -120,12 +121,21 @@ export default function VaultPage() {
 
     // Le vault HYPE50 utilise deposit() payable en HYPE natif (1e18)
     const value = parseUnits(depositAmount, hypeNative?.decimals ?? 18)
-    writeContract({
-      ...vaultContract(config.vaultAddress),
-      functionName: 'deposit',
-      args: [],
-      value,
-    })
+    try {
+      writeContract({
+        ...vaultContract(config.vaultAddress),
+        functionName: 'deposit',
+        args: [],
+        value,
+      })
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Erreur inconnue'
+      let description = 'La transaction a échoué.'
+      if (message.includes('User rejected')) description = 'Transaction rejetée par l’utilisateur.'
+      if (message.includes('insufficient funds')) description = 'Fonds insuffisants pour les frais.'
+      if (message.includes('chain mismatch') || message.includes('wrong network')) description = 'Mauvais réseau, passez sur HyperEVM.'
+      toast({ title: 'Échec du dépôt', description, variant: 'destructive' })
+    }
   }
 
   const handleWithdraw = () => {
@@ -133,11 +143,20 @@ export default function VaultPage() {
 
     // Le vault utilise withdraw(uint256 shares)
     const shares = parseUnits(withdrawAmount, vaultDecimals)
-    writeContract({
-      ...vaultContract(config.vaultAddress),
-      functionName: 'withdraw',
-      args: [shares],
-    })
+    try {
+      writeContract({
+        ...vaultContract(config.vaultAddress),
+        functionName: 'withdraw',
+        args: [shares],
+      })
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Erreur inconnue'
+      let description = 'La transaction a échoué.'
+      if (message.includes('User rejected')) description = 'Transaction rejetée par l’utilisateur.'
+      if (message.includes('insufficient funds')) description = 'Fonds insuffisants pour les frais.'
+      if (message.includes('chain mismatch') || message.includes('wrong network')) description = 'Mauvais réseau, passez sur HyperEVM.'
+      toast({ title: 'Échec du retrait', description, variant: 'destructive' })
+    }
   }
 
   // Estimation dépôt: shares attendues
@@ -286,7 +305,7 @@ export default function VaultPage() {
       {/* Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {/* Deposit */}
-        <Card className="max-w-md mx-auto">
+        <Card className="w-full">
           <CardHeader>
             <CardTitle>Déposer HYPE (natif)</CardTitle>
             <CardDescription>
@@ -335,7 +354,7 @@ export default function VaultPage() {
         </Card>
 
         {/* Withdraw */}
-        <Card className="max-w-md mx-auto">
+        <Card className="w-full">
           <CardHeader>
             <CardTitle>Retirer du Vault</CardTitle>
             <CardDescription>

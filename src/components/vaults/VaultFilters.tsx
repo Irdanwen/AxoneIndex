@@ -15,6 +15,7 @@ import {
   Search
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui'
 
 interface VaultFiltersProps {
   vaults: Vault[]
@@ -164,19 +165,23 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
 
         {/* Sort controls */}
         <div className="flex gap-2">
-          {/* Sort by */}
-          <div className="relative">
-            <button className="px-4 py-3 bg-vault-card border border-vault rounded-lg text-vault-primary flex items-center gap-2 hover:border-vault-strong transition-colors">
-              {sortOptions.find(o => o.value === sortBy)?.icon}
-              <span className="text-sm">Trier: {sortOptions.find(o => o.value === sortBy)?.label}</span>
-              <ChevronDown className="w-4 h-4" />
-            </button>
-          </div>
+          {/* Sort by dropdown */}
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'tvl' | 'performance' | 'risk')}>
+            <SelectTrigger className="w-[200px] bg-vault-card border border-vault text-vault-primary">
+              <SelectValue placeholder="Trier par" />
+            </SelectTrigger>
+            <SelectContent>
+              {sortOptions.map(o => (
+                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           {/* Sort order */}
-          <button
+          <Button
             onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-            className="px-3 py-3 bg-vault-card border border-vault rounded-lg text-vault-primary hover:border-vault-strong transition-colors"
+            variant="outline"
+            className="px-3 py-3 border-vault text-vault-primary hover:bg-vault-card"
             aria-label={`Tri ${sortOrder === 'desc' ? 'décroissant' : 'croissant'}`}
           >
             {sortOrder === 'desc' ? (
@@ -184,21 +189,20 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
             ) : (
               <TrendingUp className="w-5 h-5" />
             )}
-          </button>
+          </Button>
 
           {/* Toggle filters */}
-          <button
+          <Button
             onClick={() => setShowFilters(!showFilters)}
-            className={`px-4 py-3 bg-vault-card border rounded-lg flex items-center gap-2 transition-colors ${
-              showFilters ? 'border-vault-brand text-vault-brand' : 'border-vault text-vault-primary hover:border-vault-strong'
-            }`}
+            variant={showFilters ? 'default' : 'outline'}
+            className={`px-4 py-3 ${showFilters ? 'bg-vault-brand text-black border-vault-brand' : 'border-vault text-vault-primary hover:bg-vault-card'}`}
           >
             <Filter className="w-5 h-5" />
-            <span className="text-sm">Filtres</span>
+            <span className="text-sm ml-2">Filtres</span>
             {hasActiveFilters && (
-              <span className="w-2 h-2 rounded-full bg-vault-brand" />
+              <span className="ml-2 w-2 h-2 rounded-full bg-vault-brand" />
             )}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -216,16 +220,13 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
               <div className="space-y-4">
               {/* Quick filters */}
               <div className="flex flex-wrap gap-2">
-                <button
+                <Button
                   onClick={() => setShowUserVaults(!showUserVaults)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    showUserVaults 
-                      ? 'bg-vault-brand text-black' 
-                      : 'bg-vault-muted text-vault-primary hover:bg-vault-muted/80'
-                  }`}
+                  variant={showUserVaults ? 'default' : 'outline'}
+                  className={`${showUserVaults ? 'bg-vault-brand text-black border-vault-brand' : 'border-vault text-vault-primary hover:bg-vault-card'}`}
                 >
                   Mes vaults
-                </button>
+                </Button>
               </div>
 
               {/* Status filter */}
@@ -233,17 +234,14 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
                 <p className="text-xs text-vault-muted mb-2">Statut</p>
                 <div className="flex flex-wrap gap-2">
                   {statusOptions.map(option => (
-                    <button
+                    <Button
                       key={option.value}
                       onClick={() => setSelectedStatus(option.value as 'all' | 'open' | 'closed' | 'paused')}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                        selectedStatus === option.value
-                          ? 'bg-vault-brand text-black'
-                          : `bg-vault-muted text-vault-primary hover:bg-vault-muted/80 ${option.color || ''}`
-                      }`}
+                      variant={selectedStatus === option.value ? 'default' : 'outline'}
+                      className={`${selectedStatus === option.value ? 'bg-vault-brand text-black border-vault-brand' : 'border-vault text-vault-primary hover:bg-vault-card'} ${option.color || ''}`}
                     >
                       {option.label}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -253,18 +251,15 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
                 <p className="text-xs text-vault-muted mb-2">Niveau de risque</p>
                 <div className="flex flex-wrap gap-2">
                   {riskOptions.map(option => (
-                    <button
+                    <Button
                       key={option.value}
                       onClick={() => setSelectedRisk(option.value as 'all' | 'low' | 'medium' | 'high')}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
-                        selectedRisk === option.value
-                          ? 'bg-vault-brand text-black'
-                          : `bg-vault-muted text-vault-primary hover:bg-vault-muted/80 ${option.color || ''}`
-                      }`}
+                      variant={selectedRisk === option.value ? 'default' : 'outline'}
+                      className={`${selectedRisk === option.value ? 'bg-vault-brand text-black border-vault-brand' : 'border-vault text-vault-primary hover:bg-vault-card'} flex items-center gap-1 ${option.color || ''}`}
                     >
                       {option.icon}
                       {option.label}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -275,17 +270,14 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
                   <p className="text-xs text-vault-muted mb-2">Tokens</p>
                   <div className="flex flex-wrap gap-2">
                     {availableTokens.map(token => (
-                      <button
+                      <Button
                         key={token}
                         onClick={() => toggleToken(token)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                          selectedTokens.includes(token)
-                            ? 'bg-vault-brand text-black'
-                            : 'bg-vault-muted text-vault-primary hover:bg-vault-muted/80'
-                        }`}
+                        variant={selectedTokens.includes(token) ? 'default' : 'outline'}
+                        className={`${selectedTokens.includes(token) ? 'bg-vault-brand text-black border-vault-brand' : 'border-vault text-vault-primary hover:bg-vault-card'}`}
                       >
                         {token}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
@@ -293,13 +285,14 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
 
               {/* Clear filters */}
               {hasActiveFilters && (
-                <button
+                <Button
                   onClick={clearFilters}
-                  className="px-3 py-1.5 bg-red-500/10 text-red-400 rounded-lg text-sm font-medium hover:bg-red-500/20 transition-colors flex items-center gap-1"
+                  variant="destructive"
+                  className="text-sm font-medium flex items-center gap-1"
                 >
                   <X className="w-4 h-4" />
                   Réinitialiser les filtres
-                </button>
+                </Button>
               )}
               </div>
             </div>

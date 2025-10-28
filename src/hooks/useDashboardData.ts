@@ -6,10 +6,13 @@ import { l1readContract } from '@/contracts/l1read'
 import { coreInteractionHandlerContract } from '@/contracts/coreInteractionHandler'
 import { formatUnitsSafe, formatCoreBalance } from '@/lib/format'
 
-// Mapping des décimales des prix oracle par actif
-// Les fonctions smart contract oraclePxHype1e8() et oraclePxBtc1e8() normalisent déjà les prix vers 1e8
-// BTC : conversion de 1e3 → 1e8 (multiplie par 100000)
-// HYPE : conversion de 1e6 → 1e8 (multiplie par 100)
+// Conversions de décimales Hyperliquid ↔ EVM
+// Les oracles oraclePxHype1e8()/oraclePxBtc1e8() renvoient un prix normalisé en 1e8 (USD 1e8)
+// - BTC: ex. 4500000000 = 45000 USD
+// - HYPE: ex. 500000000 = 50 USD
+// Pour convertir vers USD 1e18, on monte d'un facteur 1e10 si nécessaire
+// Pour convertir un montant HYPE 1e18 en USD 1e18: usd1e18 = (hype1e18 * px1e8) / 1e8
+// Pour convertir USD 1e18 en HYPE 1e18: hype1e18 = (usd1e18 * 1e8) / px1e8
 const PX_DECIMALS = {
   btc: 8,   // BTC prix normalisé en 1e8 (ex: 4500000000 = 45000 USD)
   hype: 8,  // HYPE prix normalisé en 1e8 (ex: 500000000 = 50 USD)
