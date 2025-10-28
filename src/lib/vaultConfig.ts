@@ -71,3 +71,29 @@ export function clearConfig(): void {
     localStorage.removeItem(CONFIG_KEY)
   }
 }
+
+/**
+ * Configuration utilisable côté serveur (API routes)
+ * Utilise les variables d'environnement ou retourne des valeurs par défaut
+ */
+export function getConfigForApi(): Partial<VaultUiConfig> {
+  const envConfig: Partial<VaultUiConfig> = {
+    chainId: 998, // HyperEVM Testnet
+    usdcAddress: process.env.NEXT_PUBLIC_USDC_ADDRESS as `0x${string}` | undefined,
+    vaultAddress: process.env.NEXT_PUBLIC_VAULT_ADDRESS as `0x${string}` | undefined,
+    handlerAddress: process.env.NEXT_PUBLIC_HANDLER_ADDRESS as `0x${string}` | undefined,
+    l1ReadAddress: process.env.NEXT_PUBLIC_L1_READ_ADDRESS as `0x${string}` | undefined,
+  }
+
+  // Si les adresses sont définies dans l'env, utiliser la config complète
+  if (validateConfig(envConfig)) {
+    return envConfig
+  }
+
+  // Sinon retourner les valeurs par défaut
+  return {
+    ...DEFAULT_CONFIG,
+    vaultAddress: process.env.NEXT_PUBLIC_VAULT_ADDRESS as `0x${string}` | undefined,
+    handlerAddress: process.env.NEXT_PUBLIC_HANDLER_ADDRESS as `0x${string}` | undefined,
+  }
+}
