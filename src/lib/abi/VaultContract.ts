@@ -141,7 +141,7 @@ export const vaultContractAbiExtended = [
     type: 'function',
     name: 'getWithdrawFeeBpsForAmount',
     stateMutability: 'view',
-    inputs: [{ name: 'amount1e8', type: 'uint256' }],
+    inputs: [{ name: 'amount1e18', type: 'uint256' }],
     outputs: [{ name: '', type: 'uint16' }]
   }
 ] as const
