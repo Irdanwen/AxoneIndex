@@ -19,6 +19,7 @@
 - **🔒 SÉCURITÉ RENFORCÉE** : **Rate limiting basé sur les blocs** - Utilisation de `block.number` pour les époques au lieu de timestamps manipulables
 - **🐛 CORRECTION CRITIQUE** : **Migration vers ordres SPOT** — Les ordres de rééquilibrage et de dépôt utilisent désormais un encodage SPOT dédié (`encodeSpotLimitOrder`) avec TIF=IOC. Les tailles sont converties selon `szDecimals` via `toSzInSzDecimals()`.
 - **💰 CORRECTION AUDIT** : **Valorisation correcte des soldes spot** - Implémentation de `spotBalanceInWei()` pour convertir les balances de `szDecimals` vers `weiDecimals` avant calcul de la valeur USD. Correction appliquée dans `equitySpotUsd1e18()` et `_computeRebalanceDeltas()` pour éviter la surévaluation/sous-évaluation des actifs.
+ - **🐛 CORRECTION CRITIQUE (tailles d'ordre ×100)** : **Conversion USD → taille en `szDecimals`** — `toSzInSzDecimals()` divise désormais par `price1e8 * 1e10` (et non `price1e8 * 1e8`). Cela corrige un facteur ×100 sur les tailles d’ordres qui pouvait empêcher l’exécution (ex: vente HYPE initiale lors d’un dépôt natif).
 
 ### 🔄 Mécanisme de Rattrapage Graduel Oracle
 
@@ -145,6 +146,24 @@ Le contrat gère deux types de décimales pour les tokens HyperLiquid :
 
 ```solidity
 balanceInWei = balanceSz × 10^(weiDecimals - szDecimals)
+```
+
+### 🔢 Formule `toSzInSzDecimals` (USD1e18 → taille en `szDecimals`)
+
+Pour convertir un notional USD en 1e18 vers une taille base exprimée en `szDecimals` du token spot (avec prix normalisé en 1e8):
+
+```solidity
+// tailleBase(szDecimals) = (USD1e18 / px1e8) * 10^(szDecimals-8)
+// = USD1e18 * 10^szDecimals / (px1e8 * 1e10)
+uint256 numerator = usd1e18 * 10**szDecimals;
+uint256 denom = price1e8 * 1e10; // CORRECT
+uint256 sizeSz = numerator / denom;
+```
+
+Ancienne formule incorrecte (ajoutait un facteur ×100 sur la taille, à éviter):
+
+```solidity
+// ❌ denom = price1e8 * 1e8  // trop petit → tailles ×100
 ```
 
 ### 📊 Cas d'Usage

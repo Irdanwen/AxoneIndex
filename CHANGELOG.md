@@ -1,5 +1,20 @@
 # Changelog
 
+## 2025-10-29
+
+### Fixed
+- CoreInteractionHandler: correction critique de `toSzInSzDecimals` (USD1e18 → taille `szDecimals`)
+  - Dénominateur passe de `price1e8 * 1e8` à `price1e8 * 1e10` (résolvant un facteur ×100 sur les tailles d’ordre)
+  - Impact: vente HYPE initiale sur dépôt natif et achats 50/50 désormais dimensionnés correctement
+
+### Added
+- Tests: dépôt HYPE (0.5) vérifiant vente puis achats 50/50 non nuls et plausibles
+- Tests: `Rebalancer50Lib` deadband (0,5%) annule les petits écarts
+
+### Docs
+- `docs/contracts/CoreInteractionHandler.md`: ajout formule correcte `toSzInSzDecimals` et note de correction
+- `docs/AUDIT_CORRECTION_TOSZE8.md`: erratum pour `toSzInSzDecimals` (facteur ×100)
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),

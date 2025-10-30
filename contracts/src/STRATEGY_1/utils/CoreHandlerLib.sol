@@ -166,7 +166,8 @@ library CoreHandlerLib {
         // tailleBase(szDecimals) = (USD1e18 / px1e8) * 10^(szDecimals-8)
         // = absUsd * 10^(szDecimals) / 10^8 / px1e8
         uint256 numerator = absUsd * (10 ** uint256(info.szDecimals));
-        uint256 denom = uint256(price1e8) * 1e8;
+        // Corrige facteur: USD1e18 / px1e8 requiert division par 1e10 supplémentaire
+        uint256 denom = uint256(price1e8) * 1e10;
         uint256 s = numerator / denom;
         if (s > type(uint64).max) return type(uint64).max;
         return SafeCast.toUint64(s);

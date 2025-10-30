@@ -5,6 +5,10 @@
 **Sévérité**: 🔴 **CRITIQUE**  
 **Status**: ✅ **CORRIGÉ**
 
+> Erratum (Important) — toSzInSzDecimals (facteur ×100)
+>
+> Au cours de la vérification, un problème distinct et plus critique a été identifié dans `toSzInSzDecimals` (conversion USD1e18 → taille en `szDecimals` avec prix en 1e8). Le dénominateur utilisait `price1e8 * 1e8` au lieu de `price1e8 * 1e10`, gonflant les tailles d’ordres d’un facteur ×100 (ex: vente HYPE initiale lors d’un dépôt natif). La fonction a été corrigée pour diviser par `price1e8 * 1e10`. Des tests ont été ajoutés pour couvrir ce chemin.
+
 ---
 
 ## 📋 Résumé Exécutif
