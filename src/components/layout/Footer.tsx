@@ -28,7 +28,7 @@ interface FooterLink {
 const Footer: React.FC = () => {
   const footerLinks: Record<string, FooterLink[]> = {
     Produits: [
-      { label: 'Vaults', href: '/vaults', icon: Shield },
+      { label: 'Market', href: '/market', icon: Shield },
       { label: 'Dashboard', href: '/dashboard', icon: FileText },
       { label: 'Parrainage', href: '/referral', icon: Users },
       { label: 'Documentation', href: '/documentation', icon: FileText },
@@ -162,7 +162,7 @@ const Footer: React.FC = () => {
                   className="group"
                   asChild
                 >
-                  <Link href="/vaults">
+                  <Link href="/market">
                     <Rocket className="w-5 h-5 group-hover:animate-bounce" />
                     <span>COMMENCER MAINTENANT</span>
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

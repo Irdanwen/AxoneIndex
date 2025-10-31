@@ -3,7 +3,7 @@ import { getConfigForApi } from '@/lib/vaultConfig'
 import { fetchVaultData } from '@/lib/vaultData'
 
 /**
- * API pour récupérer la liste des vaults avec leurs données blockchain
+ * API pour récupérer la liste des vaults pour le market avec leurs données blockchain
  */
 export default async function handler(_req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -55,7 +55,7 @@ export default async function handler(_req: NextApiRequest, res: NextApiResponse
     
     res.status(200).json(vaults)
   } catch (error) {
-    console.error('Error in /api/vaults:', error)
+    console.error('Error in /api/market:', error)
     res.status(500).json({ error: 'Failed to fetch vault data' })
   }
 }

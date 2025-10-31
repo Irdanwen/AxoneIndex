@@ -33,7 +33,7 @@ AxoneIndex est une plateforme DeFi construite sur HyperEVM (Hyperliquid). Elle c
 +-----------------------+            +----------------------------+
 |  Interface Web        |            |  Providers & Intégrations  |
 |  Next.js (src/app)    |            |  (src/components/providers) |
-|  Pages: /vaults,      |            |  - WagmiProvider           |
+|  Pages: /market,      |            |  - WagmiProvider           |
 |  /referral, /admin    |            |  - ThemeProvider           |
 +----------+------------+            +--------------+-------------+
            |                                        |

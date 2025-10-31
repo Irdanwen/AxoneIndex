@@ -144,7 +144,7 @@ const Hero: React.FC = () => {
                 className="min-w-[200px] group"
                 asChild
               >
-                <Link href="/vaults">
+                <Link href="/market">
                   <Rocket className="w-5 h-5 group-hover:animate-bounce" />
                   <span>LAUNCH APP</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

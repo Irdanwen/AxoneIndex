@@ -11,7 +11,7 @@ import { Loader2 } from 'lucide-react'
 import { useChainId } from 'wagmi'
 import GlassCard from '@/components/ui/GlassCard'
 
-export default function VaultsPage() {
+export default function MarketPage() {
   const chainId = useChainId()
   const [vaults, setVaults] = useState<Vault[]>([])
   const [filteredVaults, setFilteredVaults] = useState<Vault[]>([])
@@ -29,7 +29,7 @@ export default function VaultsPage() {
     let cancelled = false
     ;(async () => {
       try {
-        const res = await fetch('/api/vaults')
+        const res = await fetch('/api/market')
         const data: Vault[] = await res.json()
         if (!cancelled) {
           setVaults(data)
@@ -50,14 +50,14 @@ export default function VaultsPage() {
 
   return (
     <main className="min-h-screen bg-axone-dark">
-      <section className="vaults-shell mx-auto w-full max-w-7xl px-6 py-16">
+      <section className="market-shell mx-auto w-full max-w-7xl px-6 py-16">
         <div className="flex flex-col gap-10">
           <header>
             {chainId !== 998 && (
               <div className="mt-4">
                 <GlassCard className="p-4">
                   <p className="text-sm text-white-80">
-                    Vous n’êtes pas connecté au réseau HyperEVM Testnet (998). Veuillez changer de réseau pour interagir avec les vaults.
+                    Vous n’êtes pas connecté au réseau HyperEVM Testnet (998). Veuillez changer de réseau pour interagir avec le market des vaults.
                   </p>
                 </GlassCard>
               </div>
@@ -66,7 +66,7 @@ export default function VaultsPage() {
               Gestion des stratégies
             </span>
             <h1 className="text-4xl font-semibold text-vault-primary mb-2">
-              Vaults disponibles
+              Marché des vaults
             </h1>
             <p className="text-base text-vault-muted">
               Explorez et gérez vos opportunités d&apos;investissement en quelques clics.
