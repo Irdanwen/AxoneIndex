@@ -87,7 +87,7 @@ export default function ManageMarketVaultsPage() {
         <div className="flex flex-col gap-10">
           <header className="space-y-4">
             <Button asChild variant="ghost" size="sm">
-              <Link href="/market" className="inline-flex items-center gap-2">
+              <Link href="/market">
                 <ArrowLeft className="h-4 w-4" /> Retour au market
               </Link>
             </Button>
