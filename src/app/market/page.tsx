@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import Footer from '@/components/layout/Footer'
 import { VaultDashboard } from '@/components/vaults/VaultDashboard'
@@ -10,17 +10,23 @@ import { Vault } from '@/lib/vaultTypes'
 import { Loader2 } from 'lucide-react'
 import { useChainId } from 'wagmi'
 import GlassCard from '@/components/ui/GlassCard'
+import Link from 'next/link'
+import { Button } from '@/components/ui'
+import { loadCustomVaults, CUSTOM_VAULTS_STORAGE_KEY } from '@/lib/customVaultStorage'
 
 export default function MarketPage() {
   const chainId = useChainId()
-  const [vaults, setVaults] = useState<Vault[]>([])
+  const [baseVaults, setBaseVaults] = useState<Vault[]>([])
+  const [customVaults, setCustomVaults] = useState<Vault[]>([])
   const [filteredVaults, setFilteredVaults] = useState<Vault[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  const totalDeposited = vaults.reduce((sum, vault) => sum + vault.userDeposit, 0)
-  const activeVaults = vaults.filter(vault => vault.userDeposit > 0).length
+  const allVaults = useMemo(() => [...baseVaults, ...customVaults], [baseVaults, customVaults])
+
+  const totalDeposited = allVaults.reduce((sum, vault) => sum + vault.userDeposit, 0)
+  const activeVaults = allVaults.filter(vault => vault.userDeposit > 0).length
   const globalYield = activeVaults > 0
-    ? vaults
+    ? allVaults
         .filter(vault => vault.userDeposit > 0)
         .reduce((sum, vault) => sum + vault.performance30d, 0) / activeVaults
     : 0
@@ -32,8 +38,7 @@ export default function MarketPage() {
         const res = await fetch('/api/market')
         const data: Vault[] = await res.json()
         if (!cancelled) {
-          setVaults(data)
-          setFilteredVaults(data)
+          setBaseVaults(data)
         }
       } catch {
         // silent fallback
@@ -43,6 +48,30 @@ export default function MarketPage() {
     })()
     return () => { cancelled = true }
   }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const loadLocalVaults = () => setCustomVaults(loadCustomVaults())
+
+    loadLocalVaults()
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === CUSTOM_VAULTS_STORAGE_KEY) {
+        loadLocalVaults()
+      }
+    }
+
+    window.addEventListener('storage', handleStorage)
+
+    return () => {
+      window.removeEventListener('storage', handleStorage)
+    }
+  }, [])
+
+  useEffect(() => {
+    setFilteredVaults(allVaults)
+  }, [allVaults])
 
   const handleInfo = (_vaultId: string) => {
     // Informations détaillées du vault disponibles via la page dédiée
@@ -71,6 +100,11 @@ export default function MarketPage() {
             <p className="text-base text-vault-muted">
               Explorez et gérez vos opportunités d&apos;investissement en quelques clics.
             </p>
+            <div className="mt-6">
+              <Button asChild size="sm" variant="secondary">
+                <Link href="/market/manage">Configurer mes vaults</Link>
+              </Button>
+            </div>
           </header>
 
           <div className="grid gap-10 lg:grid-cols-[320px_1fr]">
@@ -82,7 +116,7 @@ export default function MarketPage() {
                     Affinez votre sélection selon vos critères.
                   </p>
                 </div>
-                <VaultFilters vaults={vaults} onFilter={setFilteredVaults} />
+                <VaultFilters vaults={allVaults} onFilter={setFilteredVaults} />
               </GlassCard>
             </aside>
 
@@ -91,7 +125,7 @@ export default function MarketPage() {
                 totalDeposited={totalDeposited}
                 globalYield={globalYield}
                 activeVaults={activeVaults}
-                totalVaults={vaults.length}
+                totalVaults={allVaults.length}
                 variant="dense"
               />
 
@@ -123,7 +157,7 @@ export default function MarketPage() {
               {!isLoading && filteredVaults.length > 0 && (
                 <p className="text-sm text-vault-dim">
                   {filteredVaults.length} vault{filteredVaults.length > 1 ? 's' : ''} affiché{filteredVaults.length > 1 ? 's' : ''}
-                  {filteredVaults.length !== vaults.length && ` sur ${vaults.length}`}
+                  {filteredVaults.length !== allVaults.length && ` sur ${allVaults.length}`}
                 </p>
               )}
             </article>

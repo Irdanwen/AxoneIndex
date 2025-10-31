@@ -15,22 +15,28 @@ interface VaultFormProps {
   autoSave?: boolean
 }
 
+const createEmptyVault = (): Vault => ({
+  id: '',
+  name: '',
+  tvl: 0,
+  tokens: [],
+  userDeposit: 0,
+  performance30d: 0,
+  status: 'open',
+  risk: 'low',
+  contractAddress: '',
+  usdcAddress: ''
+})
+
 export function VaultForm({ initialData, onSave, onDelete, onCancel, autoSave }: VaultFormProps) {
-  const [formData, setFormData] = useState<Vault>(initialData || {
-    id: '',
-    name: '',
-    tvl: 0,
-    tokens: [],
-    userDeposit: 0,
-    performance30d: 0,
-    status: 'open',
-    risk: 'low',
-    contractAddress: '',
-    usdcAddress: ''
-  })
+  const [formData, setFormData] = useState<Vault>(initialData ? { ...initialData } : createEmptyVault())
 
   const isFirstRenderRef = useRef(true)
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    setFormData(initialData ? { ...initialData } : createEmptyVault())
+  }, [initialData])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -88,6 +94,20 @@ export function VaultForm({ initialData, onSave, onDelete, onCancel, autoSave }:
 
   return (
     <form onSubmit={handleSubmit} className="border rounded-lg p-6 bg-white dark:bg-gray-800">
+      <div className="mb-6">
+        <Label>Identifiant du Vault</Label>
+        <Input
+          value={formData.id}
+          onChange={(e) => setFormData({ ...formData, id: e.target.value })}
+          required
+          placeholder="axone-strategy-1"
+          className="dark:bg-gray-700 dark:text-white"
+        />
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          Utilisé pour identifier le vault de manière unique sur le market.
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
           <div>
