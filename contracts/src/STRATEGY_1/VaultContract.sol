@@ -9,6 +9,7 @@ interface IHandler {
     function executeDepositHype(bool forceRebalance) external payable;
     function pullHypeFromCoreToEvm(uint64 hype1e8) external returns (uint64);
     function sweepHypeToVault(uint256 amount1e18) external;
+    function feeVault() external view returns (address);
 }
 
 contract VaultContract is ReentrancyGuard {
@@ -54,6 +55,7 @@ contract VaultContract is ReentrancyGuard {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
     event WithdrawFeeTiersSet();
+    event VaultFeePaid(address indexed vault, address indexed feeVault, uint8 kind, uint256 amount1e18);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "not owner");
@@ -147,26 +149,38 @@ contract VaultContract is ReentrancyGuard {
         require(amount1e18 > 0, "amount=0");
         uint256 navPre = nav1e18();
         deposits[msg.sender] += amount1e18;
-        // USD notional for minting
+
+        uint256 feeHype = 0;
+        if (depositFeeBps > 0) {
+            address fv = handler.feeVault();
+            require(fv != address(0), "feeVault");
+            feeHype = (amount1e18 * uint256(depositFeeBps)) / 10000;
+            if (feeHype > 0) {
+                (bool okFee, ) = payable(fv).call{value: feeHype}("");
+                require(okFee, "fee send fail");
+                emit VaultFeePaid(address(this), fv, 1, feeHype);
+            }
+        }
+
+        uint256 netAmount = amount1e18 - feeHype;
+
+        // USD notional for minting (based on net amount)
         uint64 pxH = handler.oraclePxHype1e8();
         require(pxH > 0, "px");
-        uint256 depositUsd1e18 = (amount1e18 * uint256(pxH)) / 1e8;
+        uint256 depositUsd1e18 = (netAmount * uint256(pxH)) / 1e8;
         uint256 sharesMint;
         if (totalSupply == 0) {
             sharesMint = depositUsd1e18; // PPS = 1e18
         } else {
             sharesMint = (depositUsd1e18 * totalSupply) / navPre;
         }
-        if (depositFeeBps > 0) {
-            uint256 fee = (sharesMint * depositFeeBps) / 10000;
-            sharesMint -= fee;
-        }
+
         _mint(msg.sender, sharesMint);
         emit Deposit(msg.sender, amount1e18, sharesMint);
 
         // Auto-deploy a portion to Core via handler (HYPE -> USDC then 50/50)
         if (address(handler) != address(0) && autoDeployBps > 0) {
-            uint256 deployAmt = (uint256(amount1e18) * uint256(autoDeployBps)) / 10000;
+            uint256 deployAmt = (uint256(netAmount) * uint256(autoDeployBps)) / 10000;
             if (deployAmt > 0) {
                 handler.executeDepositHype{value: deployAmt}(true);
             }
@@ -198,6 +212,13 @@ contract VaultContract is ReentrancyGuard {
 
         if (cash >= netHype1e18 && !needsHandlerFunds) {
             _burn(msg.sender, shares);
+            if (feeHype1e18 > 0) {
+                address fv2 = handler.feeVault();
+                require(fv2 != address(0), "feeVault");
+                (bool okFee2, ) = payable(fv2).call{value: feeHype1e18}("");
+                require(okFee2, "fee send fail");
+                emit VaultFeePaid(address(this), fv2, 2, feeHype1e18);
+            }
             (bool ok, ) = payable(msg.sender).call{value: netHype1e18}("");
             require(ok, "native pay fail");
             uint256 base = _getBaseAmountHype(grossHype1e18, deposits[msg.sender]);
@@ -248,6 +269,13 @@ contract VaultContract is ReentrancyGuard {
         
         r.settled = true;
         _burn(r.user, r.shares);
+        if (feeHype1e18_settle > 0) {
+            address fv3 = handler.feeVault();
+            require(fv3 != address(0), "feeVault");
+            (bool okFee3, ) = payable(fv3).call{value: feeHype1e18_settle}("");
+            require(okFee3, "fee send fail");
+            emit VaultFeePaid(address(this), fv3, 3, feeHype1e18_settle);
+        }
         (bool ok2, ) = payable(to).call{value: pay1e18}("");
         require(ok2, "native pay fail");
         uint256 base = _getBaseAmountHype(grossHype1e18, deposits[r.user]);
@@ -268,10 +296,14 @@ contract VaultContract is ReentrancyGuard {
     }
 
     function recallFromCoreAndSweep(uint256 amount1e18) external onlyOwner nonReentrant {
-        uint64 amt1e8 = uint64(amount1e18 / 1e10);
+        require(amount1e18 % 1e10 == 0, "amount not 1e10 multiple");
+        uint256 amt1e8u256 = amount1e18 / 1e10;
+        require(amt1e8u256 <= type(uint64).max, "amount too large");
+        uint64 amt1e8 = uint64(amt1e8u256);
         handler.pullHypeFromCoreToEvm(amt1e8);
-        handler.sweepHypeToVault(uint256(amt1e8) * 1e10);
-        emit RecallAndSweep(amount1e18);
+        uint256 swept1e18 = amt1e8u256 * 1e10;
+        handler.sweepHypeToVault(swept1e18);
+        emit RecallAndSweep(swept1e18);
         emit NavUpdated(nav1e18());
     }
 

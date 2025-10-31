@@ -13,7 +13,7 @@ async function main() {
     
     // Récupération des contrats
     const vault = new ethers.Contract(VAULT_ADDRESS, [
-        "function recallFromCoreAndSweep(uint256 amount1e8) external",
+        "function recallFromCoreAndSweep(uint256 amount1e18) external",
         "function nav1e18() view returns (uint256)",
         "function usdc() view returns (address)",
         "function handler() view returns (address)",
@@ -89,12 +89,14 @@ async function main() {
         console.log(`   3. Appliquer les frais configurés du handler`);
         
         // Pour l'automatisation, on rapatrie tout l'équité
-        const amountToRecall = equity1e8;
+        const amountToRecall1e18 = equity1e8 * ethers.parseUnits("1", 10); // 1e8 -> 1e18
         
-        console.log(`\n🚀 Lancement du rapatriement de ${ethers.formatUnits(amountToRecall, 8)} USDC...`);
+        console.log(`\n🚀 Lancement du rapatriement:`);
+        console.log(`   - Montant (1e8): ${ethers.formatUnits(equity1e8, 8)} USDC`);
+        console.log(`   - Montant (1e18): ${ethers.formatEther(amountToRecall1e18)} USDC`);
         
-        // Exécuter le rapatriement
-        const tx = await vault.recallFromCoreAndSweep(amountToRecall);
+        // Exécuter le rapatriement (contrat exige un multiple de 1e10)
+        const tx = await vault.recallFromCoreAndSweep(amountToRecall1e18);
         console.log(`📝 Transaction soumise: ${tx.hash}`);
         
         const receipt = await tx.wait();

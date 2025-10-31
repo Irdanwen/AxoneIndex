@@ -84,7 +84,7 @@ handler.setMaxOracleDeviationBps(1000);
 - `rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype)` (onlyRebalancer, whenNotPaused): calcule les deltas via l'oracle et place des ordres IOC SPOT pour revenir vers 50/50 (avec deadband).
 - `executeDepositHype(bool forceRebalance)` (payable, onlyVault, whenNotPaused): dépôt HYPE natif (`msg.value`) → envoi natif vers `hypeCoreSystemAddress` → vente 100% en USDC via ordre SPOT IOC → achats ~50% BTC et ~50% HYPE via ordres SPOT IOC. Le rate limit s'applique sur l'équivalent USD (1e8).
 - `pullHypeFromCoreToEvm(uint64 hype1e8)` (onlyVault, whenNotPaused): achète du HYPE si nécessaire puis crédite l'EVM en HYPE.
-- `sweepHypeToVault(uint256 amount1e18)` (onlyVault, whenNotPaused): calcule les frais en HYPE (1e18), puis transfère le net vers le vault.
+- `sweepHypeToVault(uint256 amount1e18)` (onlyVault, whenNotPaused): calcule les frais en HYPE (1e18), envoie le frais à `feeVault`, transfère le net vers le vault.
 
 ## Événements
 - `Rebalanced(int256 dBtc1e18, int256 dHype1e18)`
@@ -112,6 +112,7 @@ Le contrat utilise un système de rate limiting basé sur les **blocs** (et non 
 ## Intégration avec `VaultContract`
 - Les vaults HYPE50 appellent `executeDepositHype{value: deployAmt}(true)` pour auto-déployer la fraction HYPE en 50/50 après conversion en USDC.
 - Les retraits HYPE utilisent `pullHypeFromCoreToEvm()` puis `sweepHypeToVault()` si nécessaire.
+- Cohérence des frais: le `VaultContract` réutilise la même adresse `feeVault` (via `handler.feeVault()`) pour envoyer les frais de dépôt et de retrait. Ainsi, les `sweep` du Handler et les frais du Vault convergent tous vers `feeVault`.
 
 ## Gestion des Décimales (szDecimals vs weiDecimals + pxDecimals)
 
