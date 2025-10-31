@@ -12,7 +12,7 @@ import { useChainId } from 'wagmi'
 import GlassCard from '@/components/ui/GlassCard'
 import Link from 'next/link'
 import { Button } from '@/components/ui'
-import { loadCustomVaults, CUSTOM_VAULTS_STORAGE_KEY } from '@/lib/customVaultStorage'
+import { listCustomVaults } from '@/lib/customVaultService'
 
 export default function MarketPage() {
   const chainId = useChainId()
@@ -50,22 +50,21 @@ export default function MarketPage() {
   }, [])
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    let cancelled = false
 
-    const loadLocalVaults = () => setCustomVaults(loadCustomVaults())
-
-    loadLocalVaults()
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === CUSTOM_VAULTS_STORAGE_KEY) {
-        loadLocalVaults()
+    ;(async () => {
+      try {
+        const data = await listCustomVaults()
+        if (!cancelled) {
+          setCustomVaults(data)
+        }
+      } catch (error) {
+        console.error('Unable to load custom vaults:', error)
       }
-    }
-
-    window.addEventListener('storage', handleStorage)
+    })()
 
     return () => {
-      window.removeEventListener('storage', handleStorage)
+      cancelled = true
     }
   }, [])
 
