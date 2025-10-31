@@ -12,31 +12,31 @@ type GlowButtonGlow = "accent" | "flounce" | "white";
 
 type GlowButtonElement = HTMLButtonElement | HTMLAnchorElement;
 
-interface GlowButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+type GlowButtonCommonProps = {
   children: React.ReactNode;
   variant?: GlowButtonVariant;
   size?: GlowButtonSize;
   glowColor?: GlowButtonGlow;
-  asChild?: boolean;
-}
+  className?: string;
+};
+
+type GlowButtonButtonProps = GlowButtonCommonProps &
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    asChild?: false;
+  };
+
+type GlowButtonSlotProps = GlowButtonCommonProps &
+  React.HTMLAttributes<HTMLElement> & {
+    asChild: true;
+  };
+
+type GlowButtonProps = GlowButtonButtonProps | GlowButtonSlotProps;
 
 const MotionButton = motion.button;
 const MotionSlot = motion(Slot);
 
 export const GlowButton = React.forwardRef<GlowButtonElement, GlowButtonProps>(
-  (
-    {
-      children,
-      variant = "primary",
-      size = "md",
-      glowColor = "accent",
-      className,
-      asChild = false,
-      type = "button",
-      ...props
-    },
-    ref
-  ) => {
+  (props, ref) => {
     const baseClasses =
       "relative font-inter font-bold uppercase tracking-wider transition-all duration-300 rounded-lg overflow-hidden group focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-axone-dark";
 
@@ -62,6 +62,69 @@ export const GlowButton = React.forwardRef<GlowButtonElement, GlowButtonProps>(
       white: "hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] focus:ring-white",
     };
 
+    const renderContent = (children: React.ReactNode) => (
+      <>
+        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-lg">
+          <div className="absolute inset-0 h-full w-full -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+        </div>
+
+        <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-axone-accent/20 via-axone-flounce/20 to-axone-accent/20 blur-xl" />
+        </div>
+
+        <span className="relative z-10 flex items-center justify-center gap-2">{children}</span>
+      </>
+    );
+
+    if (props.asChild) {
+      const {
+        children,
+        variant = "primary",
+        size = "md",
+        glowColor = "accent",
+        className,
+        asChild,
+        ...slotProps
+      } = props as GlowButtonSlotProps;
+
+      void asChild;
+
+      const sharedProps = {
+        whileHover: { scale: 1.05, y: -2 },
+        whileTap: { scale: 0.98 },
+        className: cn(
+          baseClasses,
+          sizeClasses[size],
+          variantClasses[variant],
+          glowClasses[glowColor],
+          className
+        ),
+      } as const;
+
+      return (
+        <MotionSlot
+          ref={ref as React.Ref<HTMLElement>}
+          {...sharedProps}
+          {...(slotProps as React.ComponentPropsWithoutRef<typeof MotionSlot>)}
+        >
+          {renderContent(children)}
+        </MotionSlot>
+      );
+    }
+
+    const {
+      children,
+      variant = "primary",
+      size = "md",
+      glowColor = "accent",
+      className,
+      asChild,
+      type = "button",
+      ...buttonProps
+    } = props as GlowButtonButtonProps;
+
+    void asChild;
+
     const sharedProps = {
       whileHover: { scale: 1.05, y: -2 },
       whileTap: { scale: 0.98 },
@@ -74,37 +137,14 @@ export const GlowButton = React.forwardRef<GlowButtonElement, GlowButtonProps>(
       ),
     } as const;
 
-    if (asChild) {
-      return (
-        <MotionSlot ref={ref as React.Ref<HTMLElement>} {...sharedProps} {...props}>
-          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-lg">
-            <div className="absolute inset-0 h-full w-full -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-          </div>
-
-          <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-axone-accent/20 via-axone-flounce/20 to-axone-accent/20 blur-xl" />
-          </div>
-
-          <span className="relative z-10 flex items-center justify-center gap-2">
-            {children}
-          </span>
-        </MotionSlot>
-      );
-    }
-
     return (
-      <MotionButton ref={ref as React.Ref<HTMLButtonElement>} type={type} {...sharedProps} {...props}>
-        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-lg">
-          <div className="absolute inset-0 h-full w-full -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-        </div>
-
-        <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-axone-accent/20 via-axone-flounce/20 to-axone-accent/20 blur-xl" />
-        </div>
-
-        <span className="relative z-10 flex items-center justify-center gap-2">
-          {children}
-        </span>
+      <MotionButton
+        ref={ref as React.Ref<HTMLButtonElement>}
+        type={type}
+        {...sharedProps}
+        {...(buttonProps as React.ComponentPropsWithoutRef<typeof MotionButton>)}
+      >
+        {renderContent(children)}
       </MotionButton>
     );
   }
