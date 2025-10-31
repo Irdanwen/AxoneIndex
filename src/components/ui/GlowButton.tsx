@@ -62,23 +62,38 @@ export const GlowButton = React.forwardRef<GlowButtonElement, GlowButtonProps>(
       white: "hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] focus:ring-white",
     };
 
-    const Component = asChild ? MotionSlot : MotionButton;
+    const sharedProps = {
+      whileHover: { scale: 1.05, y: -2 },
+      whileTap: { scale: 0.98 },
+      className: cn(
+        baseClasses,
+        sizeClasses[size],
+        variantClasses[variant],
+        glowClasses[glowColor],
+        className
+      ),
+    } as const;
+
+    if (asChild) {
+      return (
+        <MotionSlot ref={ref as React.Ref<HTMLElement>} {...sharedProps} {...props}>
+          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-lg">
+            <div className="absolute inset-0 h-full w-full -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+          </div>
+
+          <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-axone-accent/20 via-axone-flounce/20 to-axone-accent/20 blur-xl" />
+          </div>
+
+          <span className="relative z-10 flex items-center justify-center gap-2">
+            {children}
+          </span>
+        </MotionSlot>
+      );
+    }
 
     return (
-      <Component
-        ref={ref}
-        whileHover={{ scale: 1.05, y: -2 }}
-        whileTap={{ scale: 0.98 }}
-        className={cn(
-          baseClasses,
-          sizeClasses[size],
-          variantClasses[variant],
-          glowClasses[glowColor],
-          className
-        )}
-        type={asChild ? undefined : type}
-        {...props}
-      >
+      <MotionButton ref={ref as React.Ref<HTMLButtonElement>} type={type} {...sharedProps} {...props}>
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-lg">
           <div className="absolute inset-0 h-full w-full -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
         </div>
@@ -90,7 +105,7 @@ export const GlowButton = React.forwardRef<GlowButtonElement, GlowButtonProps>(
         <span className="relative z-10 flex items-center justify-center gap-2">
           {children}
         </span>
-      </Component>
+      </MotionButton>
     );
   }
 );
