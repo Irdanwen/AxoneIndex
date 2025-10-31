@@ -9,33 +9,49 @@ import { Button } from '@/components/ui'
 import { VaultForm } from '@/components/vaults/VaultForm'
 import type { Vault } from '@/lib/vaultTypes'
 import {
-  CUSTOM_VAULTS_STORAGE_KEY,
-  deleteCustomVault,
-  loadCustomVaults,
-  saveCustomVaults,
-  upsertCustomVault
-} from '@/lib/customVaultStorage'
+  deleteCustomVault as deleteCustomVaultFromService,
+  listCustomVaults,
+  saveCustomVault as saveCustomVaultToService
+} from '@/lib/customVaultService'
 
 export default function ManageMarketVaultsPage() {
   const [customVaults, setCustomVaults] = useState<Vault[]>([])
   const [selectedVaultId, setSelectedVaultId] = useState<string | null>(null)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    let cancelled = false
 
-    setCustomVaults(loadCustomVaults())
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === CUSTOM_VAULTS_STORAGE_KEY) {
-        setCustomVaults(loadCustomVaults())
+    const fetchVaults = async () => {
+      setIsLoading(true)
+      try {
+        const vaults = await listCustomVaults()
+        if (!cancelled) {
+          setCustomVaults(vaults)
+          setErrorMessage(null)
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setStatusMessage(null)
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : "Impossible de charger les vaults personnalisés."
+          )
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false)
+        }
       }
     }
 
-    window.addEventListener('storage', handleStorage)
+    fetchVaults()
 
     return () => {
-      window.removeEventListener('storage', handleStorage)
+      cancelled = true
     }
   }, [])
 
@@ -51,34 +67,58 @@ export default function ManageMarketVaultsPage() {
     [customVaults, selectedVaultId]
   )
 
-  const handleSave = (vault: Vault) => {
+  const handleSave = async (vault: Vault) => {
     const trimmedId = vault.id.trim()
     if (!trimmedId) return
 
-    const updatedVaults = upsertCustomVault({ ...vault, id: trimmedId })
-    setCustomVaults(updatedVaults)
-    setSelectedVaultId(trimmedId)
-    setStatusMessage('Vault enregistré avec succès. Il apparaîtra dans le market.')
+    try {
+      const updatedVaults = await saveCustomVaultToService({ ...vault, id: trimmedId })
+      setCustomVaults(updatedVaults)
+      setSelectedVaultId(trimmedId)
+      setStatusMessage('Vault enregistré avec succès. Il est désormais visible sur le market partagé.')
+      setErrorMessage(null)
+    } catch (error) {
+      setStatusMessage(null)
+      setErrorMessage(
+        error instanceof Error ? error.message : "Impossible d'enregistrer ce vault pour le moment."
+      )
+    }
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedVaultId) return
 
-    const updated = deleteCustomVault(selectedVaultId)
-    setCustomVaults(updated)
-    setSelectedVaultId(null)
-    setStatusMessage('Vault supprimé de votre configuration locale.')
+    try {
+      const updated = await deleteCustomVaultFromService(selectedVaultId)
+      setCustomVaults(updated)
+      setSelectedVaultId(null)
+      setStatusMessage('Vault supprimé. La liste partagée a été mise à jour.')
+      setErrorMessage(null)
+    } catch (error) {
+      setStatusMessage(null)
+      setErrorMessage(
+        error instanceof Error ? error.message : "Impossible de supprimer ce vault pour le moment."
+      )
+    }
   }
 
   const handleCancel = () => {
     setSelectedVaultId(null)
   }
 
-  const handleReset = () => {
-    const updated = saveCustomVaults([])
-    setCustomVaults(updated)
-    setSelectedVaultId(null)
-    setStatusMessage('Tous les vaults personnalisés ont été réinitialisés.')
+  const handleReset = async () => {
+    try {
+      const updated = await deleteCustomVaultFromService()
+      setCustomVaults(updated)
+      setSelectedVaultId(null)
+      setStatusMessage('Tous les vaults personnalisés ont été supprimés de l’espace partagé.')
+      setErrorMessage(null)
+    } catch (error) {
+      setStatusMessage(null)
+      setErrorMessage(
+        error instanceof Error ? error.message : "Impossible de réinitialiser les vaults pour le moment."
+      )
+    }
   }
 
   return (
@@ -95,13 +135,19 @@ export default function ManageMarketVaultsPage() {
               <span className="text-sm font-medium uppercase tracking-wide text-vault-muted mb-1 block">Paramétrage</span>
               <h1 className="text-4xl font-semibold text-vault-primary mb-2">Gérer mes vaults</h1>
               <p className="text-base text-vault-muted max-w-2xl">
-                Créez et ajustez vos vaults personnalisés. Ils seront enregistrés uniquement dans votre navigateur et seront fusionnés
-                avec les données officielles sur la page market.
+                Créez et ajustez vos vaults personnalisés. Ils sont sauvegardés dans un stockage partagé et s’ajoutent aux données
+                officielles visibles sur la page market.
               </p>
             </div>
-            {statusMessage && (
-              <GlassCard className="p-4 text-sm text-vault-muted border border-axone-accent/40">
-                {statusMessage}
+            {(statusMessage || errorMessage) && (
+              <GlassCard
+                className={`p-4 text-sm border ${
+                  errorMessage
+                    ? 'border-red-400/60 text-red-200'
+                    : 'border-axone-accent/40 text-vault-muted'
+                }`}
+              >
+                {errorMessage ?? statusMessage}
               </GlassCard>
             )}
           </header>
@@ -121,7 +167,9 @@ export default function ManageMarketVaultsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  {customVaults.length === 0 ? (
+                  {isLoading ? (
+                    <p className="text-sm text-vault-dim">Chargement des vaults personnalisés…</p>
+                  ) : customVaults.length === 0 ? (
                     <p className="text-sm text-vault-dim">
                       Aucun vault personnalisé pour le moment. Cliquez sur « Nouveau » pour en créer un.
                     </p>
@@ -146,7 +194,7 @@ export default function ManageMarketVaultsPage() {
                   )}
                 </div>
 
-                {customVaults.length > 0 && (
+                {customVaults.length > 0 && !isLoading && (
                   <Button
                     type="button"
                     variant="ghost"
@@ -163,8 +211,8 @@ export default function ManageMarketVaultsPage() {
               <GlassCard className="p-6">
                 <h2 className="text-lg font-semibold text-vault-primary mb-2">Comment ça marche ?</h2>
                 <p className="text-sm text-vault-muted">
-                  Les vaults créés ici sont stockés dans le <span className="font-semibold">localStorage</span> de votre navigateur.
-                  Ils ne sont visibles que par vous mais enrichissent l&apos;expérience du market en s&apos;ajoutant aux données officielles.
+                  Les vaults créés ici sont enregistrés dans un espace partagé du dashboard. Toute modification est immédiatement
+                  prise en compte sur la page market et visible par l’ensemble des visiteurs.
                 </p>
               </GlassCard>
             </aside>
