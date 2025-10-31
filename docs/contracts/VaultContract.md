@@ -83,3 +83,4 @@ vault.setWithdrawFeeTiers(tiers);
 - **Retraits différés**: le montant est calculé automatiquement dans `settleWithdraw`; utiliser `cancelWithdrawRequest` pour annuler avant règlement.
 - **PPS initiale**: `pps1e18()` retourne `1e18` si `totalSupply == 0`.
 - **Auto-déploiement**: `autoDeployBps` en bps; 9000 = 90%.
+\- **Unités du PPS (1e18)**: `pps1e18()` renvoie un prix par part en 1e18 (USD). Le dashboard applique une garde de normalisation purement visuelle pour éviter tout affichage sur‑échelle si une double conversion 1e18 survenait en amont. Cette garde n’affecte pas les calculs on‑chain.

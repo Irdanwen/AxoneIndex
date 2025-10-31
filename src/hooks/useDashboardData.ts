@@ -153,6 +153,19 @@ export function useDashboardData() {
   })
 
   // Formater les données
+  // Helper de normalisation défensive: si une valeur 1e18 paraît sur-échelle, on corrige visuellement
+  const normalize1e18 = (raw: bigint | undefined, decimals: number = 18): string => {
+    if (raw === undefined) return '0'
+    const v = formatUnitsSafe(raw, decimals)
+    const n = Number.parseFloat(v)
+    if (!Number.isFinite(n)) return v
+    // Gardes: PPS ne devrait pas dépasser 1e9, Equity global ne devrait pas dépasser 1e15 USD côté testnet
+    // Si dépassement, on assume un double-scaling en amont et on réapplique une division 1e18 (affichage uniquement)
+    if ((decimals === 18 && n > 1_000_000_000) || n > 1_000_000_000_000_000) {
+      return formatUnitsSafe(raw, decimals + 18)
+    }
+    return v
+  }
   const adjustByDecimals = (value: bigint, weiDecimals: number, szDecimals: number) => {
     const diff = weiDecimals - szDecimals
     if (diff === 0) return value
@@ -218,11 +231,18 @@ export function useDashboardData() {
         data[10]?.result as TokenInfoResult | undefined
       ),
     },
+    // Brutes
+    coreEquityUsdRaw: data[11]?.result as bigint | undefined,
+    ppsRaw: data[14]?.result as bigint | undefined,
+    // Formatées standard 1e18
     coreEquityUsd: formatUnitsSafe(data[11]?.result as bigint, 18),
     // CORRECTION: Utiliser les pxDecimals réels Hyperliquid au lieu de 1e8 fixe
     oraclePxBtc: formatUnitsSafe(data[12]?.result as bigint, PX_DECIMALS.btc),
     oraclePxHype: formatUnitsSafe(data[13]?.result as bigint, PX_DECIMALS.hype),
     pps: formatUnitsSafe(data[14]?.result as bigint, 18),
+    // Affichages normalisés (garde visuelle anti double-scaling)
+    coreEquityDisplay: normalize1e18(data[11]?.result as bigint | undefined, 18),
+    ppsDisplay: normalize1e18(data[14]?.result as bigint | undefined, 18),
     hypeNativeBalance: formatUnitsSafe(hypeNative?.value as bigint | undefined, hypeNative?.decimals ?? 18),
   } : null
 

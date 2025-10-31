@@ -157,14 +157,14 @@ export default function DashboardPage() {
               />
               <DashboardKpi
                 label="PPS (Prix par part)"
-                value={<span className="font-mono">${formatNumber(data?.pps || '0', { decimals: 4 })}</span>}
+                value={<span className="font-mono">${formatNumber(data?.ppsDisplay || data?.pps || '0', { decimals: 4 })}</span>}
                 isLoading={isLoading}
               />
               <DashboardKpi
                 label="Core equity (USD)"
                 value={
                   <span className="font-mono">
-                    ${formatNumber(data?.coreEquityUsd || '0', { decimals: 2, compact: true })}
+                    ${formatNumber(data?.coreEquityDisplay || data?.coreEquityUsd || '0', { decimals: 2, compact: true })}
                   </span>
                 }
                 isLoading={isLoading}

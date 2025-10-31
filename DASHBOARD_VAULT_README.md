@@ -100,6 +100,7 @@ La page affiche en temps réel :
 - Les dépôts de la page Vault sont en HYPE natif (1e18); les parts du vault ont 18 décimales
 - Les montants USDC sont en 8 décimales (1e8) sur HyperEVM (Core et EVM)
 - PPS/NAV sont exprimés en USD 1e18; les oracles (BTC/HYPE) exposent des prix en 1e8
+- Garde UI: le dashboard applique une normalisation visuelle (anti double‑scaling) pour `pps1e18` et `equitySpotUsd1e18`. Les valeurs brutes on‑chain sont lues (bigint), formatées en 1e18 puis, si une sur‑échelle évidente est détectée (ex: PPS >> 1e9), l’affichage est automatiquement re‑normalisé (division 1e18) sans affecter les calculs on‑chain.
 - Le formatage numérique de l'application utilise la locale fr-FR
 - La configuration est persistée localement dans le navigateur
 
