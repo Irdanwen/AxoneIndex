@@ -235,7 +235,7 @@ const About: React.FC = () => {
                 glowColor="flounce"
                 asChild
               >
-                <Link href="/vaults">
+                <Link href="/market">
                   <span>COMMENCER MAINTENANT</span>
                 </Link>
               </GlowButton>
