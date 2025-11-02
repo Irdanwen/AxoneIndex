@@ -16,11 +16,14 @@ Bienvenue dans la documentation unifiée (FR). Cette page sert de table des mati
 - Guides et références sous `docs/`
 
 ## Contrats (référence)
-- `docs/contracts/ReferralRegistry.md`
+- `docs/contracts/AxoneToken.md`
 - `docs/contracts/AxoneSale.md`
+- `docs/contracts/ReferralRegistry.md`
 - `docs/contracts/CoreInteractionHandler.md`
-- `docs/contracts/VaultContract.md`
-- `docs/contracts/StakingSystem.md`
+- `docs/contracts/STRATEGY_1_VaultContract.md`
+- `docs/contracts/VaultContract.md` (legacy)
+- `docs/contracts/RewardsHub.md`
+- `docs/contracts/EmissionController.md`
 
 ## Guides de déploiement
 - `docs/guides/deploiement/Guide_Deploiement_Complet_Remix.md`

@@ -45,6 +45,22 @@ Exemple: pour `axnAmount = 1e18` (1 AXN) avec prix initial
 - `PRICE_PER_AXN_IN_USDC = 10_000_000` (0,1 USDC en 8 décimales)
 - `usdcAmount = (1e18 * 10_000_000) / 1e18 = 10_000_000` (soit 0,1 USDC)
 
+## Fonctions (vue d’ensemble)
+| Nom | Signature | Visibilité | Mutabilité | Accès |
+|-----|-----------|------------|-----------|-------|
+| buyWithUSDC | `buyWithUSDC(uint256 axnAmount)` | external | whenNotPaused nonReentrant | - |
+| endSale | `endSale()` | external | - | onlyOwner |
+| setTreasury | `setTreasury(address _treasury)` | external | - | onlyOwner |
+| updatePrice | `updatePrice(uint256 newPricePerAxn)` | external | - | onlyOwner |
+| setMaxSlippageBps | `setMaxSlippageBps(uint256 _maxSlippageBps)` | external | - | onlyOwner |
+| withdrawUnsoldTokens | `withdrawUnsoldTokens(address to)` | external | - | onlyOwner |
+| remainingTokens | `remainingTokens()` → `uint256` | public view | view | - |
+| isSaleActive | `isSaleActive()` → `bool` | public view | view | - |
+| getCurrentPrice | `getCurrentPrice()` → `uint256` | external view | view | - |
+| getPriceInfo | `getPriceInfo()` → `(uint256 currentPrice, uint256 lastPrice, uint256 lastUpdateBlock, uint256 maxSlippage)` | external view | view | - |
+| emergencyPause | `emergencyPause()` | external | - | onlyOwner |
+| emergencyUnpause | `emergencyUnpause()` | external | - | onlyOwner |
+
 ## Flux d'achat (`buyWithUSDC`)
 1. Vérifications: vente active, trésorerie définie, minimum d'achat, plafond, solde AXN suffisant
 2. Calcul `usdcAmount` (voir ci-dessus)

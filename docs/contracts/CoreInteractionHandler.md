@@ -86,10 +86,60 @@ handler.setMaxOracleDeviationBps(1000);
 - `pullHypeFromCoreToEvm(uint64 hype1e8)` (onlyVault, whenNotPaused): achète du HYPE si nécessaire puis crédite l'EVM en HYPE.
 - `sweepHypeToVault(uint256 amount1e18)` (onlyVault, whenNotPaused): calcule les frais en HYPE (1e18), envoie le frais à `feeVault`, transfère le net vers le vault.
 
+## Fonctions (vue d’ensemble)
+| Nom | Signature | Visibilité | Mutabilité | Accès |
+|-----|-----------|------------|-----------|-------|
+| setVault | `setVault(address _vault)` | external | - | onlyOwner |
+| setUsdcCoreLink | `setUsdcCoreLink(address systemAddr, uint64 tokenId)` | external | - | onlyOwner |
+| setHypeCoreLink | `setHypeCoreLink(address systemAddr, uint64 tokenId)` | external | - | onlyOwner |
+| setSpotIds | `setSpotIds(uint32 btcSpot, uint32 hypeSpot)` | external | - | onlyOwner |
+| setSpotTokenIds | `setSpotTokenIds(uint64 usdcToken, uint64 btcToken, uint64 hypeToken)` | external | - | onlyOwner |
+| setLimits | `setLimits(uint64 _maxOutboundPerEpoch, uint64 _epochLength)` | external | - | onlyOwner |
+| setParams | `setParams(uint64 _maxSlippageBps, uint64 _marketEpsilonBps, uint64 _deadbandBps)` | external | - | onlyOwner |
+| setMaxOracleDeviationBps | `setMaxOracleDeviationBps(uint64 _maxDeviationBps)` | external | - | onlyOwner |
+| setFeeConfig | `setFeeConfig(address _feeVault, uint64 _feeBps)` | external | - | onlyOwner |
+| setUsdcReserveBps | `setUsdcReserveBps(uint64 bps)` | external | - | onlyOwner |
+| setRebalancer | `setRebalancer(address _rebalancer)` | external | - | onlyOwner |
+| setRebalanceAfterWithdrawal | `setRebalanceAfterWithdrawal(bool v)` | external | - | onlyOwner |
+| pause/unpause | `pause()` / `unpause()` | external | - | onlyOwner |
+| emergencyPause | `emergencyPause()` | external | - | onlyOwner |
+| oraclePxHype1e8 | `oraclePxHype1e8()` → `uint64` | external view | view | - |
+| oraclePxBtc1e8 | `oraclePxBtc1e8()` → `uint64` | external view | view | - |
+| spotBalance | `spotBalance(address coreUser, uint64 tokenId)` → `uint64` | public view | view | - |
+| spotOraclePx1e8 | `spotOraclePx1e8(uint32 spotAsset)` → `uint64` | public view | view | - |
+| equitySpotUsd1e18 | `equitySpotUsd1e18()` → `uint256` | public view | view | - |
+| executeDeposit | `executeDeposit(uint64 usdc1e8, bool forceRebalance)` | external | whenNotPaused | onlyVault |
+| executeDepositHype | `executeDepositHype(bool forceRebalance)` | external payable | whenNotPaused | onlyVault |
+| pullFromCoreToEvm | `pullFromCoreToEvm(uint64 usdc1e8)` → `uint64` | external | whenNotPaused | onlyVault |
+| pullHypeFromCoreToEvm | `pullHypeFromCoreToEvm(uint64 hype1e8)` → `uint64` | external | whenNotPaused | onlyVault |
+| sweepToVault | `sweepToVault(uint64 amount1e8)` | external | whenNotPaused | onlyVault |
+| sweepHypeToVault | `sweepHypeToVault(uint256 amount1e18)` | external | whenNotPaused | onlyVault |
+| rebalancePortfolio | `rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype)` | public | whenNotPaused | onlyRebalancer |
+
 ## Événements
 - `Rebalanced(int256 dBtc1e18, int256 dHype1e18)`
 - `SpotOrderPlaced(uint32 asset, bool isBuy, uint64 limitPx1e8, uint64 sizeSzDecimals, uint128 cloid)`
 - `RebalancerSet(address rebalancer)`
+- `FeeConfigSet(address feeVault, uint64 feeBps)`
+- `HypeCoreLinkSet(address systemAddress, uint64 tokenId)`
+- `InboundFromCore(uint64 amount1e8)`
+- `LimitsSet(uint64 maxOutboundPerEpoch, uint64 epochLength)`
+- `OutboundToCore(bytes data)`
+- `ParamsSet(uint64 maxSlippageBps, uint64 marketEpsilonBps, uint64 deadbandBps)`
+- `SpotIdsSet(uint32 btcSpot, uint32 hypeSpot)`
+- `SpotTokenIdsSet(uint64 usdcToken, uint64 btcToken, uint64 hypeToken)`
+- `SweepWithFee(uint64 gross1e8, uint64 fee1e8, uint64 net1e8)`
+- `UsdcCoreLinkSet(address systemAddress, uint64 tokenId)`
+- `UsdcReserveSet(uint64 bps)`
+- `VaultSet(address vault)`
+
+## Erreurs
+- `NotOwner()` — appelant ≠ owner
+- `NotRebalancer()` — appelant ≠ rebalancer
+- `NotVault()` — appelant ≠ vault
+- `RateLimited()` — dépassement de plafond sur l’epoch courante
+- `OracleZero()` — prix oracle nul
+- `OracleGradualCatchup()` — déviation oracle > seuil; mécanisme de rattrapage graduel
 
 ## Paramètres et Contraintes
 - `deadbandBps ≤ 50`.

@@ -11,12 +11,32 @@ Le vault STRATEGY_1 accepte des dépôts en HYPE (18 décimales), valorise la NA
 - `setWithdrawFeeTiers(WithdrawFeeTier[])` — paliers de frais (exprimés en HYPE 1e18) qui peuvent remplacer `withdrawFeeBps` selon le montant.
  - `recallFromCoreAndSweep(uint256 amount1e18)` — rappelle des fonds depuis Core en unités 1e18. Le montant DOIT être un multiple de `1e10` (interop 1e8 côté Core). La fonction émet `RecallAndSweep(swept1e18)` avec le montant effectivement sweepé après conversion, pas la valeur d’entrée brute.
 
+## Fonctions (vue d’ensemble)
+| Nom | Signature | Visibilité | Mutabilité | Accès |
+|-----|-----------|------------|-----------|-------|
+| setHandler | `setHandler(IHandler _handler)` | external | - | onlyOwner |
+| setFees | `setFees(uint16 _depositFeeBps, uint16 _withdrawFeeBps, uint16 _autoDeployBps)` | external | - | onlyOwner |
+| setWithdrawFeeTiers | `setWithdrawFeeTiers(WithdrawFeeTier[] memory tiers)` | external | - | onlyOwner |
+| getWithdrawFeeBpsForAmount | `getWithdrawFeeBpsForAmount(uint256 amount1e18)` → `uint16` | public view | view | - |
+| pause/unpause | `pause()` / `unpause()` | external | - | onlyOwner |
+| nav1e18 | `nav1e18()` → `uint256` | public view | view | - |
+| pps1e18 | `pps1e18()` → `uint256` | public view | view | - |
+| deposit | `deposit()` | external payable | notPaused nonReentrant | - |
+| withdraw | `withdraw(uint256 shares)` | external | notPaused nonReentrant | - |
+| settleWithdraw | `settleWithdraw(uint256 id, address to)` | external | nonReentrant | owner or handler |
+| cancelWithdrawRequest | `cancelWithdrawRequest(uint256 id)` | external | nonReentrant | requester |
+| recallFromCoreAndSweep | `recallFromCoreAndSweep(uint256 amount1e18)` | external | nonReentrant | onlyOwner |
+| transfer/approve/transferFrom | `transfer(address,uint256)` / `approve(address,uint256)` / `transferFrom(address,address,uint256)` | external | diverses | notPaused (sauf approve) |
+| canSetHandler | `canSetHandler(address _handler)` → `(bool,string)` | external view | view | - |
+| balanceOf | `balanceOf(address)` → `uint256` | public view | view | - |
+| deposits | `deposits(address)` → `uint256` | public view | view | - |
+
 - NAV (USD 1e18) = HYPE EVM (solde natif) en USD + Equity spot Core en USD.
 - Parts (`decimals=18`) restent USD-dénominées pour l’équité inter-dépôts.
 - Retraits: montant brut HYPE dérivé du PPS USD courant; le frais en HYPE est transféré à `feeVault`, l’utilisateur reçoit le net.
 - Auto-deploy: `executeDepositHype{value: deployAmt}(true)` côté handler. À partir de la version courante, le handler conserve une réserve d’USDC sur Core configurable (par défaut 1%) et n’alloue que 99% du notional aux achats BTC/HYPE.
 
-- Vérification `pxH > 0` dans `deposit()` et `settleWithdraw()`.
+- Vérification `pxH > 0` dans `deposit()` et `settleWithdraw(uint256 id, address to)`.
 - CEI respecté; envois natifs via `.call{value: ...}` avec vérification de succès.
 - Plus d’`approve` HYPE (flux natifs). 
 - Paliers triés et bornés (≤10).
@@ -64,6 +84,21 @@ Le vault STRATEGY_1 accepte des dépôts en HYPE (18 décimales), valorise la NA
   - Envoi du frais à `handler.feeVault()` et paiement du NET à l’utilisateur
 - Événements:
   - `VaultFeePaid(vault, feeVault, kind, amount1e18)` est émis sur dépôt (`kind=1`), retrait immédiat (`kind=2`) et règlement de file d’attente (`kind=3`).
+
+## Événements
+- `Deposit(address indexed user, uint256 amount1e18, uint256 sharesMinted)`
+- `WithdrawRequested(uint256 indexed id, address indexed user, uint256 shares)`
+- `WithdrawPaid(uint256 indexed id, address indexed to, uint256 amount1e18)`
+- `WithdrawCancelled(uint256 indexed id, address indexed user, uint256 shares)`
+- `HandlerSet(address handler)`
+- `FeesSet(uint16 depositFeeBps, uint16 withdrawFeeBps, uint16 autoDeployBps)`
+- `PausedSet(bool paused)`
+- `RecallAndSweep(uint256 amount1e18)`
+- `NavUpdated(uint256 nav1e18)`
+- `Transfer(address indexed from, address indexed to, uint256 value)`
+- `Approval(address indexed owner, address indexed spender, uint256 value)`
+- `WithdrawFeeTiersSet()`
+- `VaultFeePaid(address indexed vault, address indexed feeVault, uint8 kind, uint256 amount1e18)`
 
 ## Références code
 - NAV USD HYPE EVM + Core:

@@ -13,7 +13,8 @@
     "start": "next start",
     "lint": "next lint",
     "optimize-project": "pnpm prune && rm -rf .next/cache && node scripts/optimize-images.js",
-    "clean": "rm -rf .next/cache && rm -rf node_modules && pnpm install"
+    "clean": "rm -rf .next/cache && rm -rf node_modules && pnpm install",
+    "verify:docs": "node scripts/verify-docs-vs-code.js"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.3",

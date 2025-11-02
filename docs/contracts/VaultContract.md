@@ -1,5 +1,7 @@
 # VaultContract — Frais de Retrait par Paliers et Flux
 
+> Note: Cette page décrit un ancien modèle USDC‑based. L’implémentation active utilisée en production est `contracts/src/STRATEGY_1/VaultContract.sol` (dépôts HYPE natifs). Voir `STRATEGY_1_VaultContract.md` pour la référence à jour.
+
 ## Résumé
 `VaultContract.sol` émet des parts (18 décimales) contre des dépôts en HYPE natif (1e18 sur HyperEVM), gère la NAV/PPS, des retraits immédiats ou différés, et l'auto-déploiement partiel vers Core. Les frais de retrait dépendent du montant retiré (brut), via des paliers configurables. Le vault n'a pas besoin d'approval pour HYPE natif et transmet directement les montants en 1e18 au Handler.
 
