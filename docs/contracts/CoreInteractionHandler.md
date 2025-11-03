@@ -28,9 +28,10 @@ Le contrat implémente un mécanisme de **rattrapage graduel par paliers** pour 
 #### Fonctionnement
 
 Quand le prix oracle dévie de plus de `maxOracleDeviationBps` (défaut: 5%) :
-1. La transaction **échoue** avec l'erreur `OracleGradualCatchup`
-2. Mais `lastPx` est **quand même mis à jour** vers la limite de la fourchette (±5%)
-3. Les transactions suivantes progressent par paliers successifs jusqu'à convergence
+1. `lastPx` est **mis à jour** vers la limite de la fourchette (±5%)
+2. **Rebalance**: n'échoue plus — il devient un **no‑op** (aucun ordre placé) et émet `RebalanceSkippedOracleDeviation(pxB1e8, pxH1e8)`
+3. **Dépôts/Retraits**: continuent d'**échouer** avec `OracleGradualCatchup` (sécurité maintenue)
+4. Les transactions suivantes progressent par paliers successifs jusqu'à convergence
 
 #### Exemple Concret
 
@@ -81,8 +82,9 @@ handler.setMaxOracleDeviationBps(1000);
 - `receive()` (payable): permet de recevoir le jeton natif HYPE en provenance du Core si nécessaire.
 - `setRebalancer(address rebalancer)` (onlyOwner): définit l'adresse autorisée à appeler `rebalancePortfolio`.
 - `setMaxOracleDeviationBps(uint64 _maxDeviationBps)` (onlyOwner): Configure la déviation maximale autorisée par transaction (entre 1 et 5000 bps). Défaut: 500 bps (5%).
-- `rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype)` (onlyRebalancer, whenNotPaused): calcule les deltas via l'oracle et place des ordres IOC SPOT pour revenir vers 50/50 (avec deadband).
+- `rebalancePortfolio(uint128 cloidBtc, uint128 cloidHype)` (onlyRebalancer, whenNotPaused): calcule les deltas via l'oracle et place des ordres IOC SPOT pour revenir vers 50/50 (avec deadband). En cas de déviation oracle, le rebalance est **no‑op** (aucun ordre) et **n'échoue pas**.
 - `executeDepositHype(bool forceRebalance)` (payable, onlyVault, whenNotPaused): dépôt HYPE natif (`msg.value`) → envoi natif vers `hypeCoreSystemAddress` → vente 100% en USDC via ordre SPOT IOC → achats ~50% BTC et ~50% HYPE via ordres SPOT IOC. Le rate limit s'applique sur l'équivalent USD (1e8).
+- ⤴️ En cas de déviation oracle: les dépôts sont désormais **no‑op** (aucun ordre placé et aucune vente HYPE→USDC pour le dépôt HYPE), mais le crédit sur Core est bien effectué. Événements: `DepositSkippedOracleDeviationUsdc(pxB1e8, pxH1e8)` pour un dépôt USDC, `DepositSkippedOracleDeviationHype(pxH1e8)` pour un dépôt HYPE.
 - `pullHypeFromCoreToEvm(uint64 hype1e8)` (onlyVault, whenNotPaused): achète du HYPE si nécessaire puis crédite l'EVM en HYPE.
 - `sweepHypeToVault(uint256 amount1e18)` (onlyVault, whenNotPaused): calcule les frais en HYPE (1e18), envoie le frais à `feeVault`, transfère le net vers le vault.
 
@@ -119,6 +121,9 @@ handler.setMaxOracleDeviationBps(1000);
 ## Événements
 - `Rebalanced(int256 dBtc1e18, int256 dHype1e18)`
 - `SpotOrderPlaced(uint32 asset, bool isBuy, uint64 limitPx1e8, uint64 sizeSzDecimals, uint128 cloid)`
+- `DepositSkippedOracleDeviationUsdc(uint64 pxB1e8, uint64 pxH1e8)`
+- `DepositSkippedOracleDeviationHype(uint64 pxH1e8)`
+- `RebalanceSkippedOracleDeviation(uint64 pxB1e8, uint64 pxH1e8)`
 - `RebalancerSet(address rebalancer)`
 - `FeeConfigSet(address feeVault, uint64 feeBps)`
 - `HypeCoreLinkSet(address systemAddress, uint64 tokenId)`

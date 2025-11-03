@@ -82,6 +82,9 @@ contract CoreInteractionHandler is Pausable {
     event InboundFromCore(uint64 amount1e8);
     event Rebalanced(int256 dBtc1e18, int256 dHype1e18);
     event SpotOrderPlaced(uint32 asset, bool isBuy, uint64 limitPx1e8, uint64 sizeSzDecimals, uint128 cloid);
+    event RebalanceSkippedOracleDeviation(uint64 pxB1e8, uint64 pxH1e8);
+    event DepositSkippedOracleDeviationUsdc(uint64 pxB1e8, uint64 pxH1e8);
+    event DepositSkippedOracleDeviationHype(uint64 pxH1e8);
     event FeeConfigSet(address feeVault, uint64 feeBps);
     event SweepWithFee(uint64 gross1e8, uint64 fee1e8, uint64 net1e8);
     event RebalancerSet(address rebalancer);
@@ -312,12 +315,17 @@ contract CoreInteractionHandler is Pausable {
         usdc.safeTransferFrom(msg.sender, address(this), evmAmt);
         // EVM->Core spot: send to system address to credit Core spot balance
         usdc.safeTransfer(usdcCoreSystemAddress, evmAmt);
-        // After crediting USDC spot, place two IOC buys ~50/50 into BTC and HYPE
+        // After crediting USDC spot, try to place two IOC buys ~50/50 into BTC and HYPE
+        // Tolerant oracle: if deviated, skip orders without reverting
         uint256 usd1e18 = uint256(usdc1e8) * 1e10;
         uint256 allocUsd1e18 = (usd1e18 * (10_000 - usdcReserveBps)) / 10_000;
         uint256 halfUsd1e18 = allocUsd1e18 / 2;
-        uint64 pxB = _validatedOraclePx1e8(true);
-        uint64 pxH = _validatedOraclePx1e8(false);
+        (uint64 pxB, bool devB) = _tryValidatedOraclePx1e8(true);
+        (uint64 pxH, bool devH) = _tryValidatedOraclePx1e8(false);
+        if (devB || devH) {
+            emit DepositSkippedOracleDeviationUsdc(pxB, pxH);
+            return;
+        }
         uint64 szB = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenBTC, int256(halfUsd1e18), pxB);
         uint64 szH = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenHYPE, int256(halfUsd1e18), pxH);
         if (szB > 0) {
@@ -344,17 +352,26 @@ contract CoreInteractionHandler is Pausable {
         (bool ok, ) = payable(hypeCoreSystemAddress).call{value: hype1e18}("");
         require(ok, "NATIVE_SEND_FAIL");
         // Compute USD notional and sell HYPE -> USDC on Core via IOC
-        uint64 pxH = _validatedOraclePx1e8(false);
+        (uint64 pxH, bool devH) = _tryValidatedOraclePx1e8(false);
         // USD 1e8 = (HYPE 1e18 / 1e18) * px1e8
         uint64 usd1e8 = SafeCast.toUint64((hype1e18 * uint256(pxH)) / 1e18);
-        // Apply outbound rate limit based on USD notional like USDC deposit
+        // Apply outbound rate limit based on USD notional like USDC deposit (even if deviated)
         _rateLimit(usd1e8);
+        if (devH) {
+            emit DepositSkippedOracleDeviationHype(pxH);
+            return;
+        }
+        // Sell HYPE -> USDC on Core via IOC
         _sellAssetForUsd(spotHYPE, spotTokenHYPE, usd1e8);
         // Allocate 50/50 from USDC to BTC/HYPE
         uint256 totalUsd1e18 = uint256(usd1e8) * 1e10;
         uint256 allocUsd1e18 = (totalUsd1e18 * (10_000 - usdcReserveBps)) / 10_000;
         uint256 halfUsd1e18 = allocUsd1e18 / 2;
-        uint64 pxB = _validatedOraclePx1e8(true);
+        (uint64 pxB, bool devB) = _tryValidatedOraclePx1e8(true);
+        if (devB) {
+            emit DepositSkippedOracleDeviationHype(pxH);
+            return;
+        }
         uint64 szB = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenBTC, int256(halfUsd1e18), pxB);
         uint64 szH = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenHYPE, int256(halfUsd1e18), pxH);
         if (szB > 0) {
@@ -493,7 +510,13 @@ contract CoreInteractionHandler is Pausable {
     }
 
     function _rebalance(uint128 cloidBtc, uint128 cloidHype) internal {
-        (int256 dB, int256 dH, uint64 pxB, uint64 pxH) = _computeRebalanceDeltas();
+        (uint64 pxB, bool devB) = _tryValidatedOraclePx1e8(true);
+        (uint64 pxH, bool devH) = _tryValidatedOraclePx1e8(false);
+        if (devB || devH) {
+            emit RebalanceSkippedOracleDeviation(pxB, pxH);
+            return;
+        }
+        (int256 dB, int256 dH) = _computeDeltasWithPositions(pxB, pxH);
         _placeRebalanceOrders(dB, dH, pxB, pxH, cloidBtc, cloidHype);
         emit Rebalanced(dB, dH);
     }
@@ -710,6 +733,33 @@ contract CoreInteractionHandler is Pausable {
         }
         
         return result.adjustedPx1e8;
+    }
+
+    /// @notice Variante tolérante: met à jour le dernier prix et signale la déviation sans revert
+    /// @return px prix normalisé 1e8 ajusté (borné si déviation)
+    /// @return deviated true si le prix courant est hors bande de déviation
+    function _tryValidatedOraclePx1e8(bool isBtc) internal returns (uint64 px, bool deviated) {
+        uint32 asset = isBtc ? spotBTC : spotHYPE;
+        CoreHandlerLib.OracleValidation memory oracle = CoreHandlerLib.OracleValidation({
+            lastPxBtc1e8: lastPxBtc1e8,
+            lastPxHype1e8: lastPxHype1e8,
+            pxInitB: pxInitB,
+            pxInitH: pxInitH,
+            maxOracleDeviationBps: maxOracleDeviationBps
+        });
+
+        CoreHandlerLib.OracleResult memory result = CoreHandlerLib.validatedOraclePx1e8(l1read, asset, oracle, isBtc);
+
+        // Toujours mettre à jour le prix
+        if (isBtc) {
+            lastPxBtc1e8 = result.adjustedPx1e8;
+            pxInitB = true;
+        } else {
+            lastPxHype1e8 = result.adjustedPx1e8;
+            pxInitH = true;
+        }
+
+        return (result.adjustedPx1e8, result.shouldRevert);
     }
 
 
