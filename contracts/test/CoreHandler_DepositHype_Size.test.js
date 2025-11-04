@@ -3,7 +3,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("CoreHandler: dépôt HYPE et conversions de taille", function () {
-  it("toSzInSzDecimals calcule ~0.5 HYPE (szDecimals=8) pour 0.5 HYPE @ $50", async function () {
+  it("toSzInSzDecimals calcule ~0.5 HYPE (szDecimals=6) pour 0.5 HYPE @ $50", async function () {
     const [deployer] = await ethers.getSigners();
 
     const MockL1Read = await ethers.getContractFactory("MockL1Read");
@@ -11,8 +11,8 @@ describe("CoreHandler: dépôt HYPE et conversions de taille", function () {
 
     // TokenId arbitraire pour HYPE spot
     const spotTokenHype = 102;
-    // szDecimals=8, weiDecimals arbitraire (18)
-    await l1.setTokenInfo(spotTokenHype, "HYPE", 8, 18);
+    // szDecimals=6, weiDecimals=8 comme sur HyperCore
+    await l1.setTokenInfo(spotTokenHype, "HYPE", 6, 8);
 
     // Prix HYPE en 1e8: $50 -> 5e9? Non, 50 * 1e8 = 5_000_000_000
     const pxH1e8 = 5000000000n;
@@ -24,8 +24,8 @@ describe("CoreHandler: dépôt HYPE et conversions de taille", function () {
     const testLib = await TestLib.deploy();
 
     const sz = await testLib.toSzInSzDecimals(l1.target, spotTokenHype, usd1e18, pxH1e8);
-    // Attendu: 0.5 * 10^8 = 50,000,000
-    expect(sz).to.equal(50000000n);
+    // Attendu: 0.5 * 10^6 = 500,000
+    expect(sz).to.equal(500000n);
   });
 
   it("executeDepositHype émet des ordres d'achat non nuls et plausibles", async function () {
@@ -56,10 +56,10 @@ describe("CoreHandler: dépôt HYPE et conversions de taille", function () {
     await handler.connect(owner).setSpotIds(spotBTC, spotHYPE);
     await handler.connect(owner).setSpotTokenIds(usdcTokenId, btcTokenId, hypeTokenId);
 
-    // Token infos: szDecimals=8 pour BTC/HYPE, weiDecimals=18 pour valuation; USDC weiDecimals=8
+    // Token infos: paramètres alignés sur HyperCore (USDC 8/8, BTC 4/10, HYPE 6/8)
     await l1.setTokenInfo(usdcTokenId, "USDC", 8, 8);
-    await l1.setTokenInfo(btcTokenId, "BTC", 8, 18);
-    await l1.setTokenInfo(hypeTokenId, "HYPE", 8, 18);
+    await l1.setTokenInfo(btcTokenId, "BTC", 4, 10);
+    await l1.setTokenInfo(hypeTokenId, "HYPE", 6, 8);
 
     // Prix bruts: le handler normalise: BTC 1e3->×1e5, HYPE 1e6->×1e2
     // Cible en 1e8: BTC ~ 30_000 * 1e8 => 3e12 => raw 30_000 * 1e3 = 30_000_000, HYPE $50 => 5e9 => raw 50 * 1e6 = 50_000_000
@@ -88,8 +88,8 @@ describe("CoreHandler: dépôt HYPE et conversions de taille", function () {
 
     expect(sizeB).to.be.gt(0n);
     expect(sizeH).to.be.gt(0n);
-    // Taille HYPE rachetée ~ 0.5 * (1 - réserve 1%) ~= 0.495 HYPE => en szDecimals=8 => 49_500_000 env.
-    const maxRebuyH = 50000000n;
+    // Taille HYPE rachetée ~ 0.5 * (1 - réserve 1%) ~= 0.495 HYPE => en szDecimals=6 => 495,000 env.
+    const maxRebuyH = 495000n;
     expect(sizeH).to.be.lte(maxRebuyH);
   });
 });
