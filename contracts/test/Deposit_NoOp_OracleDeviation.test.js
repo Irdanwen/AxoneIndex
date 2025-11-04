@@ -31,7 +31,7 @@ describe("CoreInteractionHandler: deposit no-op on oracle deviation", function (
     await handler.setSpotTokenIds(1, 2, 3);
 
     await l1.setTokenInfo(1, "USDC", 8, 8);
-    await l1.setTokenInfo(2, "BTC", 4, 8);
+    await l1.setTokenInfo(2, "BTC", 4, 10);
     await l1.setTokenInfo(3, "HYPE", 6, 8);
 
     // Initialize lastPx with in-band prices
@@ -87,7 +87,7 @@ describe("CoreInteractionHandler: deposit no-op on oracle deviation", function (
     await handler.setSpotTokenIds(1, 2, 3);
 
     await l1.setTokenInfo(1, "USDC", 8, 8);
-    await l1.setTokenInfo(2, "BTC", 4, 8);
+    await l1.setTokenInfo(2, "BTC", 4, 10);
     await l1.setTokenInfo(3, "HYPE", 6, 8);
 
     // Initialize in-band prices then jump to deviated

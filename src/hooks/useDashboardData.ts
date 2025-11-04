@@ -18,6 +18,12 @@ const PX_DECIMALS = {
   hype: 8,  // HYPE prix normalisé en 1e8 (ex: 500000000 = 50 USD)
 } as const
 
+const CORE_TOKEN_DEFAULTS = {
+  usdc: { szDecimals: 8, weiDecimals: 8 },
+  hype: { szDecimals: 6, weiDecimals: 8 },
+  btc: { szDecimals: 4, weiDecimals: 10 },
+} as const
+
 type SpotBalanceResult = {
   total: bigint
   hold: bigint
@@ -181,19 +187,23 @@ export function useDashboardData() {
   const buildCoreBalance = (
     tokenId: number | undefined,
     spot: SpotBalanceResult | undefined,
-    info: TokenInfoResult | undefined
+    info: TokenInfoResult | undefined,
+    defaults?: { szDecimals: number; weiDecimals: number }
   ): CoreBalanceData => {
     const total = spot?.total ?? 0n
     const szDecimals = typeof info?.szDecimals === 'number' ? info.szDecimals : undefined
     const weiDecimals = typeof info?.weiDecimals === 'number' ? info.weiDecimals : undefined
 
-    const fallbackWeiDecimals = weiDecimals ?? 8
-    const fallbackSzDecimals = szDecimals ?? fallbackWeiDecimals
+    const defaultWeiDecimals = defaults?.weiDecimals ?? 8
+    const defaultSzDecimals = defaults?.szDecimals ?? defaultWeiDecimals
+
+    const fallbackWeiDecimals = weiDecimals ?? defaultWeiDecimals
+    const fallbackSzDecimals = szDecimals ?? defaultSzDecimals
     const normalized = adjustByDecimals(total, fallbackWeiDecimals, fallbackSzDecimals)
 
     return {
       tokenId: tokenId ?? 0,
-      balance: formatCoreBalance(total, fallbackWeiDecimals, fallbackSzDecimals),
+      balance: formatCoreBalance(normalized, fallbackWeiDecimals, fallbackSzDecimals),
       raw: total,
       normalized,
       decimals: {
@@ -218,17 +228,20 @@ export function useDashboardData() {
       usdc: buildCoreBalance(
         config?.coreTokenIds.usdc,
         data[5]?.result as SpotBalanceResult | undefined,
-        data[6]?.result as TokenInfoResult | undefined
+        data[6]?.result as TokenInfoResult | undefined,
+        CORE_TOKEN_DEFAULTS.usdc
       ),
       hype: buildCoreBalance(
         config?.coreTokenIds.hype,
         data[7]?.result as SpotBalanceResult | undefined,
-        data[8]?.result as TokenInfoResult | undefined
+        data[8]?.result as TokenInfoResult | undefined,
+        CORE_TOKEN_DEFAULTS.hype
       ),
       btc: buildCoreBalance(
         config?.coreTokenIds.btc,
         data[9]?.result as SpotBalanceResult | undefined,
-        data[10]?.result as TokenInfoResult | undefined
+        data[10]?.result as TokenInfoResult | undefined,
+        CORE_TOKEN_DEFAULTS.btc
       ),
     },
     // Brutes

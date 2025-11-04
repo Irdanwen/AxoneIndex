@@ -35,7 +35,7 @@ describe("CoreInteractionHandler: rebalance no-op on oracle deviation", function
 
     // Token infos (szDecimals, weiDecimals)
     await l1.setTokenInfo(1, "USDC", 8, 8);
-    await l1.setTokenInfo(2, "BTC", 4, 8);
+    await l1.setTokenInfo(2, "BTC", 4, 10);
     await l1.setTokenInfo(3, "HYPE", 6, 8);
 
     // Initial prices (within band)

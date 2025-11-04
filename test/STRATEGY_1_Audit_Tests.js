@@ -60,7 +60,7 @@ describe("STRATEGY_1 - Audit Tests", function () {
     it("should convert szDecimals to weiDecimals correctly", async function () {
       // Test avec différents cas de décimales
       const testCases = [
-        { szDecimals: 4, weiDecimals: 8, balanceSz: 10000, expectedWei: 100000000 },
+        { szDecimals: 4, weiDecimals: 10, balanceSz: 10000, expectedWei: 10000000000 },
         { szDecimals: 8, weiDecimals: 8, balanceSz: 100000000, expectedWei: 100000000 },
         { szDecimals: 8, weiDecimals: 4, balanceSz: 100000000, expectedWei: 10000 }
       ];
@@ -147,7 +147,7 @@ describe("STRATEGY_1 - Audit Tests", function () {
       const price1e8 = 50000 * 1e8; // 50,000 USD per BTC
 
       // Mock token info pour BTC
-      await l1read.setTokenInfo(spotTokenBTC, "BTC", [], 0, ethers.constants.AddressZero, ethers.constants.AddressZero, 4, 8, 0);
+      await l1read.setTokenInfo(spotTokenBTC, "BTC", [], 0, ethers.constants.AddressZero, ethers.constants.AddressZero, 4, 10, 0);
 
       const szDecimals = await handler.toSzInSzDecimals(spotTokenBTC, usd1e18, price1e8);
       expect(szDecimals).to.be.gt(0);
@@ -205,7 +205,7 @@ describe("STRATEGY_1 - Audit Tests", function () {
 
       // Mock token info
       await l1read.setTokenInfo(1, "USDC", [], 0, ethers.constants.AddressZero, ethers.constants.AddressZero, 8, 8, 0);
-      await l1read.setTokenInfo(spotTokenBTC, "BTC", [], 0, ethers.constants.AddressZero, ethers.constants.AddressZero, 4, 8, 0);
+      await l1read.setTokenInfo(spotTokenBTC, "BTC", [], 0, ethers.constants.AddressZero, ethers.constants.AddressZero, 4, 10, 0);
       await l1read.setTokenInfo(spotTokenHYPE, "HYPE", [], 0, ethers.constants.AddressZero, ethers.constants.AddressZero, 6, 8, 0);
 
       await expect(handler.rebalancePortfolio(0, 0))
@@ -222,7 +222,7 @@ describe("STRATEGY_1 - Audit Tests", function () {
       await l1read.setSpotBalance(handler.address, spotTokenHYPE, 980000, 0, 0); // 49% HYPE
 
       await l1read.setTokenInfo(1, "USDC", [], 0, ethers.constants.AddressZero, ethers.constants.AddressZero, 8, 8, 0);
-      await l1read.setTokenInfo(spotTokenBTC, "BTC", [], 0, ethers.constants.AddressZero, ethers.constants.AddressZero, 4, 8, 0);
+      await l1read.setTokenInfo(spotTokenBTC, "BTC", [], 0, ethers.constants.AddressZero, ethers.constants.AddressZero, 4, 10, 0);
       await l1read.setTokenInfo(spotTokenHYPE, "HYPE", [], 0, ethers.constants.AddressZero, ethers.constants.AddressZero, 6, 8, 0);
 
       // Avec deadband de 50 bps, ne devrait pas rebalancer
