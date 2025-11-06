@@ -90,13 +90,18 @@ describe("CoreInteractionHandler: deposit no-op on oracle deviation", function (
     await l1.setTokenInfo(2, "BTC", 4, 10);
     await l1.setTokenInfo(3, "HYPE", 6, 8);
 
-    // Initialize in-band prices then jump to deviated
+    // Initialize lastPx with in-band prices
     await l1.setSpotPx(1, 50_000n);
     await l1.setSpotPx(2, 50n);
     await l1.setBbo(1 + 10000, 50_000n, 50_001n);
     await l1.setBbo(2 + 10000, 50n, 51n);
 
-    // Deviation +20%
+    // Give handler some initial deposit (no deviation) to set lastPx via rebalance
+    await usdc.mint(owner.address, 1_000_000_000n); // 10 USDC
+    await usdc.approve(handler.target, 1_000_000_000n);
+    await handler.executeDeposit(100_000_000n, false); // 1 USDC deposit normal to initialize lastPx
+
+    // Now set deviation +20%
     await l1.setSpotPx(1, 60_000n);
     await l1.setSpotPx(2, 60n);
     await l1.setBbo(1 + 10000, 60_000n, 60_001n);
