@@ -1,0 +1,13 @@
+# Clés privées (NE JAMAIS COMMITER LES VRAIES CLÉS)
+PRIVATE_KEY=e4ae2778178f38d157ed6894bc601da12742b93785a061bdd15889b33b750934
+
+# URLs RPC
+# HyperEVM Testnet RPC URL
+TESTNET_RPC_URL=https://rpc.hyperliquid-testnet.xyz/evm
+MAINNET_RPC_URL=
+
+# Clés API
+ETHERSCAN_API_KEY=your_etherscan_api_key
+
+# Configuration
+REPORT_GAS=true
