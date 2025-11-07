@@ -18,24 +18,20 @@ async function main() {
   const spotHYPE = await handler.spotHYPE();
   const epsilonBps = await handler.marketEpsilonBps();
 
-  // BBO bruts (avant normalisation interne), on affiche juste les valeurs 1e8 attendues post-normalisation
+  // BBO natifs (pxDecimals Hyperliquid)
   const bboB = await l1.bbo(Number(spotBTC) + 10000);
   const bboH = await l1.bbo(Number(spotHYPE) + 10000);
-  const bidB1e8 = bboB[0] * 100000n; // BTC 1e3 -> 1e8
-  const askB1e8 = bboB[1] * 100000n;
-  const bidH1e8 = bboH[0] * 100n;     // HYPE 1e6 -> 1e8
-  const askH1e8 = bboH[1] * 100n;
 
-  const limitBuyB1e8 = (askB1e8 + (askB1e8 * BigInt(epsilonBps)) / 10000n);
-  const limitSellH1e8 = (bidH1e8 > (bidH1e8 * BigInt(epsilonBps)) / 10000n)
-    ? (bidH1e8 - (bidH1e8 * BigInt(epsilonBps)) / 10000n) : 1n;
+  const limitBuyBRaw = (bboB[1] + (bboB[1] * BigInt(epsilonBps)) / 10000n);
+  const limitSellHRaw = (bboH[0] > (bboH[0] * BigInt(epsilonBps)) / 10000n)
+    ? (bboH[0] - (bboH[0] * BigInt(epsilonBps)) / 10000n) : 1n;
 
   console.log(JSON.stringify({
     network: hre.network.name,
     spot: { BTC: Number(spotBTC), HYPE: Number(spotHYPE) },
-    bbo_1e8: { BTC: { bid: bidB1e8.toString(), ask: askB1e8.toString() }, HYPE: { bid: bidH1e8.toString(), ask: askH1e8.toString() } },
+    bbo_raw: { BTC: { bid: bboB[0].toString(), ask: bboB[1].toString() }, HYPE: { bid: bboH[0].toString(), ask: bboH[1].toString() } },
     epsilonBps: Number(epsilonBps),
-    expectedLimits_1e8: { buyBTC: limitBuyB1e8.toString(), sellHYPE: limitSellH1e8.toString() }
+    expectedLimits_raw: { buyBTC: limitBuyBRaw.toString(), sellHYPE: limitSellHRaw.toString() }
   }, null, 2));
 
   // Exécuter un rebalance pour émettre un SELL HYPE puis BUY BTC (si deltas > 0)
@@ -59,8 +55,8 @@ async function main() {
     const action = bytes[1];
     const payload = ethers.hexlify(bytes.slice(2));
     if (action === 2) {
-      const [asset, isBuy, limitPx1e8, sz, tif, cloid] = coder.decode(["uint32","bool","uint64","uint64","uint8","uint128"], payload);
-      decoded.push({ action, asset: Number(asset), isBuy, limitPx1e8: limitPx1e8.toString(), sz: sz.toString(), tif: Number(tif), cloid: cloid.toString() });
+      const [asset, isBuy, limitPxRaw, sz, tif, cloid] = coder.decode(["uint32","bool","uint64","uint64","uint8","uint128"], payload);
+      decoded.push({ action, asset: Number(asset), isBuy, limitPxRaw: limitPxRaw.toString(), sz: sz.toString(), tif: Number(tif), cloid: cloid.toString() });
     } else {
       decoded.push({ action, raw: payload });
     }

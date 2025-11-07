@@ -118,7 +118,7 @@ function validateSpotOrderEncoding() {
   const testOrder = {
     asset: 1, // BTC
     isBuy: true,
-    limitPx1e8: 50000 * 1e8,
+    limitPxRaw: 50000 * 1000,
     szInSzDecimals: 1000000,
     tif: 3, // IOC
     cloid: 12345
@@ -131,7 +131,7 @@ function validateSpotOrderEncoding() {
     Buffer.from([
       ...new Uint8Array(new Uint32Array([testOrder.asset]).buffer),
       ...new Uint8Array([testOrder.isBuy ? 1 : 0]),
-      ...new Uint8Array(new BigUint64Array([BigInt(testOrder.limitPx1e8)]).buffer),
+      ...new Uint8Array(new BigUint64Array([BigInt(testOrder.limitPxRaw)]).buffer),
       ...new Uint8Array(new BigUint64Array([BigInt(testOrder.szInSzDecimals)]).buffer),
       ...new Uint8Array([testOrder.tif]),
       ...new Uint8Array(new BigUint64Array([BigInt(testOrder.cloid)]).buffer)

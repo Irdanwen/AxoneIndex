@@ -255,7 +255,7 @@ Sans cette correction, si `weiDecimals - szDecimals > 0`, les actifs seraient **
 
 ## Note d'implémentation HYPE50 (SPOT uniquement)
 
-- Pour les rééquilibrages et achats/ventes au comptant, utilisez l'encodage SPOT: `encodeSpotLimitOrder(assetId, isBuy, limitPx1e8, szInSzDecimals, TIF_IOC, cloid)`.
+- Pour les rééquilibrages et achats/ventes au comptant, utilisez l'encodage SPOT: `encodeSpotLimitOrder(assetId, isBuy, limitPxRaw, szInSzDecimals, TIF_IOC, cloid)`.
 - Les tailles d'ordres doivent être exprimées en `szDecimals` du token base (voir `toSzInSzDecimals`).
 - Le Handler est strictement SPOT: aucun encodage perps n'est exposé (helpers perps supprimés).
 
@@ -280,5 +280,5 @@ Exemple:
 uint32 assetId = spotBTC + 10000; // BTC/USDC spot
 L1Read.Bbo memory b = l1read.bbo(assetId);
 // Ordre SPOT IOC
-_send(coreWriter, CoreHandlerLib.encodeSpotLimitOrder(assetId, true, limitPx1e8, szInSzDecimals, 0));
+_send(coreWriter, CoreHandlerLib.encodeSpotLimitOrder(assetId, true, limitPxRaw, szInSzDecimals, 0));
 ```

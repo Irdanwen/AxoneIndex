@@ -230,14 +230,14 @@ library CoreHandlerLib {
     function encodeSpotLimitOrder(
         uint32 asset,
         bool isBuy,
-        uint64 limitPx1e8,
+        uint64 limitPxRaw,
         uint64 szInSzDecimals,
         uint128 cloid
     ) internal pure returns (bytes memory) {
         return HLConstants.encodeSpotLimitOrder(
             asset,
             isBuy,
-            limitPx1e8,
+            limitPxRaw,
             szInSzDecimals,
             HLConstants.TIF_IOC,
             cloid

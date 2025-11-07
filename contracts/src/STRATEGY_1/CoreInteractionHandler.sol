@@ -673,6 +673,41 @@ contract CoreInteractionHandler is Pausable {
         }
     }
 
+    function _pxScalar(uint32 asset) internal view returns (uint64) {
+        if (asset == spotBTC) {
+            return 100000; // spotPx BTC en 1e3 → normalisé 1e8
+        }
+        if (asset == spotHYPE) {
+            return 100; // spotPx HYPE en 1e6 → normalisé 1e8
+        }
+        return 1;
+    }
+
+    function _toRawPx(uint32 asset, uint64 px1e8, bool isBuy) internal view returns (uint64) {
+        uint64 scalar = _pxScalar(asset);
+        if (scalar <= 1) {
+            return px1e8;
+        }
+
+        uint64 raw;
+        if (isBuy) {
+            uint64 quotient = px1e8 / scalar;
+            if (px1e8 % scalar > 0) {
+                unchecked {
+                    quotient += 1;
+                }
+            }
+            raw = quotient;
+        } else {
+            raw = px1e8 / scalar;
+        }
+
+        if (raw == 0) {
+            return 1;
+        }
+        return raw;
+    }
+
     function _toSz1e8(int256 deltaUsd1e18, uint64 price1e8) internal pure returns (uint64) {
         return CoreHandlerLib.toSz1e8(deltaUsd1e18, price1e8);
     }
@@ -772,7 +807,8 @@ contract CoreInteractionHandler is Pausable {
         uint128 cloid
     ) internal {
         uint32 assetId = asset + HLConstants.SPOT_ASSET_OFFSET;
-        _send(coreWriter, CoreHandlerLib.encodeSpotLimitOrder(assetId, isBuy, limitPx1e8, szInSzDecimals, cloid));
+        uint64 limitPxRaw = _toRawPx(asset, limitPx1e8, isBuy);
+        _send(coreWriter, CoreHandlerLib.encodeSpotLimitOrder(assetId, isBuy, limitPxRaw, szInSzDecimals, cloid));
     }
 }
 

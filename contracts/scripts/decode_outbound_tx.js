@@ -24,7 +24,7 @@ async function main() {
     const payload = ethers.hexlify(bytes.slice(2));
     let decoded;
     if (action === 2) {
-      // Spot Limit Order (IOC): (uint32 assetId, bool isBuy, uint64 limitPx1e8, uint64 szInSzDecimals, uint8 tif, uint128 cloid)
+      // Spot Limit Order (IOC): (uint32 assetId, bool isBuy, uint64 limitPxRaw, uint64 szInSzDecimals, uint8 tif, uint128 cloid)
       decoded = coder.decode(["uint32","bool","uint64","uint64","uint8","uint128"], payload);
     } else if (action === 6) {
       // Spot Send: (address destination, uint64 tokenId, uint64 amount1e8)

@@ -98,14 +98,14 @@ function spotOraclePx1e8(uint32 spotAsset) public view returns (uint64) {
 function encodeSpotLimitOrder(
     uint32 asset,
     bool isBuy,
-    uint64 limitPx1e8,
+    uint64 limitPxRaw,
     uint64 szInSzDecimals,
     uint8 tif,
     uint128 cloid
 ) internal pure returns (bytes memory) {
     return abi.encodePacked(
         _header(2),
-        abi.encode(asset, isBuy, limitPx1e8, szInSzDecimals, tif, cloid)
+        abi.encode(asset, isBuy, limitPxRaw, szInSzDecimals, tif, cloid)
     );
 }
 ```
