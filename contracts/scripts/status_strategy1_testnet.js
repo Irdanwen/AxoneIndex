@@ -12,46 +12,55 @@ async function main() {
   const handler = await ethers.getContractAt("CoreInteractionHandler", ADDRS.HANDLER);
   const vault = await ethers.getContractAt("VaultContract", ADDRS.VAULT);
 
+  const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+  const callWithRetry = async (fn, tries = 10, ms = 800) => {
+    let last;
+    for (let i = 0; i < tries; i++) {
+      try { return await fn(); } catch (e) { last = e; await delay(ms); }
+    }
+    throw last;
+  };
+
   // Oracles
   let pxB = 0n, pxH = 0n;
-  try { pxB = await handler.oraclePxBtc1e8(); } catch (_) {}
-  try { pxH = await handler.oraclePxHype1e8(); } catch (_) {}
+  try { pxB = await callWithRetry(() => handler.oraclePxBtc1e8()); } catch (_) {}
+  try { pxH = await callWithRetry(() => handler.oraclePxHype1e8()); } catch (_) {}
 
   // Equity / NAV / PPS
-  const equity1e18 = await handler.equitySpotUsd1e18();
-  const nav1e18 = await vault.nav1e18();
-  const pps1e18 = await vault.pps1e18();
+  const equity1e18 = await callWithRetry(() => handler.equitySpotUsd1e18());
+  const nav1e18 = await callWithRetry(() => vault.nav1e18());
+  const pps1e18 = await callWithRetry(() => vault.pps1e18());
 
   // IDs & params
-  const usdcCoreTokenId = await handler.usdcCoreTokenId();
-  const spotTokenBTC = await handler.spotTokenBTC();
-  const spotTokenHYPE = await handler.spotTokenHYPE();
-  const spotBTC = await handler.spotBTC();
-  const spotHYPE = await handler.spotHYPE();
+  const usdcCoreTokenId = await callWithRetry(() => handler.usdcCoreTokenId());
+  const spotTokenBTC = await callWithRetry(() => handler.spotTokenBTC());
+  const spotTokenHYPE = await callWithRetry(() => handler.spotTokenHYPE());
+  const spotBTC = await callWithRetry(() => handler.spotBTC());
+  const spotHYPE = await callWithRetry(() => handler.spotHYPE());
 
   // Balances spot (1e8 / szDecimals raw)
-  const usdcSpot = await handler.spotBalance(ADDRS.HANDLER, usdcCoreTokenId);
-  const btcSpot = await handler.spotBalance(ADDRS.HANDLER, spotTokenBTC);
-  const hypeSpot = await handler.spotBalance(ADDRS.HANDLER, spotTokenHYPE);
+  const usdcSpot = await callWithRetry(() => handler.spotBalance(ADDRS.HANDLER, usdcCoreTokenId));
+  const btcSpot = await callWithRetry(() => handler.spotBalance(ADDRS.HANDLER, spotTokenBTC));
+  const hypeSpot = await callWithRetry(() => handler.spotBalance(ADDRS.HANDLER, spotTokenHYPE));
 
   // Config handler
-  const feeVault = await handler.feeVault();
-  const feeBps = await handler.feeBps();
-  const usdcReserveBps = await handler.usdcReserveBps();
-  const rebalancer = await handler.rebalancer();
-  const maxOutboundPerEpoch = await handler.maxOutboundPerEpoch();
-  const epochLength = await handler.epochLength();
-  const lastEpochStart = await handler.lastEpochStart();
-  const sentThisEpoch = await handler.sentThisEpoch();
-  const marketEpsilonBps = await handler.marketEpsilonBps();
-  const maxSlippageBps = await handler.maxSlippageBps();
-  const deadbandBps = await handler.deadbandBps();
-  const maxOracleDeviationBps = await handler.maxOracleDeviationBps();
+  const feeVault = await callWithRetry(() => handler.feeVault());
+  const feeBps = await callWithRetry(() => handler.feeBps());
+  const usdcReserveBps = await callWithRetry(() => handler.usdcReserveBps());
+  const rebalancer = await callWithRetry(() => handler.rebalancer());
+  const maxOutboundPerEpoch = await callWithRetry(() => handler.maxOutboundPerEpoch());
+  const epochLength = await callWithRetry(() => handler.epochLength());
+  const lastEpochStart = await callWithRetry(() => handler.lastEpochStart());
+  const sentThisEpoch = await callWithRetry(() => handler.sentThisEpoch());
+  const marketEpsilonBps = await callWithRetry(() => handler.marketEpsilonBps());
+  const maxSlippageBps = await callWithRetry(() => handler.maxSlippageBps());
+  const deadbandBps = await callWithRetry(() => handler.deadbandBps());
+  const maxOracleDeviationBps = await callWithRetry(() => handler.maxOracleDeviationBps());
 
   // Config vault
-  const depositFeeBps = await vault.depositFeeBps();
-  const withdrawFeeBps = await vault.withdrawFeeBps();
-  const autoDeployBps = await vault.autoDeployBps();
+  const depositFeeBps = await callWithRetry(() => vault.depositFeeBps());
+  const withdrawFeeBps = await callWithRetry(() => vault.withdrawFeeBps());
+  const autoDeployBps = await callWithRetry(() => vault.autoDeployBps());
 
   const out = {
     network: hre.network.name,
@@ -68,9 +77,9 @@ async function main() {
       spotHYPE: Number(spotHYPE),
     },
     spotBalances_raw: {
-      usdc: usdcSpot.total.toString(),
-      btc: btcSpot.total.toString(),
-      hype: hypeSpot.total.toString(),
+      usdc: usdcSpot.toString(),
+      btc: btcSpot.toString(),
+      hype: hypeSpot.toString(),
     },
     handlerConfig: {
       feeVault,

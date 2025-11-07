@@ -31,14 +31,15 @@ async function main() {
   await q("DepositSkippedOracleDeviationHype", handler.filters.DepositSkippedOracleDeviationHype());
   await q("RebalanceSkippedOracleDeviation", handler.filters.RebalanceSkippedOracleDeviation());
 
-  console.log(JSON.stringify({
+  const stringify = (obj) => JSON.stringify(obj, (k, v) => typeof v === 'bigint' ? v.toString() : v, 2);
+  console.log(stringify({
     network: hre.network.name,
     handler: HANDLER,
     fromBlock,
     toBlock: latest,
     counts: Object.fromEntries(Object.entries(events).map(([k, v]) => [k, Array.isArray(v) ? v.length : 0])),
     samples: Object.fromEntries(Object.entries(events).map(([k, v]) => [k, Array.isArray(v) ? v.slice(-3) : v])),
-  }, null, 2));
+  }));
 }
 
 main().catch((e) => {
