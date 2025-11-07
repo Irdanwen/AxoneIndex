@@ -1,5 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
-require("dotenv").config();
+require("dotenv").config({ path: "./env" });
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -20,11 +20,11 @@ module.exports = {
     localhost: {
       url: "http://127.0.0.1:8545",
     },
-    // Ajoutez vos réseaux de test et mainnet ici
-    // testnet: {
-    //   url: process.env.TESTNET_RPC_URL,
-    //   accounts: [process.env.PRIVATE_KEY],
-    // },
+    // HyperEVM Testnet (Hyperliquid)
+    testnet: {
+      url: process.env.TESTNET_RPC_URL,
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
     // mainnet: {
     //   url: process.env.MAINNET_RPC_URL,
     //   accounts: [process.env.PRIVATE_KEY],
