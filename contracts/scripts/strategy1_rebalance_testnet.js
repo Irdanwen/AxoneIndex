@@ -2,7 +2,7 @@ const hre = require("hardhat");
 
 async function main() {
   const { ethers } = hre;
-  const HANDLER = process.env.HANDLER || "0xd6053F085E844d7924D1AeDAf715378a0a010B63";
+  const HANDLER = process.env.HANDLER || "0xa89e805806d0174b587a7001944aaBEECb53f284";
   const gasPrice = ethers.parseUnits(process.env.GAS_PRICE_GWEI || "3", "gwei");
 
   const handler = await ethers.getContractAt("CoreInteractionHandler", HANDLER);
@@ -19,19 +19,24 @@ async function main() {
   console.log(`tx mined in block ${rcpt.blockNumber}`);
 
   // Lire derniers événements Rebalanced
-  const latest = await ethers.provider.getBlockNumber();
-  const fromBlock = latest > 5000 ? latest - 5000 : 0;
-  const logs = await handler.queryFilter(handler.filters.Rebalanced(), fromBlock, latest);
-  const last = logs.slice(-1)[0];
-  if (last) {
-    console.log("Last Rebalanced:", {
-      blockNumber: last.blockNumber,
-      txHash: last.transactionHash,
-      dBtc1e18: last.args?.dBtc1e18?.toString?.() || last.args?.[0]?.toString?.(),
-      dHype1e18: last.args?.dHype1e18?.toString?.() || last.args?.[1]?.toString?.(),
-    });
-  } else {
-    console.log("No Rebalanced event found in recent blocks.");
+  try {
+    const latest = await ethers.provider.getBlockNumber();
+    const RANGE = 900; // HyperEVM RPC limite ~1000 blocs
+    const fromBlock = latest > RANGE ? latest - RANGE : 0;
+    const logs = await handler.queryFilter(handler.filters.Rebalanced(), fromBlock, latest);
+    const last = logs.slice(-1)[0];
+    if (last) {
+      console.log("Last Rebalanced:", {
+        blockNumber: last.blockNumber,
+        txHash: last.transactionHash,
+        dBtc1e18: last.args?.dBtc1e18?.toString?.() || last.args?.[0]?.toString?.(),
+        dHype1e18: last.args?.dHype1e18?.toString?.() || last.args?.[1]?.toString?.(),
+      });
+    } else {
+      console.log("No Rebalanced event found in recent blocks.");
+    }
+  } catch (err) {
+    console.warn("⚠️ Impossible de récupérer les événements Rebalanced:", err?.message || err);
   }
 }
 

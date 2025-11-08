@@ -8,6 +8,7 @@ Ce sous-dossier fournit un service de monitoring off-chain des actions Core (ord
 - **Vérification off-chain**:
   - Ordres: requête `userFills` de l'API Hyperliquid pour confirmer un fill autour de l'horodatage de l'événement.
   - Inbound (Core → EVM): contrôle de l'augmentation du solde USDC du handler ≥ montant attendu.
+- **Surveillance proactive des tailles d'ordres**: alerte (`warn`) si un `OutboundToCore` encode un ordre SPOT dépassant un seuil (config par actif, ex. HYPE > 5 000 unités en `szDecimals`).
 - **Alertes**: envoi optionnel via `WEBHOOK_URL` (ex: Discord).
 - **Métriques**: `/metrics` au format Prometheus (compteurs confirmés/échoués/pending).
 

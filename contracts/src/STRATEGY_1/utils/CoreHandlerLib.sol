@@ -54,19 +54,9 @@ library CoreHandlerLib {
         uint64 tokenId
     ) internal view returns (uint256) {
         L1Read.SpotBalance memory b = l1read.spotBalance(coreUser, tokenId);
-        L1Read.TokenInfo memory info = l1read.tokenInfo(uint32(tokenId));
-        
-        uint256 total = uint256(b.total);
-        
-        // Convert from szDecimals to weiDecimals
-        if (info.weiDecimals > info.szDecimals) {
-            uint8 diff = info.weiDecimals - info.szDecimals;
-            return total * (10 ** diff);
-        } else if (info.weiDecimals < info.szDecimals) {
-            uint8 diff = info.szDecimals - info.weiDecimals;
-            return total / (10 ** diff);
-        }
-        return total;
+        // Le précompile renvoie déjà la balance en weiDecimals (constaté sur Hyperliquid: HYPE total=79_600_000 pour 0.796 H, weiDecimals=8)
+        // Toute reconversion supplémentaire (ex: multiplier par 10^(weiDecimals - szDecimals)) gonfle artificiellement les montants
+        return uint256(b.total);
     }
 
     function computeRebalanceDeltas(

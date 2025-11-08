@@ -1,5 +1,13 @@
 # Changelog
 
+## 2025-11-07
+
+### Fixed
+- CoreInteractionHandler: `spotBalanceInWei` n'applique plus de conversion `szDecimals→weiDecimals` supplémentaire. Les soldes Hyperliquid sont traités tels quels (déjà en `weiDecimals`), éliminant un facteur ×10⁶ sur la valorisation et les tailles d'ordres.
+
+### Added
+- Monitoring: alerte proactive lorsque la taille d'un ordre SPOT dépasse un seuil configurable par actif.
+
 ## 2025-10-29
 
 ### Fixed

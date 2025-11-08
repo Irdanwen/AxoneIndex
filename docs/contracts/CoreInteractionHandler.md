@@ -18,7 +18,7 @@
 - **⚡ OPTIMISATION CRITIQUE** : **Migration vers block.number** - Remplacement de `block.timestamp` par `block.number` pour éviter la manipulation des validateurs
 - **🔒 SÉCURITÉ RENFORCÉE** : **Rate limiting basé sur les blocs** - Utilisation de `block.number` pour les époques au lieu de timestamps manipulables
 - **🐛 CORRECTION CRITIQUE** : **Migration vers ordres SPOT** — Les ordres de rééquilibrage et de dépôt utilisent désormais un encodage SPOT dédié (`encodeSpotLimitOrder`) avec TIF=IOC. Les tailles sont converties selon `szDecimals` via `toSzInSzDecimals()`.
-- **💰 CORRECTION AUDIT** : **Valorisation correcte des soldes spot** - Implémentation de `spotBalanceInWei()` pour convertir les balances de `szDecimals` vers `weiDecimals` avant calcul de la valeur USD. Correction appliquée dans `equitySpotUsd1e18()` et `_computeRebalanceDeltas()` pour éviter la surévaluation/sous-évaluation des actifs.
+- **💰 CORRECTION (2025-11-07)** : **Valorisation correcte des soldes spot** — `spotBalanceInWei()` consomme désormais directement les valeurs renvoyées par le précompilé (déjà en `weiDecimals`) et n'applique plus de conversion supplémentaire. Cela évite la surestimation ×10⁶ observée sur les tailles d'ordres HYPE.
  - **🐛 CORRECTION CRITIQUE (tailles d'ordre ×100)** : **Conversion USD → taille en `szDecimals`** — `toSzInSzDecimals()` divise désormais par `price1e8 * 1e10` (et non `price1e8 * 1e8`). Cela corrige un facteur ×100 sur les tailles d’ordres qui pouvait empêcher l’exécution (ex: vente HYPE initiale lors d’un dépôt natif).
 
 ### 🔄 Mécanisme de Rattrapage Graduel Oracle
@@ -189,20 +189,24 @@ Cette correction garantit que tous les calculs de valorisation et rebalancement 
 
 Le contrat gère deux types de décimales pour les tokens HyperLiquid :
 
-1. **szDecimals** : Format utilisé pour les opérations de trading (ordres, transfers)
-   - Utilisé par `SpotBalance.total` (retourné par le precompile)
-- Utilisé pour les montants dans `encodeSpotLimitOrder()` et `encodeSpotSend()`
-   - Fonction : `spotBalance()` retourne directement en szDecimals
+1. **szDecimals** : Format utilisé pour les opérations de trading (ordres, transferts)
+   - Utilisé pour les montants encodés via `encodeSpotLimitOrder()` et `encodeSpotSend()`
+   - Exemple Hyperliquid : HYPE `szDecimals = 2` (1 unité = 0.01 HYPE)
 
-2. **weiDecimals** : Format utilisé pour la représentation on-chain et valorisation
-   - Utilisé pour calculer les valeurs en USD correctement
-   - Fonction : `spotBalanceInWei()` convertit de szDecimals vers weiDecimals
+2. **weiDecimals** : Format utilisé pour la représentation on-chain et la valorisation
+   - Le précompilé `spotBalance` renvoie les soldes `total` directement en `weiDecimals`
+   - `spotBalanceInWei()` renvoie donc `SpotBalance.total` tel quel (depuis la correction 2025‑11‑07)
+   - Exemple Hyperliquid : HYPE `weiDecimals = 8` → un solde de `0.796 H` est renvoyé sous la forme `79_600_000`
 
 ### ⚠️ Formule de Conversion
 
+Depuis 2025‑11‑07, aucune conversion n'est appliquée car Hyperliquid renvoie déjà `SpotBalance.total` en `weiDecimals` :
+
 ```solidity
-balanceInWei = balanceSz × 10^(weiDecimals - szDecimals)
+balanceInWei = spotBalance(coreUser, tokenId).total; // déjà en weiDecimals
 ```
+
+Si vous interagissez avec un environnement qui renverrait encore des `szDecimals`, réactivez explicitement la conversion `× 10^(weiDecimals - szDecimals)` côté off-chain (non recommandé sur HyperEVM).
 
 ### 🔢 Formule `toSzInSzDecimals` (USD1e18 → taille en `szDecimals`)
 
@@ -233,10 +237,10 @@ Ancienne formule incorrecte (ajoutait un facteur ×100 sur la taille, à éviter
 
 ### 🎯 Impact
 
-Sans cette correction, si `weiDecimals - szDecimals > 0`, les actifs seraient **sous-valorisés**, affectant :
-- Le calcul du NAV (Net Asset Value)
-- Le prix par share (PPS)
-- Les calculs de rebalancement
+Avant la correction 2025‑11‑07, multiplier par `10^(weiDecimals - szDecimals)` sur des valeurs déjà exprimées en `weiDecimals` conduisait à une **sur-valorisation massive** (ex: HYPE ×10⁶). Les conséquences observées :
+- NAV et PPS artificiellement gonflés
+- Deltas de rebalancement démesurés → ordres SPOT rejetés (balance insuffisante)
+- Difficulté à diagnostiquer car les événements `SpotOrderPlaced` étaient bien émis malgré l'absence de fills
 - L'équité reportée aux utilisateurs
 
 ## Intégration avec `VaultContract`

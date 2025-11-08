@@ -7,9 +7,17 @@ import client from 'prom-client';
 
 const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
 
+const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+
+const ORDER_WARN_THRESHOLDS = {
+  1035: { label: 'HYPE', maxSz: 500_000 }, // 5 000 HYPE en szDecimals=2
+  1054: { label: 'BTC', maxSz: 5_000_000 }, // 50 BTC en szDecimals=5
+};
+
 // Configuration depuis l'environnement
 const RPC_URL = process.env.RPC_URL || 'https://rpc.hyperliquid-testnet.xyz/evm';
-const HANDLER_ADDRESS = (process.env.HANDLER_ADDRESS || '').trim();
+const DEFAULT_HANDLER_ADDRESS = '0xa89e805806d0174b587a7001944aaBEECb53f284';
+const HANDLER_ADDRESS = (process.env.HANDLER_ADDRESS || DEFAULT_HANDLER_ADDRESS).trim();
 const HL_API_URL = process.env.HL_API_URL || 'https://api.hyperliquid-testnet.xyz';
 const START_BLOCK = process.env.START_BLOCK ? Number(process.env.START_BLOCK) : undefined;
 const ORDER_VERIFY_DELAY_MS = Number(process.env.ORDER_VERIFY_DELAY_MS || 10000);
@@ -101,6 +109,37 @@ async function sendAlert(level, message, details) {
     });
   } catch (e) {
     logger.warn({ err: e.message }, 'Échec envoi webhook');
+  }
+}
+
+function decodeOutboundData(dataHex) {
+  if (!dataHex) return null;
+  const hex = dataHex.startsWith('0x') ? dataHex : `0x${dataHex}`;
+  if (hex.length < 6) return null;
+  const version = parseInt(hex.slice(2, 4), 16);
+  const action = parseInt(hex.slice(4, 6), 16);
+  const payload = hex.length > 6 ? `0x${hex.slice(6)}` : '0x';
+  try {
+    if (version === 1 && action === 2 && payload.length > 2) {
+      const [asset, isBuy, limitPxRaw, szInSzDecimals, tif, cloid] = abiCoder.decode(
+        ['uint32', 'bool', 'uint64', 'uint64', 'uint8', 'uint128'],
+        payload
+      );
+      return {
+        version,
+        action,
+        asset: Number(asset),
+        isBuy,
+        limitPxRaw,
+        szInSzDecimals,
+        tif: Number(tif),
+        cloid,
+      };
+    }
+    return { version, action };
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Décodage OutboundToCore impossible');
+    return null;
   }
 }
 
@@ -208,15 +247,42 @@ async function scheduleVerification() {
   pendingGauge.set(pending.size);
 }
 
-function onOutbound(evt) {
+async function onOutbound(evt) {
   const id = pendingKeyFromEvent(evt);
   const entry = {
     id,
     type: 'order',
     emittedAt: Date.now(),
     retries: 0,
-    txHash: evt.log.transactionHash
+    txHash: evt.log.transactionHash,
   };
+  const decoded = decodeOutboundData(evt.log.data);
+  if (decoded) {
+    entry.order = {
+      asset: decoded.asset,
+      isBuy: decoded.isBuy,
+      limitPxRaw: decoded.limitPxRaw ? decoded.limitPxRaw.toString() : undefined,
+      szInSzDecimals: decoded.szInSzDecimals ? decoded.szInSzDecimals.toString() : undefined,
+      cloid: decoded.cloid ? decoded.cloid.toString() : undefined,
+    };
+    const threshold = decoded.asset != null ? ORDER_WARN_THRESHOLDS[decoded.asset] : undefined;
+    if (threshold && decoded.szInSzDecimals !== undefined) {
+      const sz = Number(decoded.szInSzDecimals);
+      if (!Number.isNaN(sz) && sz > threshold.maxSz) {
+        const msg = `Taille d'ordre ${threshold.label} anormalement élevée (${sz} en szDecimals)`;
+        const warnDetails = {
+          id,
+          asset: decoded.asset,
+          isBuy: decoded.isBuy,
+          limitPxRaw: decoded.limitPxRaw.toString(),
+          szInSzDecimals: decoded.szInSzDecimals.toString(),
+          cloid: decoded.cloid.toString(),
+        };
+        logger.warn(warnDetails, msg);
+        await sendAlert('warn', msg, warnDetails);
+      }
+    }
+  }
   pending.set(id, entry);
   actionCounter.inc({ type: 'order' });
   logger.info({ id, tx: evt.log.transactionHash }, 'OutboundToCore détecté (supposé ordre IOC)');
