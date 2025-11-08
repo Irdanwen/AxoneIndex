@@ -1,10 +1,12 @@
 # Changelog
 
-## 2025-11-07
+## 2025-11-09
 
 ### Fixed
-- CoreInteractionHandler: `spotBalanceInWei` n'applique plus de conversion `szDecimals→weiDecimals` supplémentaire. Les soldes Hyperliquid sont traités tels quels (déjà en `weiDecimals`), éliminant un facteur ×10⁶ sur la valorisation et les tailles d'ordres.
+- CoreInteractionHandler: `spotBalanceInWei` convertit systématiquement les soldes `szDecimals→weiDecimals` en se basant sur `tokenInfo`, assurant une valorisation cohérente même si les precompiles Hyperliquid changent de format.
 - CoreInteractionHandler: le calcul des ordres de rebalancing réutilise désormais le prix limite BBO (ajusté par `marketEpsilonBps`) pour convertir le notional USD en taille base, évitant les IOC rejetés pour solde insuffisant lorsque l'oracle est éloigné du carnet.
+
+## 2025-11-07
 
 ### Added
 - Monitoring: alerte proactive lorsque la taille d'un ordre SPOT dépasse un seuil configurable par actif.
