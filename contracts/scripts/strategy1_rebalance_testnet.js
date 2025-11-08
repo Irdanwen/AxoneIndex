@@ -2,8 +2,27 @@ const hre = require("hardhat");
 
 async function main() {
   const { ethers } = hre;
-  const HANDLER = process.env.HANDLER || "0xa89e805806d0174b587a7001944aaBEECb53f284";
+  const HANDLER = process.env.HANDLER || "0xaEAe0B32cE902C40A6053950323e6c0228a08efD";
   const gasPrice = ethers.parseUnits(process.env.GAS_PRICE_GWEI || "3", "gwei");
+
+  const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+  const errorMessage = (err) => err?.error?.message || err?.message || String(err);
+  const isRateLimitError = (err) => /rate limited/i.test(errorMessage(err)) || err?.code === 429;
+  const sendWithRetry = async (fn, label, attempts = 5, baseWaitMs = 1500) => {
+    for (let i = 0; i < attempts; i++) {
+      try {
+        return await fn();
+      } catch (err) {
+        if (isRateLimitError(err) && i < attempts - 1) {
+          const waitMs = baseWaitMs * (i + 1);
+          console.warn(`⚠️ Rate limit lors de "${label}" (tentative ${i + 1}/${attempts}), nouvel essai dans ${waitMs}ms`);
+          await delay(waitMs);
+          continue;
+        }
+        throw err;
+      }
+    }
+  };
 
   const handler = await ethers.getContractAt("CoreInteractionHandler", HANDLER);
   const signer = (await ethers.getSigners())[0];
@@ -13,7 +32,7 @@ async function main() {
   console.log(`Handler:    ${HANDLER}`);
 
   // simple receipt wait (Hardhat/Ethers v6)
-  const tx = await handler.connect(signer).rebalancePortfolio(0, 0, { gasPrice });
+  const tx = await sendWithRetry(() => handler.connect(signer).rebalancePortfolio(0, 0, { gasPrice }), "handler.rebalancePortfolio()");
   console.log(`tx sent: ${tx.hash}`);
   const rcpt = await tx.wait();
   console.log(`tx mined in block ${rcpt.blockNumber}`);

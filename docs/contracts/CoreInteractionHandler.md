@@ -19,6 +19,7 @@
 - **🔒 SÉCURITÉ RENFORCÉE** : **Rate limiting basé sur les blocs** - Utilisation de `block.number` pour les époques au lieu de timestamps manipulables
 - **🐛 CORRECTION CRITIQUE** : **Migration vers ordres SPOT** — Les ordres de rééquilibrage et de dépôt utilisent désormais un encodage SPOT dédié (`encodeSpotLimitOrder`) avec TIF=IOC. Les tailles sont converties selon `szDecimals` via `toSzInSzDecimals()`.
 - **💰 CORRECTION (2025-11-07)** : **Valorisation correcte des soldes spot** — `spotBalanceInWei()` consomme désormais directement les valeurs renvoyées par le précompilé (déjà en `weiDecimals`) et n'applique plus de conversion supplémentaire. Cela évite la surestimation ×10⁶ observée sur les tailles d'ordres HYPE.
+- **⚖️ CORRECTION (2025-11-08)** : **Conversion des tailles au prix limite courant** — les ordres de rebalancing utilisent maintenant le même prix que la limite BBO (ask/bid ajusté par `marketEpsilonBps`) pour convertir le notional USD en taille base. Cela empêche d'essayer d'acheter plus d'actifs que la trésorerie disponible lorsque le carnet est loin de l'oracle et réduit les rejets Hyperliquid pour « insufficient funds ».
  - **🐛 CORRECTION CRITIQUE (tailles d'ordre ×100)** : **Conversion USD → taille en `szDecimals`** — `toSzInSzDecimals()` divise désormais par `price1e8 * 1e10` (et non `price1e8 * 1e8`). Cela corrige un facteur ×100 sur les tailles d’ordres qui pouvait empêcher l’exécution (ex: vente HYPE initiale lors d’un dépôt natif).
 
 ### 🔄 Mécanisme de Rattrapage Graduel Oracle
@@ -177,11 +178,9 @@ Le contrat utilise un système de rate limiting basé sur les **blocs** (et non 
 - BTC : 1e3 (ex: 45000000 = 45000 USD)  
 - HYPE : 1e6 (ex: 50000000 = 50 USD)
 
-**Solution implémentée** : La fonction `spotOraclePx1e8()` normalise automatiquement les prix vers 1e8 :
-- BTC : `px * 100000` (conversion 1e3 → 1e8)
-- HYPE : `px * 100` (conversion 1e6 → 1e8)
+**Solution implémentée** : Les fonctions de lecture (`spotOraclePx1e8()`, `_spotBboPx1e8()`, `CoreHandlerLib.validatedOraclePx1e8()`) dérivent désormais dynamiquement le facteur d'échelle à partir de `szDecimals` du token base (via `tokenInfo`). Le prix est ensuite normalisé vers 1e8, quelle que soit la paire configurée.
 
-Cette correction garantit que tous les calculs de valorisation et rebalancement utilisent des prix cohérents en 1e8.
+Cette approche respecte les règles Hyperliquid (tick & lot size) : si `szDecimals` change ou qu'un nouvel actif est ajouté, le facteur est recalculé automatiquement.
 
 ## Gestion des Décimales (szDecimals vs weiDecimals)
 
@@ -194,19 +193,19 @@ Le contrat gère deux types de décimales pour les tokens HyperLiquid :
    - Exemple Hyperliquid : HYPE `szDecimals = 2` (1 unité = 0.01 HYPE)
 
 2. **weiDecimals** : Format utilisé pour la représentation on-chain et la valorisation
-   - Le précompilé `spotBalance` renvoie les soldes `total` directement en `weiDecimals`
-   - `spotBalanceInWei()` renvoie donc `SpotBalance.total` tel quel (depuis la correction 2025‑11‑07)
-   - Exemple Hyperliquid : HYPE `weiDecimals = 8` → un solde de `0.796 H` est renvoyé sous la forme `79_600_000`
+   - Le précompilé `spotBalance` renvoie la balance en `szDecimals`
+   - `spotBalanceInWei()` récupère les métadonnées via `tokenInfo` et convertit systématiquement en `weiDecimals`
 
 ### ⚠️ Formule de Conversion
 
-Depuis 2025‑11‑07, aucune conversion n'est appliquée car Hyperliquid renvoie déjà `SpotBalance.total` en `weiDecimals` :
+Depuis 2025‑11‑09, la conversion `szDecimals → weiDecimals` est systématiquement appliquée on-chain :
 
 ```solidity
-balanceInWei = spotBalance(coreUser, tokenId).total; // déjà en weiDecimals
+L1Read.TokenInfo memory info = l1read.tokenInfo(uint32(tokenId));
+uint256 balanceInWei = convertSzToWei(balanceSz, info.szDecimals, info.weiDecimals);
 ```
 
-Si vous interagissez avec un environnement qui renverrait encore des `szDecimals`, réactivez explicitement la conversion `× 10^(weiDecimals - szDecimals)` côté off-chain (non recommandé sur HyperEVM).
+Cela garantit une valorisation correcte même si Hyperliquid modifie le format retourné par les precompiles.
 
 ### 🔢 Formule `toSzInSzDecimals` (USD1e18 → taille en `szDecimals`)
 
@@ -267,7 +266,7 @@ Avant la correction 2025‑11‑07, multiplier par `10^(weiDecimals - szDecimals
 
 - Définition: un ordre "market" est soumis en IOC avec un prix limite marketable calé sur le BBO (ask pour BUY, bid pour SELL) normalisé en 1e8.
  - Implémentation HYPE50:
-  - `_spotBboPx1e8(spotIndex)` lit `l1read.bbo(assetId)` où `assetId = spotIndex + 10000` (offset Hyperliquid pour les actifs spot), puis normalise: BTC ×1e5 (1e3→1e8), HYPE ×1e2 (1e6→1e8).
+  - `_spotBboPx1e8(spotIndex)` lit `l1read.bbo(assetId)` où `assetId = spotIndex + 10000` (offset Hyperliquid pour les actifs spot), puis applique automatiquement `10^(8 - szDecimals(baseToken))` pour normaliser le prix.
   - `_marketLimitFromBbo(asset, isBuy)`:
     - BUY: utilise `ask1e8` (+ `marketEpsilonBps`)
     - SELL: utilise `bid1e8` (− `marketEpsilonBps`)

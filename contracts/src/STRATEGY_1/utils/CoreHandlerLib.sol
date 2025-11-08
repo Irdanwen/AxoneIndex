@@ -54,9 +54,18 @@ library CoreHandlerLib {
         uint64 tokenId
     ) internal view returns (uint256) {
         L1Read.SpotBalance memory b = l1read.spotBalance(coreUser, tokenId);
-        // Le précompile renvoie déjà la balance en weiDecimals (constaté sur Hyperliquid: HYPE total=79_600_000 pour 0.796 H, weiDecimals=8)
-        // Toute reconversion supplémentaire (ex: multiplier par 10^(weiDecimals - szDecimals)) gonfle artificiellement les montants
-        return uint256(b.total);
+        L1Read.TokenInfo memory info = l1read.tokenInfo(uint32(tokenId));
+
+        uint256 total = uint256(b.total);
+        if (info.weiDecimals > info.szDecimals) {
+            uint8 diff = info.weiDecimals - info.szDecimals;
+            return total * (10 ** uint256(diff));
+        }
+        if (info.weiDecimals < info.szDecimals) {
+            uint8 diff = info.szDecimals - info.weiDecimals;
+            return total / (10 ** uint256(diff));
+        }
+        return total;
     }
 
     function computeRebalanceDeltas(
@@ -179,14 +188,10 @@ library CoreHandlerLib {
     ) internal view returns (OracleResult memory) {
         // Read raw spot price (variable decimals per asset) then normalize to 1e8 for comparisons
         uint64 rawPx = l1read.spotPx(spotAsset);
-        uint64 px1e8;
-        if (isBtc) {
-            // BTC spot px typically 1e3 → normalize to 1e8 (×1e5)
-            px1e8 = rawPx * 100000;
-        } else {
-            // HYPE spot px typically 1e6 → normalize to 1e8 (×1e2)
-            px1e8 = rawPx * 100;
-        }
+        uint64 scalar = _pxScalar(l1read, spotAsset);
+        uint256 expanded = uint256(rawPx) * uint256(scalar);
+        require(expanded <= type(uint64).max, "PX_OVERFLOW");
+        uint64 px1e8 = uint64(expanded);
 
         uint64 lastPx1e8 = isBtc ? oracle.lastPxBtc1e8 : oracle.lastPxHype1e8;
         bool init = isBtc ? oracle.pxInitB : oracle.pxInitH;
@@ -240,5 +245,21 @@ library CoreHandlerLib {
         uint64 amount
     ) internal pure returns (bytes memory) {
         return HLConstants.encodeSpotSend(systemAddress, tokenId, amount);
+    }
+
+    function _pxScalar(L1Read l1read, uint32 spotAsset) private view returns (uint64) {
+        L1Read.SpotInfo memory info = l1read.spotInfo(spotAsset);
+        uint64 baseTokenId = info.tokens[0];
+        if (baseTokenId == 0) {
+            return 1;
+        }
+        L1Read.TokenInfo memory baseInfo = l1read.tokenInfo(uint32(baseTokenId));
+        uint8 szDecimals = baseInfo.szDecimals;
+        require(szDecimals <= 8, "PX_SCALAR");
+        uint256 exponent = 8 - uint256(szDecimals);
+        if (exponent == 0) {
+            return 1;
+        }
+        return uint64(10 ** exponent);
     }
 }

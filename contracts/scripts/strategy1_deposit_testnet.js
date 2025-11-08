@@ -2,8 +2,8 @@ const hre = require("hardhat");
 
 async function main() {
   const { ethers } = hre;
-  const VAULT = process.env.VAULT || "0xc5e50b61f921C905C2e56837cBAdf3551dc24867";
-  const HANDLER = process.env.HANDLER || "0xa89e805806d0174b587a7001944aaBEECb53f284";
+  const VAULT = process.env.VAULT || "0xb9F1cde679E0C2f63ed0806f494602d36CbD7a79";
+  const HANDLER = process.env.HANDLER || "0xaEAe0B32cE902C40A6053950323e6c0228a08efD";
   const amount1e18 = process.env.DEPOSIT_HYPE_1E18 ? BigInt(process.env.DEPOSIT_HYPE_1E18) : (10n ** 17n);
   const gasPrice = ethers.parseUnits(process.env.GAS_PRICE_GWEI || "3", "gwei");
 

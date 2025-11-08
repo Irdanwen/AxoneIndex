@@ -16,7 +16,7 @@ const ORDER_WARN_THRESHOLDS = {
 
 // Configuration depuis l'environnement
 const RPC_URL = process.env.RPC_URL || 'https://rpc.hyperliquid-testnet.xyz/evm';
-const DEFAULT_HANDLER_ADDRESS = '0xa89e805806d0174b587a7001944aaBEECb53f284';
+const DEFAULT_HANDLER_ADDRESS = '0xaEAe0B32cE902C40A6053950323e6c0228a08efD';
 const HANDLER_ADDRESS = (process.env.HANDLER_ADDRESS || DEFAULT_HANDLER_ADDRESS).trim();
 const HL_API_URL = process.env.HL_API_URL || 'https://api.hyperliquid-testnet.xyz';
 const START_BLOCK = process.env.START_BLOCK ? Number(process.env.START_BLOCK) : undefined;
