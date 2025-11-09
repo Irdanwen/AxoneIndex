@@ -94,6 +94,11 @@ contract CoreInteractionHandler is Pausable {
     // Option: rééquilibrer automatiquement après un retrait HYPE (par défaut: activé)
     bool public rebalanceAfterWithdrawal = true;
 
+    // Prix: décimales spot par index (source de vérité; configuré on-chain par l’owner)
+    mapping(uint32 => uint8) public spotPxDecimals;
+    // Seuil notional minimum (USD 1e8) pour éviter des IOC poussière
+    uint64 public minNotionalUsd1e8 = 50 * 1e8;
+
     modifier onlyOwner(){
         if(msg.sender!=owner) revert NotOwner();
         _;
@@ -211,6 +216,18 @@ contract CoreInteractionHandler is Pausable {
         rebalanceAfterWithdrawal = v;
     }
 
+    /// @notice Définit les décimales prix pour un marché spot donné
+    function setSpotPxDecimals(uint32 spotIndex, uint8 pxDec) external onlyOwner {
+        require(pxDec > 0 && pxDec <= 18, "PXDEC");
+        spotPxDecimals[spotIndex] = pxDec;
+    }
+
+    /// @notice Définit le notional minimal (USD en 1e8)
+    function setMinNotionalUsd1e8(uint64 v) external onlyOwner {
+        require(v > 0, "MIN_NTL");
+        minNotionalUsd1e8 = v;
+    }
+
     /// @notice Pause all critical operations in case of emergency
     function pause() external onlyOwner {
         _pause();
@@ -242,15 +259,9 @@ contract CoreInteractionHandler is Pausable {
     }
 
     function spotOraclePx1e8(uint32 spotAsset) public view returns (uint64) {
-        uint64 px = l1read.spotPx(spotAsset);
-        if (px == 0) revert OracleZero();
-        uint64 scalar = _pxScalar(spotAsset);
-        if (scalar == 1) {
-            return px;
-        }
-        uint256 norm = uint256(px) * uint256(scalar);
-        require(norm <= type(uint64).max, "PX_OVERFLOW");
-        return uint64(norm);
+        uint64 raw = l1read.spotPx(spotAsset);
+        if (raw == 0) revert OracleZero();
+        return _toPx1e8(spotAsset, raw);
     }
 
     // Public oracle getters for vault accounting
@@ -637,39 +648,11 @@ contract CoreInteractionHandler is Pausable {
     function _spotBboPx1e8(uint32 spotAsset) internal view returns (uint64 bid1e8, uint64 ask1e8) {
         uint32 assetId = spotAsset + HLConstants.SPOT_ASSET_OFFSET;
         L1Read.Bbo memory b = l1read.bbo(assetId);
-        uint64 scalar = _pxScalar(spotAsset);
-        if (scalar == 1) {
-            bid1e8 = b.bid;
-            ask1e8 = b.ask;
-            return (bid1e8, ask1e8);
-        }
-        uint256 bidNorm = uint256(b.bid) * uint256(scalar);
-        uint256 askNorm = uint256(b.ask) * uint256(scalar);
-        require(bidNorm <= type(uint64).max && askNorm <= type(uint64).max, "BBO_OVERFLOW");
-        bid1e8 = uint64(bidNorm);
-        ask1e8 = uint64(askNorm);
+        bid1e8 = _toPx1e8(spotAsset, b.bid);
+        ask1e8 = _toPx1e8(spotAsset, b.ask);
     }
 
-    function _marketLimitFromBbo(uint32 asset, bool isBuy) internal view returns (uint64) {
-        (uint64 bid1e8, uint64 ask1e8) = _spotBboPx1e8(asset);
-        if (bid1e8 == 0 || ask1e8 == 0) {
-            // Fallback sur l'oracle normalisé si BBO indisponible
-            uint64 oracle = spotOraclePx1e8(asset);
-            return _limitFromOracle(oracle, isBuy);
-        }
-        if (isBuy) {
-            // Market buy: prendre l'ask (peut élargir avec marketEpsilonBps)
-            uint256 adj = (uint256(ask1e8) * uint256(marketEpsilonBps)) / 10_000;
-            return uint64(uint256(ask1e8) + adj);
-        } else {
-            // Market sell: prendre le bid
-            uint256 adj = (uint256(bid1e8) * uint256(marketEpsilonBps)) / 10_000;
-            uint256 lo = (uint256(bid1e8) > adj) ? (uint256(bid1e8) - adj) : 1;
-            return uint64(lo);
-        }
-    }
-
-    function _pxScalar(uint32 asset) internal view returns (uint64) {
+    function _baseSzDecimals(uint32 asset) internal view returns (uint8) {
         uint64 baseTokenId;
         if (asset == spotBTC && spotTokenBTC != 0) {
             baseTokenId = spotTokenBTC;
@@ -679,49 +662,111 @@ contract CoreInteractionHandler is Pausable {
             L1Read.SpotInfo memory info = l1read.spotInfo(asset);
             baseTokenId = info.tokens[0];
         }
-        if (baseTokenId == 0) {
-            return 1;
-        }
+        if (baseTokenId == 0) return 0;
         L1Read.TokenInfo memory baseInfo = l1read.tokenInfo(uint32(baseTokenId));
-        uint8 szDecimals = baseInfo.szDecimals;
-        uint8 weiDecimals = baseInfo.weiDecimals;
-        int256 evmExtra = int256(int8(baseInfo.evmExtraWeiDecimals));
-        int256 effectiveWei = int256(uint256(weiDecimals));
-        if (evmExtra < 0) {
-            effectiveWei += evmExtra;
-        }
-        int256 exponent = int256(8) + int256(uint256(szDecimals)) - effectiveWei;
-        if (exponent <= 0) {
-            return 1;
-        }
-        uint256 expUint = uint256(exponent);
-        require(expUint <= 12, "PX_SCALAR");
-        return uint64(10 ** expUint);
+        return baseInfo.szDecimals;
     }
 
-    function _toRawPx(uint32 asset, uint64 px1e8, bool isBuy) internal view returns (uint64) {
-        uint64 scalar = _pxScalar(asset);
-        if (scalar <= 1) {
-            return px1e8;
-        }
-
-        uint64 raw;
-        if (isBuy) {
-            uint64 quotient = px1e8 / scalar;
-            if (px1e8 % scalar > 0) {
-                unchecked {
-                    quotient += 1;
-                }
+    /// @notice Clamp prix 1e8: ≤5 sig figs et ≤ (8 - szDecimals) décimales. BUY: ceil, SELL: floor.
+    function quantizePx1e8(uint64 px1e8, uint8 szDecimals, bool isBuy) internal pure returns (uint64) {
+        if (px1e8 == 0) return 0;
+        uint8 maxPxDecimals = 8 > szDecimals ? uint8(8 - szDecimals) : 0;
+        if (maxPxDecimals < 8) {
+            uint8 cut = uint8(8 - maxPxDecimals);
+            uint64 factor = uint64(10 ** cut);
+            if (isBuy) {
+                px1e8 = uint64((uint256(px1e8) + factor - 1) / factor) * factor;
+            } else {
+                px1e8 = (px1e8 / factor) * factor;
             }
-            raw = quotient;
-        } else {
-            raw = px1e8 / scalar;
         }
+        uint64 pxInt = px1e8 / 100_000_000;
+        if (pxInt >= 100000) {
+            px1e8 = pxInt * 100_000_000;
+        }
+        return px1e8;
+    }
 
-        if (raw == 0) {
-            return 1;
+    function _marketLimitFromBbo(uint32 asset, bool isBuy) internal view returns (uint64) {
+        (uint64 bid1e8, uint64 ask1e8) = _spotBboPx1e8(asset);
+        if (bid1e8 == 0 || ask1e8 == 0) {
+            // Fallback sur l'oracle normalisé si BBO indisponible
+            uint64 oracle = spotOraclePx1e8(asset);
+            return _limitFromOracleQuantized(asset, oracle, isBuy);
         }
-        return raw;
+        uint64 lim;
+        if (isBuy) {
+            uint256 adj = (uint256(ask1e8) * uint256(marketEpsilonBps)) / 10_000;
+            lim = uint64(uint256(ask1e8) + adj);
+        } else {
+            uint256 adj = (uint256(bid1e8) * uint256(marketEpsilonBps)) / 10_000;
+            uint256 lo = (uint256(bid1e8) > adj) ? (uint256(bid1e8) - adj) : 1;
+            lim = uint64(lo);
+        }
+        uint8 baseSzDec = _baseSzDecimals(asset);
+        return quantizePx1e8(lim, baseSzDec, isBuy);
+    }
+
+    function _limitFromOracleQuantized(uint32 asset, uint64 oraclePx1e8, bool isBuy) internal view returns (uint64) {
+        uint256 bps = uint256(maxSlippageBps) + uint256(marketEpsilonBps);
+        uint256 adj = (uint256(oraclePx1e8) * bps) / 10_000;
+        uint64 lim = isBuy
+            ? uint64(uint256(oraclePx1e8) + adj)
+            : uint64((uint256(oraclePx1e8) > adj) ? (uint256(oraclePx1e8) - adj) : 1);
+        uint8 baseSzDec = _baseSzDecimals(asset);
+        return quantizePx1e8(lim, baseSzDec, isBuy);
+    }
+
+    function snapToLot(uint64 sizeSz, uint8 /*szDecimals*/) internal pure returns (uint64) {
+        // Les tailles sont déjà exprimées en unités d'entier alignées sur szDecimals
+        return sizeSz;
+    }
+
+    function _checkMinNotional(uint64 px1e8, uint64 sizeSz, uint8 szDecimals) internal view returns (bool) {
+        if (px1e8 == 0 || sizeSz == 0) return false;
+        uint256 notional1e8 = (uint256(sizeSz) * uint256(px1e8)) / (10 ** uint256(szDecimals));
+        return notional1e8 >= minNotionalUsd1e8;
+    }
+
+    function _assertOrder(uint32 asset, bool isBuy, uint64 limitPx1e8, uint64 szInSzDecimals) internal view {
+        require(limitPx1e8 > 0, "px=0");
+        require(szInSzDecimals > 0, "size=0");
+        uint8 szDec = _baseSzDecimals(asset);
+        require(_checkMinNotional(limitPx1e8, szInSzDecimals, szDec), "notional<min");
+        uint64 qpx = quantizePx1e8(limitPx1e8, szDec, isBuy);
+        require(qpx == limitPx1e8, "px not quantized");
+    }
+
+    function _spotPxDecimals(uint32 spotIndex) internal view returns (uint8) {
+        uint8 d = spotPxDecimals[spotIndex];
+        require(d > 0, "PXDEC_UNSET");
+        return d;
+    }
+
+    function _toPx1e8(uint32 spotIndex, uint64 rawPx) internal view returns (uint64) {
+        if (rawPx == 0) return 0;
+        uint8 pxDec = _spotPxDecimals(spotIndex);
+        if (pxDec == 8) return rawPx;
+        if (pxDec < 8) {
+            uint256 mul = 10 ** uint256(8 - pxDec);
+            uint256 n = uint256(rawPx) * mul;
+            require(n <= type(uint64).max, "PX_OVERFLOW");
+            return uint64(n);
+        }
+        // pxDec > 8
+        return uint64(uint256(rawPx) / (10 ** uint256(pxDec - 8)));
+    }
+
+    function _toRawPx(uint32 asset, uint64 px1e8, bool /*isBuy*/) internal view returns (uint64) {
+        uint8 pxDec = _spotPxDecimals(asset);
+        if (pxDec == 8) return px1e8;
+        if (pxDec < 8) {
+            return uint64(uint256(px1e8) / (10 ** uint256(8 - pxDec)));
+        }
+        // pxDec > 8
+        uint256 n = uint256(px1e8) * (10 ** uint256(pxDec - 8));
+        require(n <= type(uint64).max, "PX_OVERFLOW");
+        return uint64(n);
     }
 
     function _toSz1e8(int256 deltaUsd1e18, uint64 price1e8) internal pure returns (uint64) {
@@ -759,31 +804,29 @@ contract CoreInteractionHandler is Pausable {
 
     function _validatedOraclePx1e8(bool isBtc) internal returns (uint64) {
         uint32 asset = isBtc ? spotBTC : spotHYPE;
-        CoreHandlerLib.OracleValidation memory oracle = CoreHandlerLib.OracleValidation({
-            lastPxBtc1e8: lastPxBtc1e8,
-            lastPxHype1e8: lastPxHype1e8,
-            pxInitB: pxInitB,
-            pxInitH: pxInitH,
-            maxOracleDeviationBps: maxOracleDeviationBps
-        });
-        
-        CoreHandlerLib.OracleResult memory result = CoreHandlerLib.validatedOraclePx1e8(l1read, asset, oracle, isBtc);
-        
-        // Toujours mettre à jour le prix (même en cas de déviation)
-        if (isBtc) {
-            lastPxBtc1e8 = result.adjustedPx1e8;
-            pxInitB = true;
-        } else {
-            lastPxHype1e8 = result.adjustedPx1e8;
-            pxInitH = true;
+        uint64 raw = l1read.spotPx(asset);
+        if (raw == 0) revert OracleZero();
+        uint64 px1e8 = _toPx1e8(asset, raw);
+
+        uint64 last = isBtc ? lastPxBtc1e8 : lastPxHype1e8;
+        bool init = isBtc ? pxInitB : pxInitH;
+        if (init && last != 0) {
+            uint256 up = uint256(last) * (10_000 + uint256(maxOracleDeviationBps)) / 10_000;
+            uint256 down = uint256(last) * (10_000 - uint256(maxOracleDeviationBps)) / 10_000;
+            if (uint256(px1e8) > up) {
+                uint64 adj = uint64(up);
+                if (isBtc) { lastPxBtc1e8 = adj; pxInitB = true; } else { lastPxHype1e8 = adj; pxInitH = true; }
+                revert OracleGradualCatchup();
+            }
+            if (uint256(px1e8) < down) {
+                uint64 adj = uint64(down);
+                if (isBtc) { lastPxBtc1e8 = adj; pxInitB = true; } else { lastPxHype1e8 = adj; pxInitH = true; }
+                revert OracleGradualCatchup();
+            }
         }
-        
-        // Revert APRÈS la mise à jour si nécessaire
-        if (result.shouldRevert) {
-            revert OracleGradualCatchup();
-        }
-        
-        return result.adjustedPx1e8;
+
+        if (isBtc) { lastPxBtc1e8 = px1e8; pxInitB = true; } else { lastPxHype1e8 = px1e8; pxInitH = true; }
+        return px1e8;
     }
 
     /// @notice Variante tolérante: met à jour le dernier prix et signale la déviation sans revert
@@ -791,26 +834,22 @@ contract CoreInteractionHandler is Pausable {
     /// @return deviated true si le prix courant est hors bande de déviation
     function _tryValidatedOraclePx1e8(bool isBtc) internal returns (uint64 px, bool deviated) {
         uint32 asset = isBtc ? spotBTC : spotHYPE;
-        CoreHandlerLib.OracleValidation memory oracle = CoreHandlerLib.OracleValidation({
-            lastPxBtc1e8: lastPxBtc1e8,
-            lastPxHype1e8: lastPxHype1e8,
-            pxInitB: pxInitB,
-            pxInitH: pxInitH,
-            maxOracleDeviationBps: maxOracleDeviationBps
-        });
+        uint64 raw = l1read.spotPx(asset);
+        if (raw == 0) return (0, true);
+        uint64 px1e8 = _toPx1e8(asset, raw);
 
-        CoreHandlerLib.OracleResult memory result = CoreHandlerLib.validatedOraclePx1e8(l1read, asset, oracle, isBtc);
-
-        // Toujours mettre à jour le prix
-        if (isBtc) {
-            lastPxBtc1e8 = result.adjustedPx1e8;
-            pxInitB = true;
-        } else {
-            lastPxHype1e8 = result.adjustedPx1e8;
-            pxInitH = true;
+        uint64 last = isBtc ? lastPxBtc1e8 : lastPxHype1e8;
+        bool init = isBtc ? pxInitB : pxInitH;
+        bool out = false;
+        if (init && last != 0) {
+            uint256 up = uint256(last) * (10_000 + uint256(maxOracleDeviationBps)) / 10_000;
+            uint256 down = uint256(last) * (10_000 - uint256(maxOracleDeviationBps)) / 10_000;
+            if (uint256(px1e8) > up) { px1e8 = uint64(up); out = true; }
+            else if (uint256(px1e8) < down) { px1e8 = uint64(down); out = true; }
         }
 
-        return (result.adjustedPx1e8, result.shouldRevert);
+        if (isBtc) { lastPxBtc1e8 = px1e8; pxInitB = true; } else { lastPxHype1e8 = px1e8; pxInitH = true; }
+        return (px1e8, out);
     }
 
 
@@ -822,9 +861,31 @@ contract CoreInteractionHandler is Pausable {
         uint64 szInSzDecimals,
         uint128 cloid
     ) internal {
+        uint8 baseSzDec = _baseSzDecimals(asset);
+        szInSzDecimals = snapToLot(szInSzDecimals, baseSzDec);
+        require(szInSzDecimals > 0, "size=0");
+        require(_checkMinNotional(limitPx1e8, szInSzDecimals, baseSzDec), "min notional");
+        _assertOrder(asset, isBuy, limitPx1e8, szInSzDecimals);
         uint32 assetId = asset + HLConstants.SPOT_ASSET_OFFSET;
         uint64 limitPxRaw = _toRawPx(asset, limitPx1e8, isBuy);
         _send(coreWriter, CoreHandlerLib.encodeSpotLimitOrder(assetId, isBuy, limitPxRaw, szInSzDecimals, cloid));
+    }
+
+    // ==== Helpers pour tests ====
+    function toPx1e8Public(uint32 spotIndex, uint64 rawPx) external view returns (uint64) {
+        return _toPx1e8(spotIndex, rawPx);
+    }
+
+    function toRawPxPublic(uint32 spotIndex, uint64 px1e8) external view returns (uint64) {
+        return _toRawPx(spotIndex, px1e8, true);
+    }
+
+    function quantizePx1e8Public(uint64 px1e8, uint8 szDecimals, bool isBuy) external pure returns (uint64) {
+        return quantizePx1e8(px1e8, szDecimals, isBuy);
+    }
+
+    function checkMinNotionalPublic(uint64 px1e8, uint64 sizeSz, uint8 szDecimals) external view returns (bool) {
+        return _checkMinNotional(px1e8, sizeSz, szDecimals);
     }
 }
 

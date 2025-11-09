@@ -47,18 +47,21 @@ Voir: [`tick-and-lot-size`](https://hyperliquid.gitbook.io/hyperliquid-docs/for-
 ---
 
 ## Normalisation du prix (vers 1e8)
-Les précompilés renvoient un Px brut dont l’échelle varie par actif. Nos contrats normalisent en 1e8 via un scalaire dérivé des métadonnées:
+Les précompilés renvoient un Px brut dont l’échelle varie par actif. Désormais, la normalisation en 1e8 utilise la précision prix propre au marché (`pxDecimals`) lue depuis le métadata (stockée on-chain côté handler):
 
 ```
-scalar = 10^( 8 - (weiDecimals - szDecimals) )   si exponent > 0, sinon 1
-px1e8 = rawPx * scalar
+// px1e8 = rawPx * 10^(8 - pxDecimals), avec garde pour pxDecimals > 8
+if pxDecimals == 8:  px1e8 = rawPx
+if pxDecimals < 8:   px1e8 = rawPx * 10^(8 - pxDecimals)
+if pxDecimals > 8:   px1e8 = rawPx / 10^(pxDecimals - 8)
 ```
 
-Conséquence: BTC et HYPE sont ramenés à une base commune (1e8), cohérente avec la valorisation USD et les conversions.
+Conséquence: tous les actifs spot sont ramenés à une base commune (1e8), en respectant exactement la précision de prix du marché (HIP-1/HIP-3 compatibles).
 
 Implémentations:
-- `CoreInteractionHandler._pxScalar()` et `_spotBboPx1e8()`/`spotOraclePx1e8()`
-- `CoreHandlerLib.validatedOraclePx1e8()` (normalisation + garde de déviation)
+- `CoreInteractionHandler._spotPxDecimals()` (mapping on-chain), `_toPx1e8()`, `_toRawPx()`
+- `_spotBboPx1e8()`/`spotOraclePx1e8()` utilisent `_toPx1e8()`
+- `_validatedOraclePx1e8()`/_`_tryValidatedOraclePx1e8()` normalisent avant validations de déviation
 
 ---
 
@@ -100,13 +103,18 @@ Implémentations: `HLConstants`, `CoreHandlerLib.encodeSpotLimitOrder`, `CoreHan
 ---
 
 ## Règles pratiques appliquées par STRATEGY_1
-- Prix normalisés en 1e8; ordres « market IOC » via le BBO:
+- Prix normalisés en 1e8; quantisation appliquée après epsilon/slippage:
+  - Contrainte prix: ≤ 5 chiffres significatifs et ≤ (8 − szDecimals) décimales
+  - Direction d’arrondi agressif pour conserver la « marketability »: BUY ↑ (ceil), SELL ↓ (floor)
+- Ordres « market IOC » via le BBO:
   - BUY: limite sur `ask` (élargie par `marketEpsilonBps`)
   - SELL: limite sur `bid` (réduite par `marketEpsilonBps`)
 - Rebalance et dépôts:
   - Les deltas/allocations sont calculés en USD 1e18
   - Convertis en tailles `szDecimals` avec `toSzInSzDecimals`
   - Cap achat par solde USDC disponible si aucune vente préalable
+- Lot size: la taille est alignée sur `szDecimals` (snap to lot)
+- Notional minimum: un seuil en USD 1e8 évite les IOC « poussière »
 - Asset IDs:
   - `assetId = spotIndex + 10000` pour `bbo()` et `encodeSpotLimitOrder()`
   - `spotPx/spotInfo/tokenInfo/spotBalance` prennent respectivement `spotIndex` ou `tokenId`, pas `assetId`
