@@ -31,6 +31,7 @@ describe('Rebalance scale: dB/dH 1e18 -> tailles en szDecimals, BBO limit, cap U
       0
     );
     await handler.waitForDeployment();
+    await handler.setMinNotionalUsd1e8(1n);
 
     await handler.setRebalancer(rebalancer.address);
     await handler.setVault(vault.address);

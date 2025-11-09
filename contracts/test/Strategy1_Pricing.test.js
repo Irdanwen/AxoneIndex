@@ -103,9 +103,9 @@ describe('Strategy_1 Pricing & Quantization', function () {
     const px = 12_345_678n; // 0.12345678 * 1e8 (pour test)
     const qBuy = await handler.quantizePx1e8Public(px, 2, true);
     const qSell = await handler.quantizePx1e8Public(px, 2, false);
-    // Après clamp: garder 6 décimales -> couper 2 décimales en base 1e8
-    expect(qBuy % 1_000n).to.equal(0n);
-    expect(qSell % 1_000n).to.equal(0n);
+    // Après clamp: garder 6 décimales -> couper 2 décimales en base 1e8 (2 derniers digits à 0)
+    expect(qBuy % 100n).to.equal(0n);
+    expect(qSell % 100n).to.equal(0n);
     // BUY >= SELL (BUY ceil, SELL floor)
     expect(qBuy).to.be.at.least(qSell);
   });

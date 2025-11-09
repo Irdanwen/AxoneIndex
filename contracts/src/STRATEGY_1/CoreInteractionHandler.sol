@@ -739,8 +739,8 @@ contract CoreInteractionHandler is Pausable {
 
     function _spotPxDecimals(uint32 spotIndex) internal view returns (uint8) {
         uint8 d = spotPxDecimals[spotIndex];
-        require(d > 0, "PXDEC_UNSET");
-        return d;
+        // Défaut conservateur: 8 décimales si non défini
+        return d > 0 ? d : 8;
     }
 
     function _toPx1e8(uint32 spotIndex, uint64 rawPx) internal view returns (uint64) {

@@ -24,6 +24,7 @@ describe("CoreInteractionHandler: deposit no-op on oracle deviation", function (
       0n
     );
 
+    await handler.setMinNotionalUsd1e8(1n);
     await handler.setVault(owner.address);
     await handler.setUsdcCoreLink(owner.address, 1);
     await handler.setHypeCoreLink(owner.address, 3);
@@ -80,6 +81,7 @@ describe("CoreInteractionHandler: deposit no-op on oracle deviation", function (
       0n
     );
 
+    await handler.setMinNotionalUsd1e8(1n);
     await handler.setVault(owner.address);
     await handler.setUsdcCoreLink(owner.address, 1);
     await handler.setHypeCoreLink(owner.address, 3);

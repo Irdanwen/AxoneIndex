@@ -46,6 +46,9 @@ describe("CoreHandler: dépôt HYPE et conversions de taille", function () {
     const epochLen = 10;
     const handler = await Handler.deploy(l1.target, writer.target, usdc.target, maxOutbound, epochLen, owner.address, 0);
 
+    // Abaisser le notional minimal pour les tests (éviter les reverts sur petits ordres)
+    await handler.connect(owner).setMinNotionalUsd1e8(1n);
+
     // Config required
     await handler.connect(owner).setVault(vault.address);
     // IDs arbitraires
@@ -55,6 +58,9 @@ describe("CoreHandler: dépôt HYPE et conversions de taille", function () {
     await handler.connect(owner).setHypeCoreLink(systemHYPE.address, hypeTokenId);
     await handler.connect(owner).setSpotIds(spotBTC, spotHYPE);
     await handler.connect(owner).setSpotTokenIds(usdcTokenId, btcTokenId, hypeTokenId);
+    // Définir pxDecimals pour aligner la normalisation attendue
+    await handler.connect(owner).setSpotPxDecimals(spotBTC, 3);
+    await handler.connect(owner).setSpotPxDecimals(spotHYPE, 6);
 
     // Token infos: paramètres alignés sur HyperCore (USDC 8/8, BTC 4/10, HYPE 6/8)
     await l1.setTokenInfo(usdcTokenId, "USDC", 8, 8);

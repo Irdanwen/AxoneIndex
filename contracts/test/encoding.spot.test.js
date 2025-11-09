@@ -31,6 +31,7 @@ describe('Encodage SPOT: assetId offset + TIF IOC + raw px conversion', function
       0
     );
     await handler.waitForDeployment();
+    await handler.setMinNotionalUsd1e8(1n);
 
     // Autoriser owner comme rebalancer pour déclencher un ordre
     await handler.setRebalancer(owner.address);

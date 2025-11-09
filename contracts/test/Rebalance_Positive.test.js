@@ -26,6 +26,7 @@ describe("CoreInteractionHandler: rebalance positive flow", function () {
       0n               // feeBps
     );
 
+    await handler.setMinNotionalUsd1e8(1n);
     // Roles and IDs
     await handler.setRebalancer(rebalancer.address);
     await handler.setUsdcCoreLink(owner.address, 1); // usdc tokenId = 1

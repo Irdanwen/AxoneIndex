@@ -26,6 +26,7 @@ describe("CoreInteractionHandler: rebalance no-op on oracle deviation", function
       0n               // feeBps
     );
 
+    await handler.setMinNotionalUsd1e8(100000000n);
     // Configure roles and IDs
     await handler.setRebalancer(rebalancer.address);
     await handler.setUsdcCoreLink(owner.address, 1); // usdc tokenId = 1
