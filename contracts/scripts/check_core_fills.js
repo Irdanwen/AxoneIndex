@@ -24,3 +24,4 @@ main().catch((e) => {
   console.error("❌ HL API error:", e.response?.data || e.message);
   process.exit(1);
 });
+

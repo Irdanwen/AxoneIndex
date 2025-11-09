@@ -2,11 +2,11 @@
 
 ## Adresses
 
-- L1Read: `0x766842FD272Ef7110bDb60e078dc4Cf5Ad0B4c21`
+- L1Read: `0x2231Fe22EcA7490d4BcC81467ccf91651FbefB23`
 - CoreWriter (système): `0x3333333333333333333333333333333333333333`
 - USDC (EVM): `0xd9cbec81df392a88aeff575e962d149d57f4d6bc`
-- CoreInteractionHandler: `0xaEAe0B32cE902C40A6053950323e6c0228a08efD`
-- VaultContract: `0xb9F1cde679E0C2f63ed0806f494602d36CbD7a79`
+- CoreInteractionHandler: `0x59E9F03b396b2f50B643dcB11F2229744A63B47c`
+- VaultContract: `0xd01D3b500Ba571cBaCE6A75afe308e46f416999c`
 
 ## Paramètres appliqués
 

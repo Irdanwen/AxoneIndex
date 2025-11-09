@@ -684,12 +684,19 @@ contract CoreInteractionHandler is Pausable {
         }
         L1Read.TokenInfo memory baseInfo = l1read.tokenInfo(uint32(baseTokenId));
         uint8 szDecimals = baseInfo.szDecimals;
-        require(szDecimals <= 8, "PX_SCALAR");
-        uint256 exponent = 8 - uint256(szDecimals);
-        if (exponent == 0) {
+        uint8 weiDecimals = baseInfo.weiDecimals;
+        int256 evmExtra = int256(int8(baseInfo.evmExtraWeiDecimals));
+        int256 effectiveWei = int256(uint256(weiDecimals));
+        if (evmExtra < 0) {
+            effectiveWei += evmExtra;
+        }
+        int256 exponent = int256(8) + int256(uint256(szDecimals)) - effectiveWei;
+        if (exponent <= 0) {
             return 1;
         }
-        return uint64(10 ** exponent);
+        uint256 expUint = uint256(exponent);
+        require(expUint <= 12, "PX_SCALAR");
+        return uint64(10 ** expUint);
     }
 
     function _toRawPx(uint32 asset, uint64 px1e8, bool isBuy) internal view returns (uint64) {

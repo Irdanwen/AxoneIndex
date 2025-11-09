@@ -255,11 +255,14 @@ library CoreHandlerLib {
         }
         L1Read.TokenInfo memory baseInfo = l1read.tokenInfo(uint32(baseTokenId));
         uint8 szDecimals = baseInfo.szDecimals;
-        require(szDecimals <= 8, "PX_SCALAR");
-        uint256 exponent = 8 - uint256(szDecimals);
-        if (exponent == 0) {
+        uint8 weiDecimals = baseInfo.weiDecimals;
+        int256 diff = int256(uint256(weiDecimals)) - int256(uint256(szDecimals));
+        int256 exponent = int256(8) - diff;
+        if (exponent <= 0) {
             return 1;
         }
-        return uint64(10 ** exponent);
+        uint256 expUint = uint256(exponent);
+        require(expUint <= 8, "PX_SCALAR");
+        return uint64(10 ** expUint);
     }
 }
