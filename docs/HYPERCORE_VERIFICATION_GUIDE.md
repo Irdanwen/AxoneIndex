@@ -121,14 +121,14 @@ console.log(`Prix HYPE: $${ethers.utils.formatUnits(hypePrice, 8)}`);
 ```bash
 # Vérifier la NAV du vault
 npx hardhat console --network base
-> const vault = await ethers.getContractAt("VaultContract", "0x926b98ffd13a80ed0637b268c8f499cc7b782928");
+> const vault = await ethers.getContractAt("VaultContract", "0xe9CabbB51544Bcc0A57F2ad902fD938a6cE7EEf2");
 > const nav = await vault.nav1e18();
 > console.log(ethers.utils.formatEther(nav));
 ```
 
 #### Vérification des Balances Core
 ```bash
-> const handler = await ethers.getContractAt("CoreInteractionHandler", "0xd9cbec81df392a88aeff575e962d149d57f4d6bc");
+> const handler = await ethers.getContractAt("CoreInteractionHandler", "0x4E0389AcF0b2bde612C43e6CE887309D81aCe0D6");
 > const equity = await handler.equitySpotUsd1e18();
 > console.log(ethers.utils.formatEther(equity));
 ```

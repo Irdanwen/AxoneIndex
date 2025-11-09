@@ -41,7 +41,7 @@ Ce script vérifiera :
 
 **Étape 2 :** Vérifiez les balances spot
 - 📊 Allez dans la section "Spot" ou "Balances"
-- 🔍 Recherchez l'adresse du handler : `0xd9cbec81df392a88aeff575e962d149d57f4d6bc`
+- 🔍 Recherchez l'adresse du handler : `0x4E0389AcF0b2bde612C43e6CE887309D81aCe0D6`
 - 💰 Vérifiez les balances USDC, BTC, et HYPE
 
 **Étape 3 :** Consultez l'historique des ordres
@@ -75,8 +75,8 @@ Ce script vérifiera :
 ### 📞 **Adresses importantes**
 
 ```
-Vault Contract:     0x926b98ffd13a80ed0637b268c8f499cc7b782928
-Handler Contract:   0xd9cbec81df392a88aeff575e962d149d57f4d6bc
+Vault Contract:     0xe9CabbB51544Bcc0A57F2ad902fD938a6cE7EEf2
+Handler Contract:   0x4E0389AcF0b2bde612C43e6CE887309D81aCe0D6
 Votre Adresse:      0x1ee9c37e28d2db4d8c35a94bb05c3f189191d506
 Core System:        0x3333333333333333333333333333333333333333
 Core Handler:       0xdd9ca2ace9b827a6caf43c2ae63cf1ab62d87a84
@@ -87,14 +87,14 @@ Core Handler:       0xdd9ca2ace9b827a6caf43c2ae63cf1ab62d87a84
 #### Vérifier la NAV du vault
 ```javascript
 // Dans la console du navigateur sur l'interface HyperCore
-const vault = await ethers.getContractAt("VaultContract", "0x926b98ffd13a80ed0637b268c8f499cc7b782928");
+const vault = await ethers.getContractAt("VaultContract", "0xe9CabbB51544Bcc0A57F2ad902fD938a6cE7EEf2");
 const nav = await vault.nav1e18();
 console.log(`NAV: ${ethers.utils.formatEther(nav)} USD`);
 ```
 
 #### Vérifier les balances Core
 ```javascript
-const handler = await ethers.getContractAt("CoreInteractionHandler", "0xd9cbec81df392a88aeff575e962d149d57f4d6bc");
+const handler = await ethers.getContractAt("CoreInteractionHandler", "0x4E0389AcF0b2bde612C43e6CE887309D81aCe0D6");
 const equity = await handler.equitySpotUsd1e18();
 console.log(`Équité Core: ${ethers.utils.formatEther(equity)} USD`);
 ```
