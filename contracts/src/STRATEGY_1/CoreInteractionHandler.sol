@@ -738,9 +738,28 @@ contract CoreInteractionHandler is Pausable {
     }
 
     function _spotPxDecimals(uint32 spotIndex) internal view returns (uint8) {
-        uint8 d = spotPxDecimals[spotIndex];
-        // Défaut conservateur: 8 décimales si non défini
-        return d > 0 ? d : 8;
+        uint8 configured = spotPxDecimals[spotIndex];
+        if (configured > 0) {
+            return configured;
+        }
+        return _derivedSpotPxDecimals(spotIndex);
+    }
+
+    function _derivedSpotPxDecimals(uint32 spotIndex) internal view returns (uint8) {
+        L1Read.SpotInfo memory info = l1read.spotInfo(spotIndex);
+        uint64 baseTokenId = info.tokens[0];
+        if (baseTokenId == 0) {
+            // Fallback conservateur: Hyperliquid documente des prix au moins en 1e6.
+            return 8;
+        }
+        L1Read.TokenInfo memory tokenInfo = l1read.tokenInfo(uint32(baseTokenId));
+        if (tokenInfo.weiDecimals < tokenInfo.szDecimals) {
+            // Non documenté mais on évite tout underflow en supposant le prix déjà exprimé en 1e8.
+            return 8;
+        }
+        uint8 diff = tokenInfo.weiDecimals - tokenInfo.szDecimals;
+        // Diff peut dépasser 8 pour certains actifs HIP: dans ce cas on retourne diff afin que _toPx1e8 divise correctement.
+        return diff;
     }
 
     function _toPx1e8(uint32 spotIndex, uint64 rawPx) internal view returns (uint64) {

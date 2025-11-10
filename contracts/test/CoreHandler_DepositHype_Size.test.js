@@ -98,6 +98,48 @@ describe("CoreHandler: dépôt HYPE et conversions de taille", function () {
     const maxRebuyH = 495000n;
     expect(sizeH).to.be.lte(maxRebuyH);
   });
+
+  it("normalise le prix spot via tokenInfo quand aucun override n'est défini", async function () {
+    const [owner, vault, systemUSDC, systemHYPE] = await ethers.getSigners();
+
+    const MockL1Read = await ethers.getContractFactory("MockL1Read");
+    const l1 = await MockL1Read.deploy();
+
+    const MockCoreWriter = await ethers.getContractFactory("MockCoreWriter");
+    const writer = await MockCoreWriter.deploy();
+
+    const MockUSDC = await ethers.getContractFactory("MockUSDC");
+    const usdc = await MockUSDC.deploy();
+
+    const Handler = await ethers.getContractFactory("CoreInteractionHandler");
+    const handler = await Handler.deploy(
+      l1.target,
+      writer.target,
+      usdc.target,
+      1_000_000_000n,
+      10,
+      owner.address,
+      0
+    );
+
+    await handler.connect(owner).setVault(vault.address);
+    const spotBTC = 1;
+    const spotHYPE = 2;
+    const usdcTokenId = 100;
+    const hypeTokenId = 102;
+
+    await handler.connect(owner).setUsdcCoreLink(systemUSDC.address, usdcTokenId);
+    await handler.connect(owner).setHypeCoreLink(systemHYPE.address, hypeTokenId);
+    await handler.connect(owner).setSpotIds(spotBTC, spotHYPE);
+    await handler.connect(owner).setSpotTokenIds(usdcTokenId, 101, hypeTokenId);
+
+    await l1.setTokenInfo(hypeTokenId, "HYPE", 2, 8);
+    await l1.setSpotInfo(spotHYPE, "HYPE/USDC", hypeTokenId, usdcTokenId);
+
+    const rawPx = 80645000n; // 80.645 USD avec 6 décimales (1e6)
+    const normalized = await handler.toPx1e8Public(spotHYPE, rawPx);
+    expect(normalized).to.equal(8064500000n); // 80.645 * 1e8
+  });
 });
 
 

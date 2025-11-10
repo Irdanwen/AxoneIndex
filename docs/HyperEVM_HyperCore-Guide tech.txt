@@ -1,0 +1,356 @@
+# HyperEVM ⇄ HyperCore — Guide technique (IA-ready) pour trader et transférer des fonds
+
+> Objectif : permettre à une IA de générer un smart-contract Solidity sur HyperEVM qui **(1)** lit l’état HyperCore (prix, soldes, etc.), **(2)** envoie des **ordres d’achat/vente**, **(3)** effectue des **dépôts/retraits** vers/depuis HyperCore, et **(4)** transfère des **tokens spot** entre HyperEVM et HyperCore.
+
+---
+
+## 1) Primitives d’intégration
+
+### 1.1. Read precompiles (lecture de l’état L1)
+
+* Les **precompiles de lecture** commencent à l’adresse `0x0000000000000000000000000000000000000800`.
+* Elles exposent des méthodes pour : **positions perps**, **soldes spot**, **équité de vault**, **délégations de staking**, **prix oracles**, **numéro de bloc L1**, etc.
+* Exemple doc & appel : `cast call 0x...0807 <abi-encoded-args>` pour prix oracle perp (#3 sur testnet). Les prix/sizes sont renvoyés en **entiers** à convertir :
+
+  * Perps : diviser par `10^(6 - szDecimals)`
+  * Spot : diviser par `10^(8 - base asset szDecimals)` ([hyperliquid.gitbook.io][1])
+
+> ⚠️ Appels invalides (actifs/vault inexistants) **revert** côté precompile et consomment tout le gas passé dans le frame. Coût gas : `2000 + 65 * output_len`. ([hyperliquid.gitbook.io][1])
+
+**Interface conseillée (extraits)**
+
+> (Le fichier `L1Read.sol` officiel est lié depuis la doc. Utiliser ses signatures exactes si disponible.)
+
+```solidity
+// Pseudo-interface: ajustez les selectors selon L1Read.sol officiel.
+interface L1Read {
+    // ex. oracle perp price for assetId
+    function perpOraclePrice(uint32 assetId) external view returns (uint64 priceMantissa, uint8 szDecimals);
+
+    // ex. spot oracle price for tokenId
+    function spotOraclePrice(uint32 tokenId) external view returns (uint64 priceMantissa, uint8 baseSzDecimals);
+
+    // ex. core spot balance of an address for tokenId
+    function spotBalance(address user, uint32 tokenId) external view returns (uint64 weiBalance, uint8 weiDecimals);
+
+    // ...autres vues présentes dans L1Read.sol officiel
+}
+```
+
+> Référence doc “Interacting with HyperCore” (section *Read precompiles*). ([hyperliquid.gitbook.io][1])
+
+### 1.2. CoreWriter (écriture d’actions vers HyperCore)
+
+* Contrat système à **adresse fixe** : `0x3333333333333333333333333333333333333333`
+* Permet d’**envoyer des actions** (ordres, transferts de vault, etc.) de HyperEVM → HyperCore via un **log** encodé.
+* Encodage du payload `data` :
+
+  * **Byte 1** : version d’encodage (actuellement `0x01`)
+  * **Bytes 2-4** : **Action ID** (3 octets big-endian)
+  * **Reste** : `abi.encode(...)` des champs de l’action
+* Gas : ~25k gas brûlés + ~47k pour un appel simple (ordre de grandeur donné par la doc).
+* **Délai on-chain court** : les actions d’ordres/transferts envoyées via CoreWriter sont **délaisées de quelques secondes** pour ne pas court-circuiter le mempool L1. Elles apparaissent deux fois dans l’explorer : enfilement puis exécution. ([hyperliquid.gitbook.io][1])
+
+**Interface minimale :**
+
+```solidity
+interface CoreWriter {
+    function sendRawAction(bytes calldata data) external;
+}
+```
+
+**Table des actions principales** (champs & types exacts de la doc)
+
+| Action ID | Action                 | Champs (ordre)                                               | Types Solidity                                         | Notes                                                                                                 |
+| --------: | ---------------------- | ------------------------------------------------------------ | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+|         1 | **Limit order**        | `(asset, isBuy, limitPx, sz, reduceOnly, encodedTif, cloid)` | `(uint32, bool, uint64, uint64, bool, uint8, uint128)` | `TIF`: `1=Alo`, `2=Gtc`, `3=Ioc`. `limitPx` et `sz` en **1e8** * valeur humaine. `cloid=0` si absent. |
+|         2 | **Vault transfer**     | `(vault, isDeposit, usd)`                                    | `(address, bool, uint64)`                              | Dépôt/Retrait **USD-class** vers/depuis un **vault**. `usd` en entiers (mantisse USD-class).          |
+|         6 | **Spot send**          | `(destination, token, wei)`                                  | `(address, uint64, uint64)`                            | Envoi **spot Core** (ex. Core→EVM via system address). `wei` en unités `weiDecimals` du token.        |
+|         7 | **USD class transfer** | `(ntl, toPerp)`                                              | `(uint64, bool)`                                       | Mouvement interne classe USD (perp/spot).                                                             |
+|        10 | **Cancel by oid**      | `(asset, oid)`                                               | `(uint32, uint64)`                                     | Annulation par **order id**.                                                                          |
+|        11 | **Cancel by cloid**    | `(asset, cloid)`                                             | `(uint32, uint128)`                                    | Annulation par **client order id**.                                                                   |
+
+> La liste complète inclut staking/delegation, finalisation de lien EVM, etc. Voir la table officielle. ([hyperliquid.gitbook.io][1])
+
+### 1.3. Timings d’exécution (ordre des étapes dans un bloc)
+
+Sur un bloc L1 qui produit un bloc EVM :
+
+1. **Bloc L1** construit → 2) **Bloc EVM** construit → 3) **EVM→Core transfers** traités → 4) **Actions CoreWriter** traitées.
+
+> Important : le compte qui exécute **CoreWriter** doit **exister sur HyperCore** avant la construction du bloc EVM (un transfert EVM→Core dans **le même bloc** ne suffit pas pour initialiser le compte à temps). ([hyperliquid.gitbook.io][2])
+
+---
+
+## 2) Transferts de tokens spot entre HyperCore et HyperEVM
+
+### 2.1. Adresses système côté Core
+
+* Chaque token spot **Core** a une **system address** : premier octet `0x20`, le reste **zéro** sauf l’index **tokenId** (big-endian).
+
+  * Ex. `tokenId=200` → `0x20000000000000000000000000000000000000c8`
+* Exception : **HYPE** (native) utilise **`0x2222222222222222222222222222222222222222`**. ([hyperliquid.gitbook.io][3])
+
+### 2.2. Flux Core → EVM
+
+* Utiliser **action “Spot send”** (`id=6`) côté Core, destination = **system address** du token vers l’EVM.
+* Côté EVM, un **system tx** crédite le contrat ERC-20 lié en appelant `transfer(recipient, amount)` **depuis** l’adresse système, avec `recipient = sender` du `spotSend`. ([hyperliquid.gitbook.io][3])
+
+### 2.3. Flux EVM → Core
+
+* Sur EVM, faire un **`ERC20.transfer(systemAddress, amount)`**.
+* Le crédit côté Core est dérivé de l’**event** `Transfer(from, to, value)` émis par l’ERC-20 lié.
+* Pour **HYPE**, envoyer la **valeur native** au contrat `0x222...2222` (payable `receive()` émet `event Received(user, amount)`). ([hyperliquid.gitbook.io][3])
+
+### 2.4. Gas & caveats
+
+* **Core→EVM** ≈ **200k gas** au **base gas price** du prochain bloc EVM.
+* **EVM→Core** : similaire au coût d’un `transfer` ERC-20 vers une adresse existante.
+* **Ne pas** présumer la fongibilité parfaite entre Core et EVM spot : vérifier l’implémentation ERC-20 liée et ses soldes. ([hyperliquid.gitbook.io][3])
+
+---
+
+## 3) Recettes “IA-prêtes” (copy-paste)
+
+### 3.1. Encapsuler l’envoi d’actions CoreWriter
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+interface CoreWriter {
+    function sendRawAction(bytes calldata data) external;
+}
+
+library CoreAction {
+    // Encodage commun: [0]=0x01, [1..3]=ActionID (big-endian), [4..]=abi.encode(...)
+    function encode(uint24 actionId, bytes memory abiEncoded) internal pure returns (bytes memory data) {
+        data = new bytes(4 + abiEncoded.length);
+        data[0] = 0x01;
+        data[1] = bytes1(uint8(actionId >> 16));
+        data[2] = bytes1(uint8(actionId >>  8));
+        data[3] = bytes1(uint8(actionId      ));
+        for (uint256 i = 0; i < abiEncoded.length; i++) data[4 + i] = abiEncoded[i];
+    }
+}
+
+contract HyperCoreAgent {
+    CoreWriter constant CORE_WRITER = CoreWriter(0x3333333333333333333333333333333333333333);
+
+    // ---------- Helpers ----------
+    function toMantissa1e8(uint256 x) internal pure returns (uint64) {
+        // ex. 1234.56 => 123456000000000? NON: on fournit déjà "x" en 1e8 avant l'appel.
+        // Garder un helper distinct côté IA pour scaler correctement avant cast.
+        require(x <= type(uint64).max, "overflow");
+        return uint64(x);
+    }
+
+    // ---------- 1) LIMIT ORDER (ActionID 1) ----------
+    function placeLimitOrder(
+        uint32 asset, bool isBuy,
+        uint64 limitPx_1e8, uint64 sz_1e8,
+        bool reduceOnly, uint8 tif, uint128 cloid
+    ) external {
+        bytes memory args = abi.encode(asset, isBuy, limitPx_1e8, sz_1e8, reduceOnly, tif, cloid);
+        bytes memory data = CoreAction.encode(1, args);
+        CORE_WRITER.sendRawAction(data);
+    }
+
+    // ---------- 2) VAULT TRANSFER (ActionID 2) ----------
+    function vaultTransfer(address vault, bool isDeposit, uint64 usdAmount) external {
+        // usdAmount: entier classe USD (voir conventions; généralement base 1e6 côté Core).
+        bytes memory args = abi.encode(vault, isDeposit, usdAmount);
+        bytes memory data = CoreAction.encode(2, args);
+        CORE_WRITER.sendRawAction(data);
+    }
+
+    // ---------- 6) SPOT SEND (ActionID 6) ----------
+    function spotSend(address destination, uint64 tokenId, uint64 weiAmount) external {
+        // weiAmount: unités "weiDecimals" du token Core.
+        bytes memory args = abi.encode(destination, tokenId, weiAmount);
+        bytes memory data = CoreAction.encode(6, args);
+        CORE_WRITER.sendRawAction(data);
+    }
+
+    // ---------- 10/11) CANCEL ----------
+    function cancelByOid(uint32 asset, uint64 oid) external {
+        bytes memory data = CoreAction.encode(10, abi.encode(asset, oid));
+        CORE_WRITER.sendRawAction(data);
+    }
+    function cancelByCloid(uint32 asset, uint128 cloid) external {
+        bytes memory data = CoreAction.encode(11, abi.encode(asset, cloid));
+        CORE_WRITER.sendRawAction(data);
+    }
+}
+```
+
+> Les IDs/champs et l’encodage sont exactement ceux du tableau de la doc “Interacting with HyperCore”. ([hyperliquid.gitbook.io][1])
+
+### 3.2. Utilitaires de **scaling** (prix/sizes/wei)
+
+```solidity
+library Scale {
+    // Convertit un decimal fixe (valeur humaine) en mantisse 1e8 (pour perps et sizes d'ordres)
+    function to1e8(uint256 humanTimes1e8) internal pure returns (uint64) {
+        // L’IA doit fournir humanTimes1e8 = floor(human * 1e8) avant l’appel.
+        require(humanTimes1e8 <= type(uint64).max, "overflow");
+        return uint64(humanTimes1e8);
+    }
+
+    // Convertit un montant ERC-20 (18 décimales par ex.) en "wei" Core si besoin.
+    // NOTE: le "weiDecimals" du token Core peut != 18. Vérifier via L1Read.
+    function toWei(uint256 human, uint8 weiDecimals) internal pure returns (uint64) {
+        // human est déjà multiplié par 10**weiDecimals par l’IA avant d’appeler
+        require(human <= type(uint64).max, "overflow");
+        return uint64(human);
+    }
+}
+```
+
+> Rappel doc : `limitPx` et `sz` doivent être envoyés en **1e8**. Les **wei** spot utilisent les **`weiDecimals`** du token Core. Les conversions float ↔︎ entier dépendent des `szDecimals`/`baseSzDecimals` fournis par les precompiles. ([hyperliquid.gitbook.io][1])
+
+### 3.3. Lecture d’oracle/prix (precompiles)
+
+```solidity
+interface L1Read_Oracle {
+    function perpOraclePrice(uint32 asset) external view returns (uint64 px, uint8 szDecimals);
+    function spotOraclePrice(uint32 token) external view returns (uint64 px, uint8 baseSzDecimals);
+}
+
+contract PriceReader {
+    // Exemple: l’adresse exacte de la fonction peut être mappée via L1Read.sol officiel.
+    // Ici on suppose des facettes/addresses par fonctionnalité (cf. doc + L1Read.sol).
+    address constant PERP_ORACLE_PC = 0x0000000000000000000000000000000000000807;
+
+    function getPerpPx1e8(uint32 asset) external view returns (uint64 px1e8) {
+        // Appel static à la precompile: ajustez l’ABI selon L1Read.sol
+        (bool ok, bytes memory out) = PERP_ORACLE_PC.staticcall(abi.encode(asset));
+        require(ok && out.length >= 9, "precompile fail");
+        (uint64 px, /*uint8 szDec*/) = abi.decode(out, (uint64, uint8));
+        return px; // déjà en mantisse selon doc (convertir côté offchain si besoin)
+    }
+}
+```
+
+> Voir la section *Read precompiles* et le lien `L1Read.sol` sur la page. L’exemple `cast call …0807` est donné dans la doc. ([hyperliquid.gitbook.io][1])
+
+### 3.4. Transfert **EVM → Core** d’un ERC-20 lié
+
+```solidity
+interface IERC20 { function transfer(address to, uint256 amount) external returns (bool); }
+
+library SystemAddr {
+    // Calcule l'adresse système Core pour un tokenId (big-endian dans les 20 octets)
+    function forToken(uint64 tokenId) internal pure returns (address a) {
+        // 0x20xxxxxxxx... + tokenId BE sur les derniers octets
+        bytes20 b = bytes20(0);
+        b |= bytes20(uint160(uint256(0x20) << 152)); // premier octet 0x20
+        // injecter tokenId en BE dans les derniers octets
+        uint64 t = tokenId;
+        // écrire t à la fin de b ... (implémentation laissée à l’IA pour éviter gas inutile ici)
+        // Recommandation : pré-calculer offchain et injecter en constant.
+        assembly { a := b }
+    }
+}
+
+contract BridgeToCore {
+    function sendErc20ToCore(IERC20 t, address systemAddress, uint256 amount) external {
+        require(t.transfer(systemAddress, amount), "transfer failed");
+        // Crédit côté Core basé sur l’event Transfer(..., systemAddress, amount).
+    }
+}
+```
+
+> Règle officielle Core↔EVM : Core→EVM via **SpotSend** vers **system address** du token; EVM→Core via **ERC-20 `transfer(systemAddress, amount)`**. HYPE a un flux natif via `0x222...2222`. Gas/caveats détaillés dans la page dédiée. ([hyperliquid.gitbook.io][3])
+
+---
+
+## 4) Orchestration ordres & dépôts/retraits : séquences garanties
+
+### 4.1. Placer un **limit order** (achat/vente)
+
+1. **Vérifier** l’existence du compte Core (sinon l’initialiser par un petit EVM→Core transfert **au bloc précédent**). ([hyperliquid.gitbook.io][2])
+2. **Lire** tick/lot & prix via precompiles pour scaler `limitPx` & `sz` en **1e8**. ([hyperliquid.gitbook.io][1])
+3. **Encoder** l’action `id=1` : `(asset, isBuy, limitPx_1e8, sz_1e8, reduceOnly, tifEncoded, cloid)` puis `sendRawAction(data)`. ([hyperliquid.gitbook.io][1])
+4. **Annuler** si besoin via `id=10/11` (oid/cloid). ([hyperliquid.gitbook.io][1])
+
+### 4.2. **Dépôt/Retrait** vers un **vault** Core
+
+* Utiliser **Action `id=2` Vault transfer** : `(vaultAddress, isDeposit, usdAmount)`
+* `usdAmount` : entier **USD-class** (vérifiez la mantisse USD Core utilisée, typiquement 1e6).
+* **Timing** : le compte doit exister avant le bloc EVM qui porte l’action. ([hyperliquid.gitbook.io][1])
+
+### 4.3. **Transferts spot** (Core↔EVM)
+
+* **Core→EVM** : émettre sur Core un **SpotSend (`id=6`)** vers la **system address** du token (côté EVM, crédit par `transfer(recipient, amount)` exécuté par l’adresse système).
+* **EVM→Core** : faire `ERC20.transfer(systemAddress, amount)` (ou `send value` pour **HYPE** vers `0x222...2222`). ([hyperliquid.gitbook.io][3])
+
+---
+
+## 5) Bonnes pratiques & pièges connus
+
+* **Scaling exact** :
+
+  * `limitPx`, `sz` **toujours** en **1e8** (entiers).
+  * `wei` spot en **`weiDecimals`** propres au token.
+  * Pour conversions float ↔︎ int, s’appuyer sur les **precompiles** (renvoient aussi les `*Decimals`). ([hyperliquid.gitbook.io][1])
+* **Existence du compte Core** **avant** `CoreWriter` (sinon rejet). Utiliser un micro-transfert EVM→Core **dans un bloc précédent**. ([hyperliquid.gitbook.io][2])
+* **Fongibilité Core/EVM** : ne pas supposer la parité par défaut — **auditer** l’ERC-20 lié (bytecode, total balance). ([hyperliquid.gitbook.io][3])
+* **Gas** : precompiles de lecture ont coût `2000 + 65 * outLen`; Core→EVM ≈ **200k gas**; `CoreWriter` ≈ **~47k** pour un appel simple. ([hyperliquid.gitbook.io][1])
+* **TIF/CLOID** : respecter l’**encodage** exact (`1=Alo / 2=Gtc / 3=Ioc`; `cloid=0` si absent). ([hyperliquid.gitbook.io][1])
+
+---
+
+## 6) Blocs de configuration (pour IA)
+
+```json
+{
+  "addresses": {
+    "coreWriter": "0x3333333333333333333333333333333333333333",
+    "l1ReadBase": "0x0000000000000000000000000000000000000800",
+    "hypeSystem": "0x2222222222222222222222222222222222222222"
+  },
+  "actions": {
+    "LIMIT_ORDER": 1,
+    "VAULT_TRANSFER": 2,
+    "SPOT_SEND": 6,
+    "USD_CLASS_TRANSFER": 7,
+    "CANCEL_BY_OID": 10,
+    "CANCEL_BY_CLOID": 11
+  },
+  "tif": { "ALO": 1, "GTC": 2, "IOC": 3 },
+  "scaling": {
+    "orderMantissa": "1e8",
+    "usdClassHint": "verify; typically 1e6",
+    "spotWei": "token.weiDecimals via precompiles"
+  }
+}
+```
+
+---
+
+## 7) Références officielles (à jour)
+
+* **Interacting with HyperCore** (precompiles + CoreWriter + table des actions + exemples + liens `L1Read.sol` / `CoreWriter.sol`). ([hyperliquid.gitbook.io][1])
+* **HyperCore ⇄ HyperEVM transfers** (adresses système, flux Core→EVM et EVM→Core, HYPE natif, gas, caveats, linking). ([hyperliquid.gitbook.io][3])
+* **Interaction timings** (ordre exact des étapes dans un bloc, contrainte “compte doit exister”). ([hyperliquid.gitbook.io][2])
+* **API (publique)** — infos générales, SDKs (utile côté off-chain, pas nécessaire pour CoreWriter). ([hyperliquid.gitbook.io][4])
+
+---
+
+## 8) Checklist “prête à coder”
+
+* [ ] **Importer** `CoreWriter` (addr fixe) et **encoder** correctement `sendRawAction` (v=1, id sur 3 bytes BE, `abi.encode(...)`). ([hyperliquid.gitbook.io][1])
+* [ ] **Scaler** `limitPx`/`sz` en **1e8**, `wei` selon **`weiDecimals`**, USD-class vérifiée. ([hyperliquid.gitbook.io][1])
+* [ ] **Lire** via precompiles (prix, décimales, soldes) **avant** d’envoyer l’ordre. ([hyperliquid.gitbook.io][1])
+* [ ] **S’assurer** que le **compte existe** sur Core **avant** un appel CoreWriter (sinon init par EVM→Core au bloc précédent). ([hyperliquid.gitbook.io][2])
+* [ ] **Transferts** : Core→EVM via **SpotSend→system address**, EVM→Core via **ERC-20.transfer(systemAddress)** (HYPE via `0x222...`). ([hyperliquid.gitbook.io][3])
+* [ ] **Gérer erreurs** precompiles (inputs invalides ⇒ gas consommé) et prévoir annulations par **OID/CLOID**. ([hyperliquid.gitbook.io][1])
+
+---
+
+
+[1]: https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/hyperevm/interacting-with-hypercore "Interacting with HyperCore | Hyperliquid Docs"
+[2]: https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/hyperevm/interaction-timings "Interaction timings | Hyperliquid Docs"
+[3]: https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/hyperevm/hypercore-less-than-greater-than-hyperevm-transfers "HyperCore <> HyperEVM transfers | Hyperliquid Docs"
+[4]: https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api "API | Hyperliquid Docs"
