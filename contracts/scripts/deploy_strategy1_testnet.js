@@ -43,7 +43,6 @@ async function main() {
 
   // Pas de mocks: utiliser l'adresse système CoreWriter fournie
   const CORE_WRITER_ADDRESS = "0x3333333333333333333333333333333333333333";
-  const writer = { target: CORE_WRITER_ADDRESS };
 
   // Pas de mocks: exiger une adresse USDC EVM réelle côté HyperEVM testnet
   const USDC_EVM_ADDRESS = process.env.USDC_EVM_ADDRESS;
@@ -71,11 +70,12 @@ async function main() {
 
   // Validations basiques d'adresse EVM (42 chars)
   const isAddr = (a) => typeof a === "string" && /^0x[0-9a-fA-F]{40}$/.test(a);
-  if (!isAddr(CORE_WRITER_ADDRESS)) throw new Error("CORE_WRITER_ADDRESS invalide");
   if (!isAddr(FEE_VAULT_ADDRESS)) throw new Error("FEE_VAULT_ADDRESS invalide");
   if (!isAddr(REBALANCER_ADDRESS)) throw new Error("REBALANCER_ADDRESS invalide");
   if (!isAddr(USDC_EVM_ADDRESS)) throw new Error("USDC_EVM_ADDRESS invalide");
   if (!isAddr(HYPE_CORE_SYSTEM_ADDRESS)) throw new Error("HYPE_CORE_SYSTEM_ADDRESS invalide (fournissez 20 bytes)");
+
+  console.log("ℹ️ Rappel: effectuez un micro-transfert HyperCore vers l'adresse du handler après déploiement pour éviter `CoreAccountMissing()` lors du premier ordre.");
 
   console.log("\n🔧 Déploiement CoreInteractionHandler...");
   const CoreInteractionHandler = await ethers.getContractFactory("CoreInteractionHandler");
@@ -85,7 +85,6 @@ async function main() {
   const feeBps = FEE_BPS;
   const handler = await CoreInteractionHandler.deploy(
     l1.target,
-    writer.target,
     USDC_EVM_ADDRESS,
     maxOutboundPerEpoch,
     epochLen,

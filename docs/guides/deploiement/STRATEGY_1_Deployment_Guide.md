@@ -21,8 +21,8 @@ Ce document décrit l'architecture, les paramètres, et les étapes de déploiem
 ### Constructeurs et dépendances
 
 - CoreInteractionHandler
-  - `constructor(L1Read _l1read, ICoreWriter _coreWriter, uint64 _maxOutboundPerEpoch, uint64 _epochLength, address _feeVault, uint64 _feeBps)`
-  - Dépend de `L1Read`, `CoreWriter` (HYPE est natif, pas d'USDC)
+  - `constructor(L1Read _l1read, IERC20 _usdc, uint64 _maxOutboundPerEpoch, uint64 _epochLength, address _feeVault, uint64 _feeBps)`
+  - Dépend de `L1Read` et de l'adresse système `CoreWriter` (constante `0x3333…3333`)
 
 - VaultContract
   - `constructor()` (aucun paramètre)
@@ -36,7 +36,7 @@ Toutes les unités sont précisées entre parenthèses.
 
 - Pour CoreInteractionHandler (au déploiement)
   - **L1READ_ADDRESS**: adresse du contrat `L1Read` sur votre EVM (wrapper de lectures Core precompile).
-  - **CORE_WRITER_ADDRESS**: adresse du contrat writer officiel pour envoyer des actions vers Core. À défaut, utiliser le stub `CoreWriter` pour tests.
+  - **USDC_TOKEN_EVM**: adresse ERC-20 USDC sur l’EVM (8 décimales).
   - **MAX_OUTBOUND_PER_EPOCH_1e8 (uint64)**: plafond d'équivalent USD émis EVM→Core par epoch, en unités 1e8. Ex: 100k USD → `100000 * 1e8`.
   - **EPOCH_LENGTH_BLOCKS (uint64)**: ⚠️ **IMPORTANT** : durée d'une epoch **EN NOMBRE DE BLOCS** (pas en secondes). Le contrat utilise `block.number` pour éviter la manipulation des timestamps par les validateurs. Exemples de calcul :
     - Sur HyperEVM (~2 sec/bloc) : 1 jour = 43200 blocs (86400 sec ÷ 2)
@@ -82,19 +82,19 @@ Où trouver les IDs Core
 
 ### Ordre de déploiement recommandé
 
+> ℹ️ **CoreWriter** : aucune adresse n’est passée au constructeur. Le handler utilise directement l’adresse système `0x3333…3333`. Assurez-vous que le compte HyperCore du handler est initialisé (micro-transfert Core) avant tout envoi d’action, sinon les appels revertent avec `CoreAccountMissing()`.
+
 1. `L1Read`
    - Déployer le contrat utilitaire de lectures Core (precompile wrappers).
-2. `CoreWriter`
-   - Utiliser l'adresse writer officielle. À défaut, déployer le stub `CoreWriter` pour dev/test.
-3. `CoreInteractionHandler`
+2. `CoreInteractionHandler`
    - Paramètres du constructeur:
      - `l1read = L1READ_ADDRESS`
-     - `coreWriter = CORE_WRITER_ADDRESS`
+     - `usdc = USDC_TOKEN_EVM`
      - `maxOutboundPerEpoch = MAX_OUTBOUND_PER_EPOCH_1e8`
      - `epochLength = EPOCH_LENGTH_BLOCKS` ⚠️ **EN BLOCS, PAS EN SECONDES**
      - `feeVault = FEE_VAULT_ADDRESS`
      - `feeBps = FEE_BPS`
-4. `VaultContract`
+3. `VaultContract`
    - Aucun paramètre du constructeur (HYPE natif)
 5. Configuration (owner)
    - Handler:

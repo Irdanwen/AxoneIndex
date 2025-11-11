@@ -36,6 +36,10 @@ describe("CoreHandler: dépôt HYPE et conversions de taille", function () {
 
     const MockCoreWriter = await ethers.getContractFactory("MockCoreWriter");
     const writer = await MockCoreWriter.deploy();
+    await writer.waitForDeployment();
+    const systemCoreWriter = "0x3333333333333333333333333333333333333333";
+    const writerCode = await ethers.provider.getCode(writer.target);
+    await ethers.provider.send("hardhat_setCode", [systemCoreWriter, writerCode]);
 
     const MockUSDC = await ethers.getContractFactory("MockUSDC");
     const usdc = await MockUSDC.deploy();
@@ -44,7 +48,7 @@ describe("CoreHandler: dépôt HYPE et conversions de taille", function () {
     const Handler = await ethers.getContractFactory("CoreInteractionHandler");
     const maxOutbound = 1000000000000n; // large
     const epochLen = 10;
-    const handler = await Handler.deploy(l1.target, writer.target, usdc.target, maxOutbound, epochLen, owner.address, 0);
+    const handler = await Handler.deploy(l1.target, usdc.target, maxOutbound, epochLen, owner.address, 0);
 
     // Abaisser le notional minimal pour les tests (éviter les reverts sur petits ordres)
     await handler.connect(owner).setMinNotionalUsd1e8(1n);
@@ -107,6 +111,10 @@ describe("CoreHandler: dépôt HYPE et conversions de taille", function () {
 
     const MockCoreWriter = await ethers.getContractFactory("MockCoreWriter");
     const writer = await MockCoreWriter.deploy();
+    await writer.waitForDeployment();
+    const systemCoreWriter = "0x3333333333333333333333333333333333333333";
+    const writerCode = await ethers.provider.getCode(writer.target);
+    await ethers.provider.send("hardhat_setCode", [systemCoreWriter, writerCode]);
 
     const MockUSDC = await ethers.getContractFactory("MockUSDC");
     const usdc = await MockUSDC.deploy();
@@ -114,7 +122,6 @@ describe("CoreHandler: dépôt HYPE et conversions de taille", function () {
     const Handler = await ethers.getContractFactory("CoreInteractionHandler");
     const handler = await Handler.deploy(
       l1.target,
-      writer.target,
       usdc.target,
       1_000_000_000n,
       10,

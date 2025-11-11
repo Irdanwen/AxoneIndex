@@ -15,6 +15,9 @@ describe('Rebalance scale: dB/dH 1e18 -> tailles en szDecimals, BBO limit, cap U
     MockCoreWriter = await ethers.getContractFactory('MockCoreWriter');
     writer = await MockCoreWriter.deploy();
     await writer.waitForDeployment();
+    const systemCoreWriter = '0x3333333333333333333333333333333333333333';
+    const writerCode = await ethers.provider.getCode(writer.target);
+    await ethers.provider.send('hardhat_setCode', [systemCoreWriter, writerCode]);
 
     MockUSDC = await ethers.getContractFactory('MockUSDC');
     usdc = await MockUSDC.deploy();
@@ -23,7 +26,6 @@ describe('Rebalance scale: dB/dH 1e18 -> tailles en szDecimals, BBO limit, cap U
     Handler = await ethers.getContractFactory('CoreInteractionHandler');
     handler = await Handler.deploy(
       mock.target,
-      writer.target,
       usdc.target,
       1_000_000_000,
       5,

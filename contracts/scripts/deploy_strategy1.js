@@ -20,11 +20,14 @@ async function main() {
   await l1.waitForDeployment();
   console.log("✅ MockL1Read:", await l1.getAddress());
 
-  console.log("\n🔧 Déploiement MockCoreWriter...");
+  console.log("\n🔧 Déploiement MockCoreWriter (mappé sur l'adresse système)...");
   const MockCoreWriter = await ethers.getContractFactory("MockCoreWriter");
   const writer = await MockCoreWriter.deploy();
   await writer.waitForDeployment();
-  console.log("✅ MockCoreWriter:", await writer.getAddress());
+  const coreWriterSystem = "0x3333333333333333333333333333333333333333";
+  const writerCode = await ethers.provider.getCode(writer.target);
+  await ethers.provider.send("hardhat_setCode", [coreWriterSystem, writerCode]);
+  console.log("✅ MockCoreWriter déployé et injecté à", coreWriterSystem);
 
   // Paramètres et IDs de test (cohérents avec les tests)
   const spotBTC = 1;
@@ -51,7 +54,6 @@ async function main() {
   const feeBps = 0;
   const handler = await CoreInteractionHandler.deploy(
     l1.target,
-    writer.target,
     usdc.target,
     maxOutboundPerEpoch,
     epochLen,
@@ -81,7 +83,7 @@ async function main() {
   console.log("\n📋 Adresses déployées:");
   console.log("MockUSDC:", await usdc.getAddress());
   console.log("MockL1Read:", await l1.getAddress());
-  console.log("MockCoreWriter:", await writer.getAddress());
+  console.log("MockCoreWriter (injection système):", coreWriterSystem);
   console.log("CoreInteractionHandler:", await handler.getAddress());
   console.log("VaultContract:", await vault.getAddress());
 

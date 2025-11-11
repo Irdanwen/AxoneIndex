@@ -94,25 +94,27 @@ function spotOraclePx1e8(uint32 spotAsset) public view returns (uint64) {
 
 **Implémentation HLConstants** :
 ```solidity
-// HLConstants.sol - Ligne 43-54
+// HLConstants.sol
 function encodeSpotLimitOrder(
+    uint24 actionId,
     uint32 asset,
     bool isBuy,
     uint64 limitPxRaw,
     uint64 szInSzDecimals,
-    uint8 tif,
+    bool reduceOnly,
+    uint8 encodedTif,
     uint128 cloid
 ) internal pure returns (bytes memory) {
     return abi.encodePacked(
-        _header(2),
-        abi.encode(asset, isBuy, limitPxRaw, szInSzDecimals, tif, cloid)
+        _header(actionId),
+        abi.encode(asset, isBuy, limitPxRaw, szInSzDecimals, reduceOnly, encodedTif, cloid)
     );
 }
 ```
 
 **✅ Points positifs** :
-- Format correct : header(2) + encode(...)
-- TIF_IOC = 3 correctement défini
+- Format correct : header `0x01 || actionId(3 bytes)` (ActionID 1) + payload ABI
+- `reduceOnly` contrôlable (HYPE50 ⇒ `false`) et `encodedTif = TIF_IOC`
 - Utilisation de `toSzInSzDecimals()` pour conversion USD → szDecimals
 - Ordres IOC avec limites de prix appropriées
 
@@ -144,13 +146,14 @@ require(ok, "NATIVE_SEND_FAIL");
 
 **Implémentation HLConstants** :
 ```solidity
-// HLConstants.sol - Ligne 58-64
+// HLConstants.sol
 function encodeSpotSend(
+    uint24 actionId,
     address destination,
     uint64 tokenId,
     uint64 amount1e8
 ) internal pure returns (bytes memory) {
-    return abi.encodePacked(_header(6), abi.encode(destination, tokenId, amount1e8));
+    return abi.encodePacked(_header(actionId), abi.encode(destination, tokenId, amount1e8));
 }
 ```
 

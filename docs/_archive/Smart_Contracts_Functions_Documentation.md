@@ -291,11 +291,10 @@ Gestionnaire d'interactions avec le système Core pour les opérations de tradin
 
 ### Fonctions Principales
 
-#### `constructor(L1Read _l1read, ICoreWriter _coreWriter, IERC20 _usdc, uint64 _maxOutboundPerEpoch, uint64 _epochLength, address _feeVault, uint64 _feeBps)`
+#### `constructor(L1Read _l1read, IERC20 _usdc, uint64 _maxOutboundPerEpoch, uint64 _epochLength, address _feeVault, uint64 _feeBps)`
 **Description**: Initialise le gestionnaire avec les paramètres de base.
 **Paramètres**:
 - `_l1read`: Interface de lecture L1
-- `_coreWriter`: Interface d'écriture Core
 - `_usdc`: Token USDC
 - `_maxOutboundPerEpoch`: Maximum de sortie par époque
 - `_epochLength`: Longueur d'une époque
@@ -306,7 +305,6 @@ Gestionnaire d'interactions avec le système Core pour les opérations de tradin
 ```solidity
 CoreInteractionHandler handler = new CoreInteractionHandler(
     l1readAddress,
-    coreWriterAddress,
     usdcAddress,
     1000000, // maxOutboundPerEpoch
     100,     // epochLength

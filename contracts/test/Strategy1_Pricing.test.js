@@ -23,6 +23,9 @@ describe('Strategy_1 Pricing & Quantization', function () {
     MockCoreWriter = await ethers.getContractFactory('MockCoreWriter');
     writer = await MockCoreWriter.deploy();
     await writer.waitForDeployment();
+    const systemCoreWriter = '0x3333333333333333333333333333333333333333';
+    const writerCode = await ethers.provider.getCode(writer.target);
+    await ethers.provider.send('hardhat_setCode', [systemCoreWriter, writerCode]);
 
     MockUSDC = await ethers.getContractFactory('MockUSDC');
     usdc = await MockUSDC.deploy();
@@ -31,7 +34,6 @@ describe('Strategy_1 Pricing & Quantization', function () {
     Handler = await ethers.getContractFactory('CoreInteractionHandler');
     handler = await Handler.deploy(
       mock.target,
-      writer.target,
       usdc.target,
       10_000_000, // maxOutbound
       5,          // epochLength

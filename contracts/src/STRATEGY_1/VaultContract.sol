@@ -336,6 +336,8 @@ contract VaultContract is ReentrancyGuard {
     }
 
     function _getBaseAmountHype(uint256 gross1e18, uint256 depositRecorded) internal pure returns (uint256) {
+        // Logique de base amount: limite le retrait aux dépôts enregistrés
+        // Évite les retraits excessifs qui pourraient affecter la stabilité du vault
         return gross1e18 > depositRecorded ? depositRecorded : gross1e18;
     }
 

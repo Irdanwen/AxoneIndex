@@ -4,12 +4,9 @@
 - `CoreInteractionHandler.sol` gère les interactions avec Core (Hyperliquid): transferts HYPE natif, ordres IOC SPOT BTC/HYPE, et rééquilibrage 50/50. Le rééquilibrage est restreint à une adresse `rebalancer` définie par l'owner. Pour HYPE50 Defensive, HYPE est traité comme le jeton de gaz natif: les dépôts se font en natif (payable), sont convertis 100% en USDC côté Core, puis alloués 50/50.
 
 ## 🔒 Améliorations de Sécurité
-
-### Mécanisme de Pause d'Urgence
 - **Héritage de Pausable** : Le contrat utilise maintenant `Pausable` d'OpenZeppelin
 - **Protection des fonctions critiques** : Toutes les opérations principales sont protégées par `whenNotPaused`
 - **Contrôle d'urgence** : `pause()` et `unpause()` permettent d'arrêter immédiatement les opérations
-- **🚨 NOUVEAU** : **Fonction d'urgence** : `emergencyPause()` pour les situations critiques
 - **Protection contre les défaillances d'oracle** : Pause disponible en cas de manipulation ou de défaillance
 
 ### Corrections Implémentées
@@ -17,10 +14,21 @@
 - **Période de grâce pour l'oracle** : Initialisation progressive de l'oracle sans blocage initial
 - **⚡ OPTIMISATION CRITIQUE** : **Migration vers block.number** - Remplacement de `block.timestamp` par `block.number` pour éviter la manipulation des validateurs
 - **🔒 SÉCURITÉ RENFORCÉE** : **Rate limiting basé sur les blocs** - Utilisation de `block.number` pour les époques au lieu de timestamps manipulables
-- **🐛 CORRECTION CRITIQUE** : **Migration vers ordres SPOT** — Les ordres de rééquilibrage et de dépôt utilisent désormais un encodage SPOT dédié (`encodeSpotLimitOrder`) avec TIF=IOC. Les tailles sont converties selon `szDecimals` via `toSzInSzDecimals()`.
+- **🐛 CORRECTION CRITIQUE** : **Migration vers ordres SPOT** — Les ordres de rééquilibrage et de dépôt utilisent désormais un encodage SPOT dédié (`encodeSpotLimitOrder`) avec `reduceOnly=false` et `encodedTif=IOC`. Les tailles sont converties selon `szDecimals` via `toSzInSzDecimals()`.
+- **🔗 HARDENING (2025-11-10)** : **Adresse CoreWriter constante** — `CORE_WRITER` est figée à `0x3333…3333` (contrat système HyperCore), supprimant tout risque de mauvaise configuration lors du déploiement.
+- **🛡️ GARDE CORE** : **Vérification d’existence du compte HyperCore** — Chaque envoi `sendRawAction` appelle `_ensureCoreAccountExists()` et revert avec `CoreAccountMissing()` si le compte n’est pas encore initialisé côté Core.
 - **💰 CORRECTION (2025-11-09)** : **Valorisation fiable des soldes spot** — `spotBalanceInWei()` lit les métadonnées Hyperliquid (`tokenInfo`) et convertit systématiquement les soldes `szDecimals → weiDecimals`, garantissant une valorisation correcte même si le format des precompiles évolue.
 - **⚖️ CORRECTION (2025-11-08)** : **Conversion des tailles au prix limite courant** — les ordres de rebalancing utilisent maintenant le même prix que la limite BBO (ask/bid ajusté par `marketEpsilonBps`) pour convertir le notional USD en taille base. Cela empêche d'essayer d'acheter plus d'actifs que la trésorerie disponible lorsque le carnet est loin de l'oracle et réduit les rejets Hyperliquid pour « insufficient funds ».
 - **🐛 CORRECTION CRITIQUE (tailles d'ordre ×100)** : **Conversion USD → taille en `szDecimals`** — `toSzInSzDecimals()` divise désormais par `price1e8 * 1e10` (et non `price1e8 * 1e8`). Cela corrige un facteur ×100 sur les tailles d’ordres qui pouvait empêcher l’exécution (ex: vente HYPE initiale lors d’un dépôt natif).
+
+### Encodage CoreWriter (v=1 + ActionID sur 3 bytes)
+- L’encodage suit le format: `[0]=0x01, [1..3]=ActionID (big-endian), [4..]=abi.encode(...)`.
+- Implémenté dans `HLConstants._encodeAction()` et utilisé par `encodeSpotLimitOrder` et `encodeSpotSend`.
+
+### Adresses Système (Core → EVM / EVM → Core)
+- Spot system address: premier octet `0x20`, le reste zéro sauf l’index `tokenId` en big‑endian.
+- HYPE natif: adresse spéciale `0x2222222222222222222222222222222222222222`.
+- `SystemAddressLib.getSpotSystemAddress(tokenId)` calcule toujours `0x20 + tokenId`, y compris pour `tokenId = 0` (USDC). Aucun traitement spécial n’est appliqué à `tokenId == 0`.
 
 ### 🔄 Mécanisme de Rattrapage Graduel Oracle
 
@@ -146,6 +154,7 @@ handler.setMaxOracleDeviationBps(1000);
 - `RateLimited()` — dépassement de plafond sur l’epoch courante
 - `OracleZero()` — prix oracle nul
 - `OracleGradualCatchup()` — déviation oracle > seuil; mécanisme de rattrapage graduel
+- `CoreAccountMissing()` — le compte HyperCore de ce contrat n’est pas encore initialisé (exige un micro-transfert Core avant les actions)
 
 ## Paramètres et Contraintes
 - `deadbandBps ≤ 50`.
@@ -189,7 +198,7 @@ Cette approche respecte les règles Hyperliquid (tick & lot size) : si `szDecima
 Le contrat gère deux types de décimales pour les tokens HyperLiquid :
 
 1. **szDecimals** : Format utilisé pour les opérations de trading (ordres, transferts)
-   - Utilisé pour les montants encodés via `encodeSpotLimitOrder()` et `encodeSpotSend()`
+   - Utilisé pour les montants encodés via `encodeSpotLimitOrder(asset, isBuy, limitPxRaw, szInSzDecimals, reduceOnly, encodedTif, cloid)` et `encodeSpotSend(destination, tokenId, amount1e8)`
    - Exemple Hyperliquid : HYPE `szDecimals = 2` (1 unité = 0.01 HYPE)
 
 2. **weiDecimals** : Format utilisé pour la représentation on-chain et la valorisation
@@ -258,7 +267,7 @@ Avant la correction 2025‑11‑07, multiplier par `10^(weiDecimals - szDecimals
 
 ## Note d'implémentation HYPE50 (SPOT uniquement)
 
-- Pour les rééquilibrages et achats/ventes au comptant, utilisez l'encodage SPOT: `encodeSpotLimitOrder(assetId, isBuy, limitPxRaw, szInSzDecimals, TIF_IOC, cloid)`.
+- Pour les rééquilibrages et achats/ventes au comptant, utilisez l'encodage SPOT: `encodeSpotLimitOrder(assetId, isBuy, limitPxRaw, szInSzDecimals, reduceOnly, encodedTif, cloid)` avec `reduceOnly=false` et `encodedTif=HLConstants.TIF_IOC`.
 - Les tailles d'ordres doivent être exprimées en `szDecimals` du token base (voir `toSzInSzDecimals`).
 - Le Handler est strictement SPOT: aucun encodage perps n'est exposé (helpers perps supprimés).
 
@@ -282,6 +291,16 @@ Exemple:
 ```solidity
 uint32 assetId = spotBTC + 10000; // BTC/USDC spot
 L1Read.Bbo memory b = l1read.bbo(assetId);
-// Ordre SPOT IOC
-_send(coreWriter, CoreHandlerLib.encodeSpotLimitOrder(assetId, true, limitPxRaw, szInSzDecimals, 0));
+// Ordre SPOT IOC (reduceOnly=false, TIF=IOC)
+_send(
+    CoreHandlerLib.encodeSpotLimitOrder(
+        assetId,
+        true,
+        limitPxRaw,
+        szInSzDecimals,
+        false,
+        HLConstants.TIF_IOC,
+        0
+    )
+);
 ```

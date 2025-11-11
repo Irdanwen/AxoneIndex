@@ -19,6 +19,10 @@ describe("STRATEGY_1 - Audit Tests", function () {
 
     const CoreWriterMock = await ethers.getContractFactory("CoreWriterMock");
     coreWriter = await CoreWriterMock.deploy();
+    await coreWriter.waitForDeployment();
+    const systemCoreWriter = "0x3333333333333333333333333333333333333333";
+    const writerCode = await ethers.provider.getCode(coreWriter.target);
+    await ethers.provider.send("hardhat_setCode", [systemCoreWriter, writerCode]);
 
     const USDC = await ethers.getContractFactory("ERC20Mock");
     usdc = await USDC.deploy("USDC", "USDC", 8); // 8 decimals comme USDC
@@ -26,7 +30,6 @@ describe("STRATEGY_1 - Audit Tests", function () {
     const CoreInteractionHandler = await ethers.getContractFactory("CoreInteractionHandler");
     handler = await CoreInteractionHandler.deploy(
       l1read.address,
-      coreWriter.address,
       usdc.address,
       ethers.utils.parseUnits("1000000", 8), // maxOutboundPerEpoch
       7200, // epochLength (1 jour sur Ethereum)

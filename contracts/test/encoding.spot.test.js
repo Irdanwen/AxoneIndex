@@ -15,6 +15,9 @@ describe('Encodage SPOT: assetId offset + TIF IOC + raw px conversion', function
     MockCoreWriter = await ethers.getContractFactory('MockCoreWriter');
     writer = await MockCoreWriter.deploy();
     await writer.waitForDeployment();
+    const systemCoreWriter = '0x3333333333333333333333333333333333333333';
+    const writerCode = await ethers.provider.getCode(writer.target);
+    await ethers.provider.send('hardhat_setCode', [systemCoreWriter, writerCode]);
 
     MockUSDC = await ethers.getContractFactory('MockUSDC');
     usdc = await MockUSDC.deploy();
@@ -23,7 +26,6 @@ describe('Encodage SPOT: assetId offset + TIF IOC + raw px conversion', function
     Handler = await ethers.getContractFactory('CoreInteractionHandler');
     handler = await Handler.deploy(
       mock.target,
-      writer.target,
       usdc.target,
       1_000_000_000,
       5,
@@ -80,7 +82,7 @@ describe('Encodage SPOT: assetId offset + TIF IOC + raw px conversion', function
     // Il peut y avoir plusieurs envois; on vérifie le dernier
     const last = events[events.length - 1];
     const data = last.args[0];
-    // Header(1, action=2) + abi.encode(asset, isBuy, limitPxRaw, sz, tif=3, cloid)
+    // Header(0x01 || actionId=1 big-endian) + abi.encode(asset, isBuy, limitPxRaw, sz, reduceOnly, tif=3, cloid)
     // Vérifications légères: assetId présent et TIF=3.
     // assetId attendu: 10000 + 3 = 10003 (BTC) ou 10000 + 4 = 10004 (HYPE) selon l'ordre encodé.
     // TIF=3 encodé ensuite; pour un test black-box, on se contente de vérifier la présence de 10003 en bytes.
@@ -89,8 +91,8 @@ describe('Encodage SPOT: assetId offset + TIF IOC + raw px conversion', function
     const asset10004 = '0000000000000000000000000000000000000000000000000000000000002714';
     expect(hex.includes(asset10003) || hex.includes(asset10004)).to.equal(true);
     // tif=3 devrait apparaître comme un uint8 dans l’abi.encode pack de la struct; présence non-triviale en hex.
-    // On vérifie plutôt la présence du header 0x01 0x02 (version=1, action=2)
-    expect(hex.startsWith('0x0102')).to.equal(true);
+    // On vérifie plutôt la présence du header 0x01 00 00 01 (version=1, action=1)
+    expect(hex.startsWith('0x01000001')).to.equal(true);
   });
 });
 

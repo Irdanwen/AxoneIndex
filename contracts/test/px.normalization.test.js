@@ -16,6 +16,9 @@ describe('Prix normalisation 1e8 (CoreInteractionHandler via pxDecimals)', funct
     const MockCoreWriter = await ethers.getContractFactory('MockCoreWriter');
     const writer = await MockCoreWriter.deploy();
     await writer.waitForDeployment();
+    const systemCoreWriter = '0x3333333333333333333333333333333333333333';
+    const writerCode = await ethers.provider.getCode(writer.target);
+    await ethers.provider.send('hardhat_setCode', [systemCoreWriter, writerCode]);
 
     const MockUSDC = await ethers.getContractFactory('MockUSDC');
     const usdc = await MockUSDC.deploy();
@@ -24,7 +27,6 @@ describe('Prix normalisation 1e8 (CoreInteractionHandler via pxDecimals)', funct
     Handler = await ethers.getContractFactory('CoreInteractionHandler');
     handler = await Handler.deploy(
       mock.target,
-      writer.target,
       usdc.target,
       10_000_000, // maxOutbound
       5,          // epochLength

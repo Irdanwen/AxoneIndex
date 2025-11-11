@@ -284,11 +284,11 @@ rewardsHub.setPoolRewarder(0, rewarderAddress);
 
 **Note** : Ce contrat doit être déployé avec les interfaces appropriées du système Core. Pour les tests, vous pouvez utiliser un mock.
 
-### 8. CoreWriter (Interface d'Écriture Core)
+### 8. CoreWriter (adresse système)
 
-**Objectif** : Interface pour envoyer des actions vers le système Core
+**Objectif** : Adresse système `0x3333333333333333333333333333333333333333` utilisée par HyperCore pour recevoir les actions.
 
-**Note** : Utiliser l'adresse officielle du CoreWriter ou déployer un stub pour les tests.
+**Note** : Aucun déploiement n'est requis. Conservez l'adresse dans votre configuration/test; le handler y fait référence en dur. Pour les environnements de test, un stub reste disponible pour simuler les événements mais n'est plus injecté au constructeur.
 
 ### 9. CoreInteractionHandler
 
@@ -298,9 +298,9 @@ rewardsHub.setPoolRewarder(0, rewarderAddress);
 ```solidity
 constructor(
     L1Read _l1read,                    // Interface de lecture L1
-    ICoreWriter _coreWriter,           // Interface d'écriture Core
-    uint64 _maxOutboundPerEpoch,       // Maximum de sortie par époque
-    uint64 _epochLength,               // Longueur d'une époque
+    IERC20 _usdc,                      // Token USDC sur l’EVM (8 décimales)
+    uint64 _maxOutboundPerEpoch,       // Maximum de sortie par époque (USD 1e8)
+    uint64 _epochLength,               // Longueur d'une époque (en blocs)
     address _feeVault,                 // Vault des frais
     uint64 _feeBps                     // Frais en basis points
 )
@@ -308,7 +308,7 @@ constructor(
 
 **Paramètres d'exemple** :
 - `_l1read` : adresse de L1Read
-- `_coreWriter` : adresse de CoreWriter
+- `_usdc` : adresse de l’USDC bridgé sur HyperEVM
 - `_maxOutboundPerEpoch` : `100000000000` (100k USD équivalent en 1e8)
 - `_epochLength` : `43200` (1 jour en blocs sur HyperEVM)
 - `_feeVault` : adresse de trésorerie
@@ -319,6 +319,7 @@ constructor(
 2. Remplir les paramètres avec les valeurs d'exemple
 3. Cliquer "Deploy"
 4. Noter l'adresse du contrat
+5. ⚠️ Effectuer un micro-transfert Core → Handler afin d'initialiser le compte avant d'envoyer des actions, sous peine de revert `CoreAccountMissing()`.
 
 ### 10. VaultContract
 

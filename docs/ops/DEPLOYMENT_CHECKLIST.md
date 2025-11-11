@@ -3,7 +3,8 @@
 ## Ordre d’Initialisation
 
 1. Déployer `CoreInteractionHandler`
-   - Renseigner le constructeur: `L1Read`, `CoreWriter`, `USDC`, `maxOutboundPerEpoch`, `epochLength`, `feeVault`, `feeBps` (≤ 10000)
+   - Renseigner le constructeur: `L1Read`, `USDC`, `maxOutboundPerEpoch`, `epochLength`, `feeVault`, `feeBps` (≤ 10000)
+   - ⚠️ `CORE_WRITER` est figé à `0x3333...3333` ; initialiser le compte HyperCore du handler avant d'envoyer des actions (sinon `CoreAccountMissing()`).
    - Appeler:
      - `setSpotIds(btcSpot, hypeSpot)`
      - `setSpotTokenIds(usdcToken, btcToken, hypeToken)` (⚠️ n’écrase pas un `usdcCoreTokenId` existant)

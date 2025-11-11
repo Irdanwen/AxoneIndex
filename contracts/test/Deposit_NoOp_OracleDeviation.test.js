@@ -10,13 +10,16 @@ describe("CoreInteractionHandler: deposit no-op on oracle deviation", function (
     const l1 = await L1Read.deploy();
     const CoreWriter = await ethers.getContractFactory("MockCoreWriter");
     const writer = await CoreWriter.deploy();
+    await writer.waitForDeployment();
+    const systemCoreWriter = "0x3333333333333333333333333333333333333333";
+    const writerCode = await ethers.provider.getCode(writer.target);
+    await ethers.provider.send("hardhat_setCode", [systemCoreWriter, writerCode]);
     const USDC = await ethers.getContractFactory("MockUSDC");
     const usdc = await USDC.deploy();
 
     const Handler = await ethers.getContractFactory("CoreInteractionHandler");
     const handler = await Handler.deploy(
       l1.target,
-      writer.target,
       usdc.target,
       10_000_000_000n,
       1n,
@@ -67,13 +70,16 @@ describe("CoreInteractionHandler: deposit no-op on oracle deviation", function (
     const l1 = await L1Read.deploy();
     const CoreWriter = await ethers.getContractFactory("MockCoreWriter");
     const writer = await CoreWriter.deploy();
+    await writer.waitForDeployment();
+    const systemCoreWriter = "0x3333333333333333333333333333333333333333";
+    const writerCode = await ethers.provider.getCode(writer.target);
+    await ethers.provider.send("hardhat_setCode", [systemCoreWriter, writerCode]);
     const USDC = await ethers.getContractFactory("MockUSDC");
     const usdc = await USDC.deploy();
 
     const Handler = await ethers.getContractFactory("CoreInteractionHandler");
     const handler = await Handler.deploy(
       l1.target,
-      writer.target,
       usdc.target,
       10_000_000_000n,
       1n,

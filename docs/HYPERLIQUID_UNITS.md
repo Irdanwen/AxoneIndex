@@ -93,9 +93,11 @@ Implémentation: `CoreHandlerLib.toSzInSzDecimals()`. Cette version corrige un a
 
 ## Encodage des ordres SPOT et envois
 - `assetId` utilisé pour le carnet/BBO et la soumission d’ordres: `assetId = 10000 + spotIndex`
-- `encodeSpotLimitOrder(assetId, isBuy, limitPxRaw, szInSzDecimals, TIF_IOC, cloid)`
+- `encodeSpotLimitOrder(assetId, isBuy, limitPxRaw, szInSzDecimals, reduceOnly, encodedTif, cloid)`
   - `limitPxRaw` est en décimales « natives » du marché (avant normalisation). Nous partons d’un `limitPx1e8` puis re‑replions via `_toRawPx()`.
   - `szInSzDecimals` est en `szDecimals` de l’actif base.
+  - `reduceOnly` = `false` pour les ordres marketables de STRATEGY_1.
+  - `encodedTif` = `HLConstants.TIF_IOC` (3) pour exécuter en IOC.
 - `encodeSpotSend(destination, tokenId, amount1e8)` pour crédits EVM/Core
 
 Implémentations: `HLConstants`, `CoreHandlerLib.encodeSpotLimitOrder`, `CoreHandlerLib.encodeSpotSend`, `CoreInteractionHandler._sendSpotLimitOrderDirect`.
@@ -138,6 +140,11 @@ Implémentations: `HLConstants`, `CoreHandlerLib.encodeSpotLimitOrder`, `CoreHan
 - Notation Px/Sz/Side/Asset/TIF: conforme [`notation`](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/notation)
 - Asset IDs SPOT avec offset 10000: conforme [`asset-ids`](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/asset-ids)
 - Respect des `szDecimals`/tick rules et normalisation px: conforme [`tick-and-lot-size`](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/tick-and-lot-size)
+
+## Adresses système (Spot et HYPE natif)
+- Spot system address: premier octet `0x20`, le reste zéro sauf l’index `tokenId` (big‑endian implicite sur les derniers octets).
+- HYPE natif: `0x2222222222222222222222222222222222222222`.
+- STRATEGY_1: `SystemAddressLib.getSpotSystemAddress(tokenId)` calcule toujours `0x20 + tokenId` — y compris pour `tokenId = 0` (USDC). Le natif HYPE est géré séparément via la constante HYPE.
 
 
 
