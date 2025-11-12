@@ -72,6 +72,23 @@ library StrategyMathLib {
         return notional1e8 >= minNotionalUsd1e8;
     }
 
+    /// @notice Convertit une taille exprimée en szDecimals en format 1e8 attendu par HyperCore.
+    /// @dev Effectue un plancher lors de la réduction de décimales pour éviter de dépasser.
+    function sizeSzTo1e8(uint64 sizeSz, uint8 szDecimals) internal pure returns (uint64) {
+        if (sizeSz == 0) return 0;
+        if (szDecimals == 8) {
+            return sizeSz;
+        } else if (szDecimals < 8) {
+            uint256 factor = 10 ** uint256(8 - szDecimals);
+            uint256 n = uint256(sizeSz) * factor;
+            require(n <= type(uint64).max, "SZ_OVERFLOW");
+            return uint64(n);
+        } else {
+            uint256 divisor = 10 ** uint256(szDecimals - 8);
+            return uint64(uint256(sizeSz) / divisor);
+        }
+    }
+
     // Calcule une limite « marketable IOC » depuis BBO et quantize
     function marketLimitFromBbo(uint64 bid1e8, uint64 ask1e8, uint8 baseSzDec, uint64 marketEpsilonBps, bool isBuy) internal pure returns (uint64) {
         uint64 lim;

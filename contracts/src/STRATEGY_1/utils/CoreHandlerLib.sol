@@ -67,11 +67,16 @@ library CoreHandlerLib {
         return uint64(lo);
     }
 
+    /// @notice Encode un ordre limite spot en respectant le format HyperCore (prix et taille en 1e8).
+    /// @param asset Spot asset id (après offset HyperCore)
+    /// @param isBuy Sens de l'ordre (true = achat)
+    /// @param limitPx1e8 Prix humain * 1e8 (quantifié)
+    /// @param sz1e8 Taille base humaine * 1e8
     function encodeSpotLimitOrder(
         uint32 asset,
         bool isBuy,
-        uint64 limitPxRaw,
-        uint64 szInSzDecimals,
+        uint64 limitPx1e8,
+        uint64 sz1e8,
         bool reduceOnly,
         uint8 encodedTif,
         uint128 cloid
@@ -80,8 +85,8 @@ library CoreHandlerLib {
             HLConstants.ACTION_LIMIT_ORDER,
             asset,
             isBuy,
-            limitPxRaw,
-            szInSzDecimals,
+            limitPx1e8,
+            sz1e8,
             reduceOnly,
             encodedTif,
             cloid

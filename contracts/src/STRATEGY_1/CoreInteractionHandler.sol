@@ -962,14 +962,16 @@ contract CoreInteractionHandler is Pausable {
         }
         
         uint32 assetId = asset + HLConstants.SPOT_ASSET_OFFSET;
-        uint64 limitPxRaw = _toRawPx(asset, limitPx1e8, isBuy);
+        uint64 limitPxForCore = limitPx1e8;
+        uint64 sz1e8 = StrategyMathLib.sizeSzTo1e8(szInSzDecimals, baseSzDec);
+        if (sz1e8 == 0) revert SIZE_TOO_LARGE();
         
         _send(
             CoreHandlerLib.encodeSpotLimitOrder(
                 assetId,
                 isBuy,
-                limitPxRaw,
-                szInSzDecimals,
+                limitPxForCore,
+                sz1e8,
                 false, // reduceOnly
                 encodedTif,
                 cloid

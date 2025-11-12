@@ -28,8 +28,8 @@ library HLConstants {
     // Action 1: Spot Limit Order (IOC)
     // asset: spot id (uint32)
     // isBuy: true if buy
-    // limitPxRaw: price exprimé en pxDecimals natifs Hyperliquid
-    // szInSzDecimals: base size in token szDecimals
+    // limitPx1e8: prix humain * 1e8 (quantifié)
+    // sz1e8: taille base humaine * 1e8
     // reduceOnly: true si l'ordre ne doit que réduire la position
     // encodedTif: time-in-force encodé
     // cloid: client order id
@@ -37,13 +37,13 @@ library HLConstants {
         uint24 actionId,
         uint32 asset,
         bool isBuy,
-        uint64 limitPxRaw,
-        uint64 szInSzDecimals,
+        uint64 limitPx1e8,
+        uint64 sz1e8,
         bool reduceOnly,
         uint8 encodedTif,
         uint128 cloid
     ) internal pure returns (bytes memory) {
-        bytes memory abiEncoded = abi.encode(asset, isBuy, limitPxRaw, szInSzDecimals, reduceOnly, encodedTif, cloid);
+        bytes memory abiEncoded = abi.encode(asset, isBuy, limitPx1e8, sz1e8, reduceOnly, encodedTif, cloid);
         return _encodeAction(actionId, abiEncoded);
     }
 
