@@ -96,6 +96,7 @@ contract CoreInteractionHandler is Pausable {
     error PX_TOO_LOW();
     error PX_TOO_HIGH();
     error SIZE_TOO_LARGE();
+    error SIZE_ZERO();
     error INVALID_TIF();
     error CLOID_TOO_LARGE();
     error MIN_NTL();
@@ -717,25 +718,6 @@ contract CoreInteractionHandler is Pausable {
     }
 
     /// @notice Clamp prix 1e8: ≤5 sig figs et ≤ (8 - szDecimals) décimales. BUY: ceil, SELL: floor.
-    function quantizePx1e8(uint64 px1e8, uint8 szDecimals, bool isBuy) internal pure returns (uint64) {
-        if (px1e8 == 0) return 0;
-        uint8 maxPxDecimals = 8 > szDecimals ? uint8(8 - szDecimals) : 0;
-        if (maxPxDecimals < 8) {
-            uint8 cut = uint8(8 - maxPxDecimals);
-            uint64 factor = uint64(10 ** cut);
-            if (isBuy) {
-                px1e8 = uint64((uint256(px1e8) + factor - 1) / factor) * factor;
-            } else {
-                px1e8 = (px1e8 / factor) * factor;
-            }
-        }
-        uint64 pxInt = px1e8 / 100_000_000;
-        if (pxInt >= 100000) {
-            px1e8 = pxInt * 100_000_000;
-        }
-        return px1e8;
-    }
-
     function _marketLimitFromBbo(uint32 asset, bool isBuy) internal view returns (uint64) {
         (uint64 bid1e8, uint64 ask1e8) = _spotBboPx1e8(asset);
         if (bid1e8 == 0 || ask1e8 == 0) {
@@ -799,11 +781,6 @@ contract CoreInteractionHandler is Pausable {
     function _toPx1e8(uint32 spotIndex, uint64 rawPx) internal view returns (uint64) {
         uint8 pxDec = _spotPxDecimals(spotIndex);
         return StrategyMathLib.scalePxTo1e8(rawPx, pxDec);
-    }
-
-    function _toRawPx(uint32 asset, uint64 px1e8, bool /*isBuy*/) internal view returns (uint64) {
-        uint8 pxDec = _spotPxDecimals(asset);
-        return StrategyMathLib.scalePxFrom1e8(px1e8, pxDec);
     }
 
     function _toSz1e8(int256 deltaUsd1e18, uint64 price1e8) internal pure returns (uint64) {
@@ -964,9 +941,10 @@ contract CoreInteractionHandler is Pausable {
         uint32 assetId = asset + HLConstants.SPOT_ASSET_OFFSET;
         uint64 limitPxForCore = limitPx1e8;
         uint64 sz1e8 = StrategyMathLib.sizeSzTo1e8(szInSzDecimals, baseSzDec);
-        if (sz1e8 == 0) revert SIZE_TOO_LARGE();
+        if (sz1e8 == 0) revert SIZE_ZERO();
         
         _send(
+            // HyperCore wire format expects both price and size as human-readable * 1e8 values.
             CoreHandlerLib.encodeSpotLimitOrder(
                 assetId,
                 isBuy,
