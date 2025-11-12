@@ -98,7 +98,6 @@ contract CoreInteractionHandler is Pausable {
     error SIZE_TOO_LARGE();
     error INVALID_TIF();
     error CLOID_TOO_LARGE();
-    error PXDEC();
     error MIN_NTL();
     error USDC_ID_CONFLICT();
     error BAL();
@@ -126,8 +125,6 @@ contract CoreInteractionHandler is Pausable {
     // Option: rééquilibrer automatiquement après un retrait HYPE (par défaut: activé)
     bool public rebalanceAfterWithdrawal = true;
 
-    // Prix: décimales spot par index (source de vérité; configuré on-chain par l’owner)
-    mapping(uint32 => uint8) public spotPxDecimals;
     // Seuil notional minimum (USD 1e8) pour éviter des IOC poussière
     uint64 public minNotionalUsd1e8 = 50 * 1e8;
 
@@ -254,12 +251,6 @@ contract CoreInteractionHandler is Pausable {
     /// @notice Active/désactive le rééquilibrage automatique après retrait HYPE
     function setRebalanceAfterWithdrawal(bool v) external onlyOwner {
         rebalanceAfterWithdrawal = v;
-    }
-
-    /// @notice Définit les décimales prix pour un marché spot donné
-    function setSpotPxDecimals(uint32 spotIndex, uint8 pxDec) external onlyOwner {
-        if (!(pxDec > 0 && pxDec <= 18)) revert PXDEC();
-        spotPxDecimals[spotIndex] = pxDec;
     }
 
     /// @notice Définit le notional minimal (USD en 1e8)
@@ -787,10 +778,6 @@ contract CoreInteractionHandler is Pausable {
     }
 
     function _spotPxDecimals(uint32 spotIndex) internal view returns (uint8) {
-        uint8 configured = spotPxDecimals[spotIndex];
-        if (configured > 0) {
-            return configured;
-        }
         return _derivedSpotPxDecimals(spotIndex);
     }
 
@@ -802,13 +789,11 @@ contract CoreInteractionHandler is Pausable {
             return 8;
         }
         L1Read.TokenInfo memory tokenInfo = l1read.tokenInfo(uint32(baseTokenId));
-        if (tokenInfo.weiDecimals < tokenInfo.szDecimals) {
-            // Non documenté mais on évite tout underflow en supposant le prix déjà exprimé en 1e8.
-            return 8;
+        if (tokenInfo.szDecimals >= 8) {
+            return 0;
         }
-        uint8 diff = tokenInfo.weiDecimals - tokenInfo.szDecimals;
-        // Diff peut dépasser 8 pour certains actifs HIP: dans ce cas on retourne diff afin que _toPx1e8 divise correctement.
-        return diff;
+        uint8 priceDecimals = uint8(8 - tokenInfo.szDecimals);
+        return priceDecimals;
     }
 
     function _toPx1e8(uint32 spotIndex, uint64 rawPx) internal view returns (uint64) {
