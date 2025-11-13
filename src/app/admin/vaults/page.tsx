@@ -1,13 +1,14 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui'
 import { Trash2, Plus } from 'lucide-react'
 import type { VaultDefinition } from '@/types/vaults'
 import { VaultForm } from '@/components/admin/VaultForm'
 
 export default function AdminVaultsPage() {
+	const router = useRouter()
 	const [vaults, setVaults] = useState<VaultDefinition[]>([])
 	const [selectedId, setSelectedId] = useState<string | null>(null)
 	const [loading, setLoading] = useState(true)
@@ -19,6 +20,16 @@ export default function AdminVaultsPage() {
 		;(async () => {
 			try {
 				const res = await fetch('/api/vaults', { cache: 'no-store' })
+
+				if (!res.ok) {
+					const text = await res.text().catch(() => '')
+					throw new Error(
+						text
+							? `Erreur API /api/vaults (${res.status}) : ${text.slice(0, 120)}`
+							: `Erreur API /api/vaults (${res.status})`
+					)
+				}
+
 				const data = (await res.json()) as VaultDefinition[]
 				if (!cancelled) setVaults(data)
 			} catch (e) {
@@ -27,12 +38,15 @@ export default function AdminVaultsPage() {
 				if (!cancelled) setLoading(false)
 			}
 		})()
-		return () => { cancelled = true }
+		return () => {
+			cancelled = true
+		}
 	}, [])
 
 	const handleUpdated = (v: VaultDefinition) => {
 		setVaults(prev => prev.map(x => (x.id === v.id ? v : x)))
 	}
+
 	const handleDelete = async () => {
 		if (!selectedId) return
 		try {
@@ -57,8 +71,13 @@ export default function AdminVaultsPage() {
 							<CardTitle className="text-2xl">Administration des Vaults</CardTitle>
 							<CardDescription>Gérez la liste des vaults disponibles sur le site.</CardDescription>
 						</div>
-						<Button asChild size="sm" variant="secondary">
-							<Link href="/admin/addVault"><Plus className="h-4 w-4" />&nbsp;Nouveau</Link>
+						<Button
+							size="sm"
+							variant="secondary"
+							onClick={() => router.push('/admin/addVault')}
+						>
+							<Plus className="h-4 w-4" />
+							&nbsp;Nouveau
 						</Button>
 					</header>
 
