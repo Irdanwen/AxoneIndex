@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button, Input, Label, Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui'
 
-export default function AdminLoginPage() {
+function AdminLoginForm() {
 	const router = useRouter()
 	const search = useSearchParams()
 	const nextAfter = search?.get('next') || '/admin/vaults'
@@ -36,32 +36,40 @@ export default function AdminLoginPage() {
 	}
 
 	return (
+		<Card className="w-full max-w-md">
+			<CardHeader>
+				<CardTitle>Connexion Admin</CardTitle>
+				<CardDescription>Entrez le mot de passe pour accéder à l'administration.</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<form onSubmit={handleSubmit} className="space-y-6">
+					<div className="space-y-2">
+						<Label htmlFor="password">Mot de passe</Label>
+						<Input
+							id="password"
+							type="password"
+							autoComplete="current-password"
+							value={password}
+							onChange={(e) => setPassword(e.target.value)}
+							placeholder="••••••"
+						/>
+						{error && <p className="text-sm text-red-500">{error}</p>}
+					</div>
+					<Button type="submit" className="w-full" disabled={loading || !password}>
+						{loading ? 'Connexion…' : 'Se connecter'}
+					</Button>
+				</form>
+			</CardContent>
+		</Card>
+	)
+}
+
+export default function AdminLoginPage() {
+	return (
 		<main className="min-h-screen bg-axone-dark flex items-center justify-center px-6">
-			<Card className="w-full max-w-md">
-				<CardHeader>
-					<CardTitle>Connexion Admin</CardTitle>
-					<CardDescription>Entrez le mot de passe pour accéder à l’administration.</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<form onSubmit={handleSubmit} className="space-y-6">
-						<div className="space-y-2">
-							<Label htmlFor="password">Mot de passe</Label>
-							<Input
-								id="password"
-								type="password"
-								autoComplete="current-password"
-								value={password}
-								onChange={(e) => setPassword(e.target.value)}
-								placeholder="••••••"
-							/>
-							{error && <p className="text-sm text-red-500">{error}</p>}
-						</div>
-						<Button type="submit" className="w-full" disabled={loading || !password}>
-							{loading ? 'Connexion…' : 'Se connecter'}
-						</Button>
-					</form>
-				</CardContent>
-			</Card>
+			<Suspense fallback={<Card className="w-full max-w-md"><CardContent className="pt-6"><p className="text-center">Chargement…</p></CardContent></Card>}>
+				<AdminLoginForm />
+			</Suspense>
 		</main>
 	)
 }
