@@ -1,6 +1,5 @@
 import { getPublicClient } from './serverBlockchain'
 import { vaultContractAbiExtended } from './abi/VaultContract'
-import { coreInteractionHandlerAbi } from './abi/coreInteractionHandler'
 import { formatUnits, type Address } from 'viem'
 
 export interface VaultData {

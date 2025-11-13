@@ -7,7 +7,7 @@ import { Button, Input, Label, Card, CardContent, CardHeader, CardTitle, CardDes
 export default function AdminLoginPage() {
 	const router = useRouter()
 	const search = useSearchParams()
-	const nextAfter = search.get('next') || '/admin/vaults'
+	const nextAfter = search?.get('next') || '/admin/vaults'
 
 	const [password, setPassword] = useState('')
 	const [error, setError] = useState<string | null>(null)
