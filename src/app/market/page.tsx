@@ -1,80 +1,35 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-
+import { useEffect, useState } from 'react'
 import Footer from '@/components/layout/Footer'
-import { VaultDashboard } from '@/components/vaults/VaultDashboard'
-import { VaultCardSummary } from '@/components/vaults/VaultCard'
-import { VaultFilters } from '@/components/vaults/VaultFilters'
-import { Vault } from '@/lib/vaultTypes'
-import { Loader2 } from 'lucide-react'
-import { useChainId } from 'wagmi'
 import GlassCard from '@/components/ui/GlassCard'
 import Link from 'next/link'
 import { Button } from '@/components/ui'
-import { listCustomVaults } from '@/lib/customVaultService'
+import { Loader2 } from 'lucide-react'
+import { useChainId } from 'wagmi'
+import type { VaultDefinition } from '@/types/vaults'
 
 export default function MarketPage() {
   const chainId = useChainId()
-  const [baseVaults, setBaseVaults] = useState<Vault[]>([])
-  const [customVaults, setCustomVaults] = useState<Vault[]>([])
-  const [filteredVaults, setFilteredVaults] = useState<Vault[]>([])
+  const [vaults, setVaults] = useState<VaultDefinition[]>([])
   const [isLoading, setIsLoading] = useState(true)
-
-  const allVaults = useMemo(() => [...baseVaults, ...customVaults], [baseVaults, customVaults])
-
-  const totalDeposited = allVaults.reduce((sum, vault) => sum + vault.userDeposit, 0)
-  const activeVaults = allVaults.filter(vault => vault.userDeposit > 0).length
-  const globalYield = activeVaults > 0
-    ? allVaults
-        .filter(vault => vault.userDeposit > 0)
-        .reduce((sum, vault) => sum + vault.performance30d, 0) / activeVaults
-    : 0
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       try {
-        const res = await fetch('/api/market')
-        const data: Vault[] = await res.json()
-        if (!cancelled) {
-          setBaseVaults(data)
-        }
-      } catch {
-        // silent fallback
+        const res = await fetch('/api/vaults', { cache: 'no-store' })
+        const data = (await res.json()) as VaultDefinition[]
+        if (!cancelled) setVaults(data)
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Erreur de chargement')
       } finally {
         if (!cancelled) setIsLoading(false)
       }
     })()
     return () => { cancelled = true }
   }, [])
-
-  useEffect(() => {
-    let cancelled = false
-
-    ;(async () => {
-      try {
-        const data = await listCustomVaults()
-        if (!cancelled) {
-          setCustomVaults(data)
-        }
-      } catch (error) {
-        console.error('Unable to load custom vaults:', error)
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  useEffect(() => {
-    setFilteredVaults(allVaults)
-  }, [allVaults])
-
-  const handleInfo = (_vaultId: string) => {
-    // Informations détaillées du vault disponibles via la page dédiée
-  }
 
   return (
     <main className="min-h-screen bg-axone-dark">
@@ -101,65 +56,42 @@ export default function MarketPage() {
             </p>
             <div className="mt-6">
               <Button asChild size="sm" variant="secondary">
-                <Link href="/market/manage">Configurer mes vaults</Link>
+                <Link href="/admin/vaults">Gérer mes vaults</Link>
               </Button>
             </div>
           </header>
 
-          <div className="grid gap-10 lg:grid-cols-[320px_1fr]">
-            <aside>
-              <GlassCard className="p-6">
-                <div className="mb-6">
-                  <h2 className="text-lg font-semibold text-vault-primary">Filtres</h2>
-                  <p className="text-sm text-vault-muted">
-                    Affinez votre sélection selon vos critères.
-                  </p>
-                </div>
-                <VaultFilters vaults={allVaults} onFilter={setFilteredVaults} />
+          <div className="flex flex-col gap-8">
+            {isLoading ? (
+              <GlassCard className="py-16 text-center">
+                <Loader2 className="h-6 w-6 animate-spin text-white-60 inline-block" />
               </GlassCard>
-            </aside>
-
-            <article className="flex flex-col gap-8">
-              <VaultDashboard
-                totalDeposited={totalDeposited}
-                globalYield={globalYield}
-                activeVaults={activeVaults}
-                totalVaults={allVaults.length}
-                variant="dense"
-              />
-
-              {isLoading ? (
-                <GlassCard className="py-16 text-center">
-                  <Loader2 className="h-6 w-6 animate-spin text-white-60 inline-block" />
-                </GlassCard>
-              ) : filteredVaults.length === 0 ? (
-                <GlassCard className="p-10 text-center">
-                  <p className="text-base font-medium text-vault-muted">
-                    Aucun vault ne correspond à vos critères.
-                  </p>
-                  <p className="mt-2 text-sm text-vault-dim">
-                    Ajustez vos filtres pour explorer d&apos;autres opportunités.
-                  </p>
-                </GlassCard>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                  {filteredVaults.map(vault => (
-                    <VaultCardSummary
-                      key={vault.id}
-                      vault={vault}
-                      onInfo={() => handleInfo(vault.id)}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {!isLoading && filteredVaults.length > 0 && (
-                <p className="text-sm text-vault-dim">
-                  {filteredVaults.length} vault{filteredVaults.length > 1 ? 's' : ''} affiché{filteredVaults.length > 1 ? 's' : ''}
-                  {filteredVaults.length !== allVaults.length && ` sur ${allVaults.length}`}
-                </p>
-              )}
-            </article>
+            ) : error ? (
+              <GlassCard className="p-10 text-center">
+                <p className="text-sm text-red-500">{error}</p>
+              </GlassCard>
+            ) : vaults.length === 0 ? (
+              <GlassCard className="p-10 text-center">
+                <p className="text-base font-medium text-vault-muted">Aucun vault disponible.</p>
+              </GlassCard>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {vaults.map(v => (
+                  <GlassCard key={v.id} className="p-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-vault-primary">{v.displayName}</h3>
+                      <span className="text-xs uppercase tracking-wide text-vault-dim">{v.status}</span>
+                    </div>
+                    {v.description && <p className="mt-2 text-sm text-vault-muted">{v.description}</p>}
+                    <div className="mt-4">
+                      <Button asChild size="sm">
+                        <Link href={`/vault/${v.slug}`}>Ouvrir</Link>
+                      </Button>
+                    </div>
+                  </GlassCard>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </section>

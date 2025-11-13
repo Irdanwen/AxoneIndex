@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Vault } from '@/lib/vaultTypes'
 import { 
   Filter, 
   ChevronDown,
@@ -15,10 +14,18 @@ import {
   Search
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import type { VaultDefinition } from '@/types/vaults'
+
+type VaultFilterItem = VaultDefinition & {
+  tokens?: { symbol: string; percentage?: number }[]
+  tvlUsd?: number
+  userDepositUsd?: number
+  performance30d?: number
+}
 
 interface VaultFiltersProps {
-  vaults: Vault[]
-  onFilter: (vaults: Vault[]) => void
+  vaults: VaultFilterItem[]
+  onFilter: (vaults: VaultFilterItem[]) => void
 }
 
 export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
@@ -36,7 +43,12 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
   useEffect(() => {
     const tokensSet = new Set<string>()
     vaults.forEach(vault => {
-      vault.tokens.forEach(token => tokensSet.add(token.symbol))
+      if (vault.tokens?.length) {
+        vault.tokens.forEach(token => tokensSet.add(token.symbol))
+      }
+      if (vault.tags?.length) {
+        vault.tags.forEach(tag => tokensSet.add(tag))
+      }
     })
     setAvailableTokens(Array.from(tokensSet).sort())
   }, [vaults])
@@ -72,15 +84,18 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
     // Search filter
     if (searchTerm) {
       filtered = filtered.filter(vault => 
-        vault.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vault.tokens.some(t => t.symbol.toLowerCase().includes(searchTerm.toLowerCase()))
+        vault.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        vault.slug.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        vault.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        vault.tokens?.some(t => t.symbol.toLowerCase().includes(searchTerm.toLowerCase()))
       )
     }
 
     // Token filter
     if (selectedTokens.length > 0) {
       filtered = filtered.filter(vault => 
-        vault.tokens.some(t => selectedTokens.includes(t.symbol))
+        vault.tokens?.some(t => selectedTokens.includes(t.symbol)) ||
+        vault.tags?.some(tag => selectedTokens.includes(tag))
       )
     }
 
@@ -94,9 +109,9 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
       filtered = filtered.filter(vault => vault.risk === selectedRisk)
     }
 
-    // User vaults filter
+    // User vaults filter (basé sur userDepositUsd)
     if (showUserVaults) {
-      filtered = filtered.filter(vault => vault.userDeposit > 0)
+      filtered = filtered.filter(vault => (vault.userDepositUsd ?? 0) > 0)
     }
 
     // Sorting
@@ -105,10 +120,10 @@ export function VaultFilters({ vaults, onFilter }: VaultFiltersProps) {
       
       switch (sortBy) {
         case 'tvl':
-          comparison = a.tvl - b.tvl
+          comparison = (a.tvlUsd ?? 0) - (b.tvlUsd ?? 0)
           break
         case 'performance':
-          comparison = a.performance30d - b.performance30d
+          comparison = (a.performance30d ?? 0) - (b.performance30d ?? 0)
           break
         case 'risk':
           const riskOrder = { low: 1, medium: 2, high: 3 }

@@ -28,17 +28,24 @@ import {
   CardTitle
 } from '@/components/ui/card'
 import { vaultContractAbi } from '@/lib/abi/VaultContract'
-import { Vault } from '@/lib/vaultTypes'
+import type { VaultDefinition } from '@/types/vaults'
+
+type VaultListItem = VaultDefinition & {
+  tokens?: { symbol: string; percentage?: number }[]
+  tvlUsd?: number
+  userDepositUsd?: number
+  performance30d?: number
+}
 
 interface VaultCardSummaryProps {
-  vault: Vault
+  vault: VaultListItem
   onDeposit?: () => void
   onWithdraw?: () => void
   onInfo?: () => void
 }
 
 interface VaultCardActionsProps {
-  vault: Vault
+  vault: VaultListItem
   open: boolean
   onOpenChange: (open: boolean) => void
   onDeposit?: () => void
@@ -64,9 +71,15 @@ export function VaultCardSummary({
   onInfo
 }: VaultCardSummaryProps) {
   const [isActionsOpen, setIsActionsOpen] = useState(false)
-  const isPositive = vault.performance30d >= 0
-  const hasDeposit = vault.userDeposit > 0
+  const performance = vault.performance30d ?? 0
+  const isPositive = performance >= 0
+  const userDeposit = vault.userDepositUsd ?? 0
+  const hasDeposit = userDeposit > 0
   const RiskIcon = riskConfig[vault.risk].Icon
+  const composition = vault.tokens?.length
+    ? vault.tokens.map(token => `${token.symbol}${typeof token.percentage === 'number' ? ` ${token.percentage}%` : ''}`).join(' • ')
+    : vault.tags?.join(' • ')
+  const tvl = vault.tvlUsd ?? 0
 
   return (
     <>
@@ -74,7 +87,7 @@ export function VaultCardSummary({
         <CardHeader className="pb-0">
           <div className="flex items-start justify-between gap-3">
             <CardTitle className="text-lg font-semibold text-vault-primary">
-              {vault.name}
+              {vault.displayName}
             </CardTitle>
             <div className="flex flex-shrink-0 items-center gap-2">
               <span
@@ -89,16 +102,18 @@ export function VaultCardSummary({
             </div>
           </div>
 
-          <p className="mt-3 text-sm text-vault-muted">
-            {vault.tokens.map(token => `${token.symbol} ${token.percentage}%`).join(' • ')}
-          </p>
+          {composition && (
+            <p className="mt-3 text-sm text-vault-muted">
+              {composition}
+            </p>
+          )}
         </CardHeader>
 
         <CardContent className="space-y-4 pt-6">
           <div className="flex items-baseline justify-between">
             <span className="text-sm text-vault-muted">TVL</span>
             <span className="text-2xl font-semibold text-vault-primary">
-              ${vault.tvl.toLocaleString('fr-FR')}
+              {tvl > 0 ? `$${tvl.toLocaleString('fr-FR')}` : '–'}
             </span>
           </div>
 
@@ -110,7 +125,8 @@ export function VaultCardSummary({
                   isPositive ? 'text-green-400' : 'text-red-400'
                 }`}
               >
-                {isPositive ? '+' : ''}{vault.performance30d.toFixed(2)}%
+                {isPositive ? '+' : ''}
+                {performance.toFixed(2)}%
               </p>
             </div>
             {isPositive ? (
@@ -124,7 +140,7 @@ export function VaultCardSummary({
             <div className="rounded-lg border border-vault bg-vault-brand-muted px-4 py-3">
               <p className="text-xs text-vault-muted">Mon dépôt</p>
               <p className="text-sm font-semibold text-vault-primary">
-                ${vault.userDeposit.toLocaleString('fr-FR')} USDC
+                ${userDeposit.toLocaleString('fr-FR')} USDC
               </p>
             </div>
           )}
@@ -172,7 +188,7 @@ export function VaultCardActions({
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [isMounted, setIsMounted] = useState(false)
 
-  const vaultAddress = vault.contractAddress as `0x${string}` | undefined
+  const vaultAddress = vault.vaultAddress as `0x${string}` | undefined
 
   const { data: userShares } = useReadContract({
     abi: vaultContractAbi,
@@ -268,12 +284,12 @@ export function VaultCardActions({
         className="relative z-10 w-full max-w-lg vault-surface border border-vault shadow-vault-sm"
         role="dialog"
         aria-modal="true"
-        aria-label={`Actions pour ${vault.name}`}
+        aria-label={`Actions pour ${vault.displayName}`}
       >
         <CardHeader className="pb-0">
           <div className="flex items-start justify-between gap-3">
             <CardTitle className="text-lg font-semibold text-vault-primary">
-              Gérer {vault.name}
+              Gérer {vault.displayName}
             </CardTitle>
             <button
               type="button"
