@@ -42,11 +42,8 @@ Bienvenue dans la documentation unifiée (FR). Cette page sert de table des mati
 - UI: `docs/ui/STYLE_GUIDE.md`
 
 ## Rapports & audits
-- `docs/AUDIT_CORRECTION_DECIMALS.md`
-- `docs/AUDIT_CORRECTION_TOSZE8.md`
-- `docs/SECURITY_IMPROVEMENTS_REPORT.md`
-- `docs/VAULT_CONTRACT_UPDATE_REPORT.md`
-- `docs/OPTIMIZATION_SUMMARY.md`
+- Optimisations en cours: `docs/OPTIMIZATION_SUMMARY.md`
+- Rapports d'audit historiques: voir `docs/_archive/`
 
 ## Archivage
 - Voir `docs/_archive/INDEX.md`

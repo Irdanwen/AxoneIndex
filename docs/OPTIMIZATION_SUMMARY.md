@@ -132,26 +132,25 @@ uint256 expiresAtBlock = block.number + 30 * BLOCKS_PER_DAY;
 ### 5. Circuit Breaker Renforcé
 
 #### Problème
-- Mécanisme de pause basique
-- Pas de fonction d'urgence explicite
+- Certaines fonctions critiques n'étaient pas protégées par le garde `whenNotPaused`
+- Difficulté à geler rapidement les flux EVM ↔ Core en cas d'incident
 
 #### Solution
 ```solidity
-// NOUVEAU : Fonction d'urgence
-function emergencyPause() external onlyOwner {
-    _pause();
+// Protection uniforme par whenNotPaused sur les opérations sensibles
+function executeDeposit(...) external onlyVault whenNotPaused {
+    // ...
 }
 
-// Protection de toutes les fonctions critiques
-function executeDeposit(...) external onlyVault whenNotPaused {
+function pullHypeFromCoreToEvm(...) external onlyVault whenNotPaused returns (uint64) {
     // ...
 }
 ```
 
 #### Impact
-- ✅ Contrôle d'urgence en cas de défaillance
+- ✅ Contrôle d'urgence via `pause()/unpause()` équitablement appliqué
 - ✅ Protection de toutes les opérations critiques
-- ✅ Gestion des situations d'urgence
+- ✅ Gestion plus simple des situations d'urgence
 
 ## 📊 Métriques d'Impact
 
@@ -197,7 +196,7 @@ function executeDeposit(...) external onlyVault whenNotPaused {
 ### Tests de Sécurité
 - [ ] Annulation des retraits fonctionne correctement
 - [ ] Migration block.timestamp → block.number
-- [ ] Circuit breaker en cas d'urgence
+- [ ] Circuit breaker via `pause()` sur les fonctions critiques
 - [ ] Optimisations de gas validées
 
 ### Tests de Performance
@@ -225,7 +224,7 @@ function executeDeposit(...) external onlyVault whenNotPaused {
 
 ---
 
-**Date de Création** : $(date)  
-**Version** : 1.0  
+**Dernière mise à jour** : 2025-11-13  
+**Version** : 1.1  
 **Statut** : Implémenté et Testé  
-**Prochaine Révision** : Dans 3 mois
+**Prochaine Révision** : dans 3 mois

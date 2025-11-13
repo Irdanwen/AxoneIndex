@@ -10,24 +10,24 @@ Les modifications suivantes ont été implémentées avec succès :
 - Intégration dans la configuration wagmi
 
 ### 2. Mise à jour du Header (`src/components/layout/Header.tsx`)
-- Ajout des hooks wagmi (`useAccount`, `useConnect`, `useSwitchChain`)
-- Implémentation du bouton "Connecter Wallet"
-- Affichage de l'adresse wallet connectée
-- Bouton de basculement vers HyperEVM
-- Gestion des erreurs de chaîne
+- Hooks wagmi utilisés: `useAccount`, `useConnect`, `useDisconnect`, `useSwitchChain`
+- Bouton `Connect Wallet` (desktop + drawer mobile) basé sur le connecteur `injected()`
+- Pilule `HyperEVM` qui déclenche `switchChain({ chainId: 998 })` avec gestion de l'état `isPending`
+- Menu compte affichant l'adresse abrégée et une action `Déconnecter`
+- Gestion des erreurs (réseau manquant, changement refusé) via le système de toasts local
 
 ## 🧪 Tests à Effectuer
 
 ### Test 1 : Connexion Wallet
 1. Ouvrez l'application dans votre navigateur
-2. Cliquez sur "Connecter Wallet" dans le header
+2. Cliquez sur `Connect Wallet` dans le header (ou le bouton équivalent dans le drawer mobile)
 3. Résultat attendu : MetaMask s'ouvre pour demander l'autorisation
 4. Autorisez la connexion
 5. Résultat attendu : L'adresse wallet s'affiche dans le header
 
 ### Test 2 : Basculement vers HyperEVM
-1. Avec le wallet connecté, cliquez sur "Basculer vers HyperEVM"
-2. Résultat attendu : MetaMask demande confirmation pour changer de réseau
+1. Avec le wallet connecté, cliquez sur la pilule `HyperEVM`
+2. Résultat attendu : MetaMask demande confirmation pour changer de réseau (ou propose d'ajouter HyperEVM si absent)
 3. Confirmez le changement
 4. Résultat attendu : Le réseau change vers HyperEVM (ID: 998)
 
@@ -62,8 +62,8 @@ Solution : Vérifiez que MetaMask est installé et déverrouillé
 ## 📝 Notes Techniques
 
 - L'implémentation utilise `injected()` (wagmi v2)
-- Le gestionnaire d'erreur global capture les erreurs de changement de chaîne
-- L'interface s'adapte dynamiquement selon l'état de connexion
-- Les états de chargement sont gérés avec `isPending`
+- Les erreurs `switchChain` (ex: code 4902) sont capturées et relayées par des toasts
+- L'interface s'adapte dynamiquement selon l'état de connexion et le viewport
+- Les états de chargement sont gérés avec `isPending` exposé par wagmi
 
 

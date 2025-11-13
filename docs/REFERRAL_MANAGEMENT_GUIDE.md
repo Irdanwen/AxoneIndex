@@ -1,6 +1,7 @@
 # Guide de la Page de Gestion des Referrals
 
 ## ⚙️ Intégration technique
+> Pour une vue d’ensemble du flux d’onboarding et de l’usage des codes côté utilisateur final, consultez également `./REFERRAL_GUIDE.md`.
 Les vérifications de whitelist sont désormais **centralisées** via `src/lib/referralRoutesConfig.ts`.
 
 ### Pour modifier les règles d'accès
@@ -29,7 +30,7 @@ graph LR
 
 ## Liens utiles
 - Connexion wallet et réseau: `./WALLET_CONNECTION_GUIDE.md`
-- Implémentation des vaults: `./VAULTS_IMPLEMENTATION.md`
+- Implémentation des vaults: `./contracts/STRATEGY_1_VaultContract.md`
 
 ## Détails fonctionnels
 

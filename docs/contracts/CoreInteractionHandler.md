@@ -113,7 +113,6 @@ handler.setMaxOracleDeviationBps(1000);
 | setRebalancer | `setRebalancer(address _rebalancer)` | external | - | onlyOwner |
 | setRebalanceAfterWithdrawal | `setRebalanceAfterWithdrawal(bool v)` | external | - | onlyOwner |
 | pause/unpause | `pause()` / `unpause()` | external | - | onlyOwner |
-| emergencyPause | `emergencyPause()` | external | - | onlyOwner |
 | oraclePxHype1e8 | `oraclePxHype1e8()` → `uint64` | external view | view | - |
 | oraclePxBtc1e8 | `oraclePxBtc1e8()` → `uint64` | external view | view | - |
 | spotBalance | `spotBalance(address coreUser, uint64 tokenId)` → `uint64` | public view | view | - |

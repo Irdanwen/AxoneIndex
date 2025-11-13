@@ -4,10 +4,12 @@
 
 ### 1. **Exécution des Scripts de Vérification**
 
+> Pré-requis: depuis `contracts/`, assurez-vous que `pnpm install` a été exécuté et que les variables d'environnement (`TESTNET_RPC_URL`, `PRIVATE_KEY`) sont renseignées dans `contracts/env`.
+
 #### Script 1: Vérification des Balances
 ```bash
 cd contracts
-npx hardhat run scripts/check-hypercore-balances.js --network base
+pnpm hardhat run scripts/check-hypercore-balances.js --network testnet
 ```
 
 Ce script vous donnera :
@@ -20,7 +22,7 @@ Ce script vous donnera :
 #### Script 2: Analyse des Événements
 ```bash
 cd contracts
-npx hardhat run scripts/analyze-deposit-events.js --network base
+pnpm hardhat run scripts/analyze-deposit-events.js --network testnet
 ```
 
 Ce script analysera votre transaction spécifique et décodera tous les événements.
@@ -120,7 +122,7 @@ console.log(`Prix HYPE: $${ethers.utils.formatUnits(hypePrice, 8)}`);
 #### Vérification Rapide
 ```bash
 # Vérifier la NAV du vault
-npx hardhat console --network base
+pnpm hardhat console --network testnet
 > const vault = await ethers.getContractAt("VaultContract", "0xe9CabbB51544Bcc0A57F2ad902fD938a6cE7EEf2");
 > const nav = await vault.nav1e18();
 > console.log(ethers.utils.formatEther(nav));

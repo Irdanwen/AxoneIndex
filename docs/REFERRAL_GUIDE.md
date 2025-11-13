@@ -1,6 +1,7 @@
 # Guide d'utilisation - Referral (Pages protégées)
 
 ## 🔐 Configuration centralisée des pages protégées
+> Pour la gestion détaillée des métriques, quotas et fonctionnalités avancées, voir également `./REFERRAL_MANAGEMENT_GUIDE.md`.
 Depuis la version 0.1.0, les pages nécessitant une whitelist via le système de referral sont gérées via un fichier de configuration unique.
 
 ### Fichier de référence
@@ -62,17 +63,17 @@ export default function NouvellePage() {
 
 ### Liens croisés
 - Connexion wallet et réseau: `./WALLET_CONNECTION_GUIDE.md`
-- Implémentation des vaults (si des pages vaults sont protégées): `./VAULTS_IMPLEMENTATION.md`
+- Implémentation des vaults (si des pages vaults sont protégées): `./contracts/STRATEGY_1_VaultContract.md`
 
-## Notes sur la transférabilité du token c50USD
+## Notes sur la transférabilité du token sAXN1
 
-- **Transférable**: Les parts du vault `c50USD` sont des tokens ERC20 (18 décimales) pleinement transférables entre adresses.
+- **Transférable**: Les parts du vault `sAXN1` sont des tokens ERC20 (18 décimales) pleinement transférables entre adresses.
 - **Aucun frais sur transfert**: Les frais ne s’appliquent qu’au dépôt (`depositFeeBps`) et au retrait (`withdrawFeeBps`). Les transferts ne déclenchent aucun frais.
 - **Pause & sécurité**: Les transferts sont bloqués si le vault est en pause et sont protégés contre la réentrance.
 - **Compatibilité**: Les fonctions ERC20 standard sont disponibles: `transfer`, `approve`, `transferFrom`, `allowance`, `balanceOf`.
 
 ## Transferts de parts de vault
-- Les parts `c50USD` sont transférables via les fonctions ERC20 standard.
+- Les parts `sAXN1` sont transférables via les fonctions ERC20 standard.
 - **Restrictions** :
   - Les transferts vers `0x0` sont interdits (`zero address`).
   - Les transferts de montant `0` sont interdits (`zero value`).
@@ -146,7 +147,7 @@ console.log(hash)
 
 1. Non connecté → Page de connexion wallet
 2. Mauvais réseau → Demande de changement vers HyperEVM Testnet
-3. Déjà whitelisté → Bouton "Go App" vers google.com
+3. Déjà whitelisté → Bouton "Gérer mes parrainages" vers `/referral-management`
 4. Non whitelisté → Formulaire de saisie de code
 
 ### Sécurité

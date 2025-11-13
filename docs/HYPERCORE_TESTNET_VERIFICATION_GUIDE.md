@@ -8,7 +8,7 @@ D'après l'analyse de vos logs, voici ce qui s'est passé :
 
 #### ✅ **Dépôt réussi :**
 - **Montant déposé :** 50 USDC
-- **Parts créées :** 49.5 c50USD (avec 1% de frais de dépôt)
+- **Parts créées :** 49.5 sAXN1 (avec 1% de frais de dépôt)
 - **Auto-déploiement :** 45 USDC (90% du dépôt) envoyés vers HyperCore
 - **Interactions Core :** 5 événements HyperCore détectés
 
@@ -16,7 +16,7 @@ D'après l'analyse de vos logs, voici ce qui s'est passé :
 1. **50 USDC** → Vault (de votre adresse)
 2. **45 USDC** → Handler → HyperCore System
 3. **5 USDC** → Restent dans le vault
-4. **49.5 c50USD** → Parts créées pour vous
+4. **49.5 sAXN1** → Parts créées pour vous
 
 ### 🛠️ **Méthodes de vérification**
 
@@ -143,7 +143,7 @@ Pour surveiller vos positions :
 
 ## 🎯 **Résumé de votre transaction**
 
-✅ **Dépôt :** 50 USDC → 49.5 c50USD  
+✅ **Dépôt :** 50 USDC → 49.5 sAXN1  
 ✅ **Auto-déploiement :** 45 USDC vers HyperCore  
 ✅ **Interactions Core :** 5 événements détectés  
 ✅ **NAV mis à jour :** 5.0 USD  
