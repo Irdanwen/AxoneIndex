@@ -203,7 +203,7 @@ export function useDashboardData() {
 
     return {
       tokenId: tokenId ?? 0,
-      balance: formatCoreBalance(normalized, fallbackWeiDecimals, fallbackSzDecimals),
+      balance: formatCoreBalance(normalized, fallbackWeiDecimals),
       raw: total,
       normalized,
       decimals: {

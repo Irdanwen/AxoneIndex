@@ -15,7 +15,7 @@ export function useVaults() {
 			const res = await fetch('/api/vaults', { cache: 'no-store' })
 			const data = (await res.json()) as VaultDefinition[]
 			setVaults(data)
-	+	} catch (e) {
+		} catch (e) {
 			setError(e instanceof Error ? e.message : 'Erreur de chargement')
 		} finally {
 			setLoading(false)

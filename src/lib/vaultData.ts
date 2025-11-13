@@ -28,7 +28,7 @@ export async function fetchVaultData(
     const client = getPublicClient()
     
     // Lire les données du vault en parallèle
-    const [totalSupply, pps1e18, decimals, oraclePxHype1e8] = await Promise.all([
+    const [totalSupply, pps1e18, decimals] = await Promise.all([
       // totalSupply du vault (shares)
       client.readContract({
         address: vaultAddress as Address,
@@ -46,12 +46,6 @@ export async function fetchVaultData(
         address: vaultAddress as Address,
         abi: vaultContractAbiExtended,
         functionName: 'decimals',
-      }),
-      // Prix oracle HYPE en 1e8 (via handler)
-      client.readContract({
-        address: handlerAddress as Address,
-        abi: coreInteractionHandlerAbi,
-        functionName: 'oraclePxHype1e8',
       }),
     ])
 

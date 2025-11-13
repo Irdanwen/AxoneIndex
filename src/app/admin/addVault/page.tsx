@@ -3,11 +3,10 @@
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui'
 import { VaultForm } from '@/components/admin/VaultForm'
-import type { VaultDefinition } from '@/types/vaults'
 
 export default function AdminAddVaultPage() {
 	const router = useRouter()
-	const handleSuccess = (_created: VaultDefinition) => {
+	const handleSuccess = () => {
 		router.replace('/admin/vaults')
 	}
 	return (

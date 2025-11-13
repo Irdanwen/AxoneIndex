@@ -5,7 +5,7 @@ import { useAccount, useBalance, useReadContract, useReadContracts } from 'wagmi
 import type { VaultDefinition } from '@/types/vaults'
 import { vaultContract } from '@/contracts/vault'
 import { coreInteractionHandlerContract } from '@/contracts/coreInteractionHandler'
-import { formatUnits } from 'viem'
+import { formatUnits, zeroAddress } from 'viem'
 
 function formatUnitsSafe(value: bigint | undefined, decimals: number): string {
 	if (value === undefined) return '0'
@@ -14,6 +14,14 @@ function formatUnitsSafe(value: bigint | undefined, decimals: number): string {
 	} catch {
 		return '0'
 	}
+}
+
+function toBigint(value: unknown): bigint | undefined {
+	return typeof value === 'bigint' ? value : undefined
+}
+
+function toNumber(value: unknown): number | undefined {
+	return typeof value === 'number' ? value : undefined
 }
 
 export function useVaultOnchainData(vault: VaultDefinition | undefined) {
@@ -36,27 +44,28 @@ export function useVaultOnchainData(vault: VaultDefinition | undefined) {
 		query: { enabled: !!vault },
 	})
 
-	const decimals = (multi?.[0]?.result as number | undefined) ?? 18
-	const totalSupplyRaw = (multi?.[1]?.result as bigint | undefined) ?? 0n
-	const pps1e18Raw = (multi?.[2]?.result as bigint | undefined) ?? 0n
-	const depositFeeBps = (multi?.[3]?.result as number | undefined) ?? 0
-	const withdrawFeeBps = (multi?.[4]?.result as number | undefined) ?? 0
-	const oraclePxHype1e8Raw = (multi?.[5]?.result as bigint | undefined) ?? 0n
+	const decimals = toNumber(multi?.[0]?.result) ?? 18
+	const totalSupplyRaw = toBigint(multi?.[1]?.result) ?? 0n
+	const pps1e18Raw = toBigint(multi?.[2]?.result) ?? 0n
+	const depositFeeBps = toNumber(multi?.[3]?.result) ?? 0
+	const withdrawFeeBps = toNumber(multi?.[4]?.result) ?? 0
+	const oraclePxHype1e8Raw = toBigint(multi?.[5]?.result) ?? 0n
 
 	const totalSupply = formatUnitsSafe(totalSupplyRaw, decimals)
 	const pps = formatUnitsSafe(pps1e18Raw, 18)
 	const oraclePxHype1e8Str = formatUnitsSafe(oraclePxHype1e8Raw, 8)
 
-	const { data: vaultCash } = useBalance({ address: (vault?.vaultAddress as any), query: { enabled: !!vault?.vaultAddress } })
-	const vaultCashHype = formatUnitsSafe(vaultCash?.value as any, vaultCash?.decimals ?? 18)
+	const { data: vaultCash } = useBalance({ address: vault?.vaultAddress, query: { enabled: !!vault?.vaultAddress } })
+	const vaultCashHype = formatUnitsSafe(vaultCash?.value, vaultCash?.decimals ?? 18)
 
+	const safeVaultAddress = vault?.vaultAddress ?? zeroAddress
 	const { data: userSharesRes } = useReadContract({
-		...vaultContract((vault?.vaultAddress || '0x0000000000000000000000000000000000000000') as any),
+		...vaultContract(safeVaultAddress),
 		functionName: 'balanceOf',
 		args: address ? [address] : undefined,
 		query: { enabled: !!vault && !!address && isConnected },
 	})
-	const userShares = formatUnitsSafe(userSharesRes as any, decimals)
+	const userShares = formatUnitsSafe(toBigint(userSharesRes), decimals)
 
 	const navUsd = useMemo(() => {
 		if (pps1e18Raw === 0n || totalSupplyRaw === 0n) return '0'

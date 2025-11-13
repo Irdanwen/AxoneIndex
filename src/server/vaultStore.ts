@@ -128,13 +128,13 @@ export async function updateVault(id: string, changes: UpdateVaultInput): Promis
 		risk: changes.risk ?? current.risk,
 		status: changes.status ?? current.status,
 		iconUrl: changes.iconUrl !== undefined ? changes.iconUrl?.trim() : current.iconUrl,
-		tags: changes.tags ? changes.tags.map(t => t.trim()).filter(Boolean) : current.tags,
+		tags: changes.tags !== undefined ? changes.tags.map(t => t.trim()).filter(Boolean) : current.tags,
 		// On-chain
 		chainId: changes.chainId ?? current.chainId,
-		vaultAddress: (changes as any).vaultAddress ?? current.vaultAddress,
-		handlerAddress: (changes as any).handlerAddress ?? current.handlerAddress,
-		l1ReadAddress: (changes as any).l1ReadAddress ?? current.l1ReadAddress,
-		usdcAddress: (changes as any).usdcAddress ?? current.usdcAddress,
+		vaultAddress: changes.vaultAddress ?? current.vaultAddress,
+		handlerAddress: changes.handlerAddress ?? current.handlerAddress,
+		l1ReadAddress: changes.l1ReadAddress ?? current.l1ReadAddress,
+		usdcAddress: changes.usdcAddress ?? current.usdcAddress,
 		coreTokenIds: changes.coreTokenIds
 			? {
 				usdc: Number.isFinite(changes.coreTokenIds.usdc) ? changes.coreTokenIds.usdc : current.coreTokenIds.usdc,

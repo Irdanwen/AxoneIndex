@@ -146,7 +146,7 @@ export function VaultForm({ onSuccess, mode = 'create', vault }: Props) {
 					<div className="grid sm:grid-cols-3 gap-4">
 						<div className="space-y-2">
 							<Label>Risque</Label>
-							<Select value={form.risk} onValueChange={(v) => setField('risk', v as any)}>
+							<Select value={form.risk} onValueChange={(value) => setField('risk', value as NewVaultInput['risk'])}>
 								<SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
 								<SelectContent>
 									<SelectItem value="low">Faible</SelectItem>
@@ -157,7 +157,7 @@ export function VaultForm({ onSuccess, mode = 'create', vault }: Props) {
 						</div>
 						<div className="space-y-2">
 							<Label>Statut</Label>
-							<Select value={form.status} onValueChange={(v) => setField('status', v as any)}>
+							<Select value={form.status} onValueChange={(value) => setField('status', value as NewVaultInput['status'])}>
 								<SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
 								<SelectContent>
 									<SelectItem value="open">Ouvert</SelectItem>
@@ -175,34 +175,34 @@ export function VaultForm({ onSuccess, mode = 'create', vault }: Props) {
 					<div className="grid sm:grid-cols-2 gap-4">
 						<div className="space-y-2">
 							<Label htmlFor="vaultAddress">Adresse du Vault</Label>
-							<Input id="vaultAddress" value={form.vaultAddress} onChange={(e) => setField('vaultAddress', e.target.value as any)} placeholder="0x…" />
+							<Input id="vaultAddress" value={form.vaultAddress} onChange={(e) => setField('vaultAddress', e.target.value as NewVaultInput['vaultAddress'])} placeholder="0x…" />
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="handlerAddress">Adresse du Handler</Label>
-							<Input id="handlerAddress" value={form.handlerAddress} onChange={(e) => setField('handlerAddress', e.target.value as any)} placeholder="0x…" />
+							<Input id="handlerAddress" value={form.handlerAddress} onChange={(e) => setField('handlerAddress', e.target.value as NewVaultInput['handlerAddress'])} placeholder="0x…" />
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="l1ReadAddress">Adresse L1Read</Label>
-							<Input id="l1ReadAddress" value={form.l1ReadAddress} onChange={(e) => setField('l1ReadAddress', e.target.value as any)} placeholder="0x…" />
+							<Input id="l1ReadAddress" value={form.l1ReadAddress} onChange={(e) => setField('l1ReadAddress', e.target.value as NewVaultInput['l1ReadAddress'])} placeholder="0x…" />
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="usdcAddress">Adresse USDC</Label>
-							<Input id="usdcAddress" value={form.usdcAddress} onChange={(e) => setField('usdcAddress', e.target.value as any)} placeholder="0x…" />
+							<Input id="usdcAddress" value={form.usdcAddress} onChange={(e) => setField('usdcAddress', e.target.value as NewVaultInput['usdcAddress'])} placeholder="0x…" />
 						</div>
 					</div>
 
 					<div className="grid sm:grid-cols-3 gap-4">
 						<div className="space-y-2">
 							<Label htmlFor="coreUsdc">Core Token ID — USDC</Label>
-							<Input id="coreUsdc" type="number" value={form.coreTokenIds.usdc} onChange={(e) => setField('coreTokenIds', { ...form.coreTokenIds, usdc: Number(e.target.value) || 0 })} />
+							<Input id="coreUsdc" type="number" value={form.coreTokenIds.usdc} onChange={(e) => setField('coreTokenIds', { ...form.coreTokenIds, usdc: Number(e.target.value) || 0 } as NewVaultInput['coreTokenIds'])} />
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="coreHype">Core Token ID — HYPE</Label>
-							<Input id="coreHype" type="number" value={form.coreTokenIds.hype} onChange={(e) => setField('coreTokenIds', { ...form.coreTokenIds, hype: Number(e.target.value) || 0 })} />
+							<Input id="coreHype" type="number" value={form.coreTokenIds.hype} onChange={(e) => setField('coreTokenIds', { ...form.coreTokenIds, hype: Number(e.target.value) || 0 } as NewVaultInput['coreTokenIds'])} />
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="coreBtc">Core Token ID — BTC</Label>
-							<Input id="coreBtc" type="number" value={form.coreTokenIds.btc} onChange={(e) => setField('coreTokenIds', { ...form.coreTokenIds, btc: Number(e.target.value) || 0 })} />
+							<Input id="coreBtc" type="number" value={form.coreTokenIds.btc} onChange={(e) => setField('coreTokenIds', { ...form.coreTokenIds, btc: Number(e.target.value) || 0 } as NewVaultInput['coreTokenIds'])} />
 						</div>
 					</div>
 

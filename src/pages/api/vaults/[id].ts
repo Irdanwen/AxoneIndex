@@ -1,12 +1,20 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { deleteVault, getVaultById, updateVault } from '@/server/vaultStore'
 import type { UpdateVaultInput } from '@/types/vaults'
+import { isAddress } from 'viem'
 
 function isValidRisk(v: unknown): v is 'low' | 'medium' | 'high' {
 	return v === 'low' || v === 'medium' || v === 'high'
 }
 function isValidStatus(v: unknown): v is 'open' | 'closed' | 'paused' {
 	return v === 'open' || v === 'closed' || v === 'paused'
+}
+
+function parseHexAddress(value: unknown, field: string): `0x${string}` {
+	if (typeof value !== 'string' || !isAddress(value)) {
+		throw new Error(`${field} invalid`)
+	}
+	return value as `0x${string}`
 }
 
 function parseUpdate(body: unknown): UpdateVaultInput {
@@ -41,21 +49,19 @@ function parseUpdate(body: unknown): UpdateVaultInput {
 		if (typeof v.chainId !== 'number') throw new Error('chainId invalid')
 		out.chainId = v.chainId
 	}
-	if (v.vaultAddress !== undefined) out.vaultAddress = v.vaultAddress as any
-	if (v.handlerAddress !== undefined) out.handlerAddress = v.handlerAddress as any
-	if (v.l1ReadAddress !== undefined) out.l1ReadAddress = v.l1ReadAddress as any
-	if (v.usdcAddress !== undefined) out.usdcAddress = v.usdcAddress as any
+	if (v.vaultAddress !== undefined) out.vaultAddress = parseHexAddress(v.vaultAddress, 'vaultAddress')
+	if (v.handlerAddress !== undefined) out.handlerAddress = parseHexAddress(v.handlerAddress, 'handlerAddress')
+	if (v.l1ReadAddress !== undefined) out.l1ReadAddress = parseHexAddress(v.l1ReadAddress, 'l1ReadAddress')
+	if (v.usdcAddress !== undefined) out.usdcAddress = parseHexAddress(v.usdcAddress, 'usdcAddress')
 	if (v.coreTokenIds !== undefined) {
-		if (
-			typeof v.coreTokenIds !== 'object' ||
-			v.coreTokenIds === null ||
-			typeof (v.coreTokenIds as any).usdc !== 'number' ||
-			typeof (v.coreTokenIds as any).hype !== 'number' ||
-			typeof (v.coreTokenIds as any).btc !== 'number'
-		) {
+		if (typeof v.coreTokenIds !== 'object' || v.coreTokenIds === null) {
 			throw new Error('coreTokenIds invalid')
 		}
-		out.coreTokenIds = v.coreTokenIds
+		const { usdc, hype, btc } = v.coreTokenIds as Partial<UpdateVaultInput['coreTokenIds']>
+		if (typeof usdc !== 'number' || typeof hype !== 'number' || typeof btc !== 'number') {
+			throw new Error('coreTokenIds invalid')
+		}
+		out.coreTokenIds = { usdc, hype, btc }
 	}
 	return out
 }

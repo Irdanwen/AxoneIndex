@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useBalance, useReadContracts, useReadContract } from 'wagmi'
 import { parseUnits } from 'viem'
 import { Button, Card, CardContent, CardHeader, CardTitle, CardDescription, Input, Label } from '@/components/ui'
-import { Wallet, Loader2, AlertCircle } from 'lucide-react'
+import { Wallet, Loader2 } from 'lucide-react'
 import { useVaultBySlug } from '@/hooks/useVaultBySlug'
 import type { VaultDefinition } from '@/types/vaults'
 import { vaultContract } from '@/contracts/vault'
@@ -22,6 +22,14 @@ function formatUnitsSafe(value: bigint | undefined, decimals: number): string {
 }
 
 const PX_DECIMALS = { hype: 8 } as const
+
+function toBigint(value: unknown): bigint | undefined {
+	return typeof value === 'bigint' ? value : undefined
+}
+
+function toNumber(value: unknown): number | undefined {
+	return typeof value === 'number' ? value : undefined
+}
 
 export default function VaultBySlugPage() {
 	const params = useParams<{ slug: string }>()
@@ -56,7 +64,7 @@ function VaultClient({ vault }: { vault: VaultDefinition }) {
 	const { data: hypeNative } = useBalance({ address, query: { enabled: !!address } })
 
 	const contracts = useMemo(() => ([
-		{ ...vaultContract(vault.vaultAddress), functionName: 'balanceOf' as const, args: [address] as const },
+		{ ...vaultContract(vault.vaultAddress), functionName: 'balanceOf' as const, args: address ? [address] as const : undefined },
 		{ ...vaultContract(vault.vaultAddress), functionName: 'decimals' as const },
 		{ ...vaultContract(vault.vaultAddress), functionName: 'totalSupply' as const },
 		{ ...vaultContract(vault.vaultAddress), functionName: 'pps1e18' as const },
@@ -70,21 +78,22 @@ function VaultClient({ vault }: { vault: VaultDefinition }) {
 		query: { enabled: isConnected },
 	})
 
-	const hypeBalance = formatUnitsSafe(hypeNative?.value as any, hypeNative?.decimals ?? 18)
-	const vaultShares = formatUnitsSafe(contractData?.[0]?.result as any, (contractData?.[1]?.result as number) || 18)
-	const vaultDecimals = (contractData?.[1]?.result as number) || 18
-	const vaultTotalSupply = formatUnitsSafe(contractData?.[2]?.result as any, vaultDecimals)
-	const pps = formatUnitsSafe(contractData?.[3]?.result as any, 18)
-	const depositFeeBps = (contractData?.[4]?.result as number) || 0
-	const withdrawFeeBpsDefault = (contractData?.[5]?.result as number) || 0
-	const oraclePxHype1e8Str = formatUnitsSafe(contractData?.[6]?.result as any, PX_DECIMALS.hype)
+	const decimalsResult = contractData?.[1]?.result
+	const vaultDecimals = toNumber(decimalsResult) ?? 18
+	const hypeBalance = formatUnitsSafe(hypeNative?.value, hypeNative?.decimals ?? 18)
+	const vaultShares = formatUnitsSafe(toBigint(contractData?.[0]?.result), vaultDecimals)
+	const vaultTotalSupply = formatUnitsSafe(toBigint(contractData?.[2]?.result), vaultDecimals)
+	const pps = formatUnitsSafe(toBigint(contractData?.[3]?.result), 18)
+	const depositFeeBps = toNumber(contractData?.[4]?.result) ?? 0
+	const withdrawFeeBpsDefault = toNumber(contractData?.[5]?.result) ?? 0
+	const oraclePxHype1e8Str = formatUnitsSafe(toBigint(contractData?.[6]?.result), PX_DECIMALS.hype)
 
-	const ppsRaw = (contractData?.[3]?.result as bigint) || 0n
-	const totalSupplyRaw = (contractData?.[2]?.result as bigint) || 0n
-	const pxHype1e8Raw = (contractData?.[6]?.result as bigint) || 0n
+	const ppsRaw = toBigint(contractData?.[3]?.result) ?? 0n
+	const totalSupplyRaw = toBigint(contractData?.[2]?.result) ?? 0n
+	const pxHype1e8Raw = toBigint(contractData?.[6]?.result) ?? 0n
 
-	const { data: vaultCash } = useBalance({ address: (vault.vaultAddress as any), query: { enabled: !!vault.vaultAddress } })
-	const vaultCashHypeStr = formatUnitsSafe(vaultCash?.value as any, vaultCash?.decimals ?? 18)
+	const { data: vaultCash } = useBalance({ address: vault.vaultAddress, query: { enabled: !!vault.vaultAddress } })
+	const vaultCashHypeStr = formatUnitsSafe(vaultCash?.value, vaultCash?.decimals ?? 18)
 
 	useEffect(() => {
 		if (isSuccess) {
@@ -136,18 +145,20 @@ function VaultClient({ vault }: { vault: VaultDefinition }) {
 		}
 	})()
 
+	const withdrawArgs = useMemo(() => {
+		const sharesStr = withdrawAmount || '0'
+		const shares = sharesStr ? parseUnits(sharesStr, vaultDecimals) : 0n
+		if (shares <= 0n || ppsRaw === 0n || pxHype1e8Raw === 0n) return undefined
+		const dueUsd1e18 = (shares * ppsRaw) / 1000000000000000000n
+		const grossHype = (dueUsd1e18 * BigInt(10 ** PX_DECIMALS.hype)) / pxHype1e8Raw
+		return [grossHype] as const
+	}, [withdrawAmount, vaultDecimals, ppsRaw, pxHype1e8Raw])
+
 	const { data: feeBpsForAmount } = useReadContract({
-		...vaultContract(vault.vaultAddress as any),
+		...vaultContract(vault.vaultAddress),
 		functionName: 'getWithdrawFeeBpsForAmount',
-		args: (() => {
-			const sharesStr = withdrawAmount || '0'
-			const shares = sharesStr ? parseUnits(sharesStr, vaultDecimals) : 0n
-			if (shares <= 0n || ppsRaw === 0n || pxHype1e8Raw === 0n) return undefined
-			const dueUsd1e18 = (shares * ppsRaw) / 1000000000000000000n
-			const grossHype = (dueUsd1e18 * BigInt(10 ** PX_DECIMALS.hype)) / pxHype1e8Raw
-			return [grossHype] as const
-		})(),
-		query: { enabled: Boolean(vault?.vaultAddress && withdrawAmount) }
+		args: withdrawArgs,
+		query: { enabled: Boolean(vault?.vaultAddress && withdrawArgs) }
 	})
 
 	const withdrawEstimate = (() => {
@@ -156,10 +167,10 @@ function VaultClient({ vault }: { vault: VaultDefinition }) {
 		if (shares <= 0n || ppsRaw === 0n || pxHype1e8Raw === 0n) return null
 		const dueUsd1e18 = (shares * ppsRaw) / 1000000000000000000n
 		const grossHype1e18 = (dueUsd1e18 * BigInt(10 ** PX_DECIMALS.hype)) / pxHype1e8Raw
-		const appliedFeeBps = (feeBpsForAmount as number | undefined) ?? withdrawFeeBpsDefault
+		const appliedFeeBps = (typeof feeBpsForAmount === 'number' ? feeBpsForAmount : undefined) ?? withdrawFeeBpsDefault
 		const fee = (grossHype1e18 * BigInt(appliedFeeBps)) / 10000n
 		const net = grossHype1e18 - fee
-		const cash = (vaultCash?.value as bigint | undefined) ?? 0n
+		const cash = vaultCash?.value ?? 0n
 		const likelyQueued = grossHype1e18 > cash
 		return { grossHype1e18, netHype1e18: net, feeBps: appliedFeeBps, likelyQueued }
 	})()
@@ -262,8 +273,8 @@ function VaultClient({ vault }: { vault: VaultDefinition }) {
 									{withdrawEstimate && (
 										<div className="text-xs text-muted-foreground space-y-1">
 											<div>Frais estimés: {withdrawEstimate.feeBps} bps</div>
-											<div>Montant brut (HYPE): ~{formatUnitsSafe(withdrawEstimate.grossHype1e18, 18)}</div>
-											<div>Montant net (HYPE): ~{formatUnitsSafe(withdrawEstimate.netHype1e18, 18)}</div>
+												<div>Montant brut (HYPE): ~{formatUnitsSafe(withdrawEstimate.grossHype1e18, 18)}</div>
+												<div>Montant net (HYPE): ~{formatUnitsSafe(withdrawEstimate.netHype1e18, 18)}</div>
 											<div>Trésorerie EVM: {vaultCashHypeStr} HYPE</div>
 											{withdrawEstimate.likelyQueued ? (
 												<div className="text-amber-500">Ce retrait pourrait être mis en file d’attente.</div>

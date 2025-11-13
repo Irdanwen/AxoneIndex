@@ -1,4 +1,4 @@
-import { createPublicClient, http, type Address } from 'viem'
+import { createPublicClient, http } from 'viem'
 import { defineChain } from 'viem'
 
 // Définition du réseau HyperEVM

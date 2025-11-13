@@ -59,8 +59,7 @@ export function truncateAddress(address: string): string {
 
 export function formatCoreBalance(
   value: bigint | number | undefined,
-  weiDecimals: number,
-  _szDecimals?: number
+  weiDecimals: number
 ): string {
   if (value === undefined) return '0'
 

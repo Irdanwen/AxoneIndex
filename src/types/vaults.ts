@@ -1,4 +1,5 @@
 import { isAddress } from 'viem'
+import type { Address } from 'viem'
 
 export interface VaultOnchainConfig {
 	chainId: number
@@ -36,21 +37,23 @@ export type UpdateVaultInput = Partial<Omit<VaultDefinition, 'id' | 'slug'>> & {
 export function isVaultOnchainConfig(value: unknown): value is VaultOnchainConfig {
 	if (!value || typeof value !== 'object') return false
 	const v = value as Partial<VaultOnchainConfig>
+	const coreTokenIds = v.coreTokenIds as Partial<VaultOnchainConfig['coreTokenIds']> | undefined
 	return (
 		typeof v.chainId === 'number' &&
-		typeof v.coreTokenIds === 'object' &&
-		v.coreTokenIds !== null &&
-		typeof (v.coreTokenIds as any).usdc === 'number' &&
-		typeof (v.coreTokenIds as any).hype === 'number' &&
-		typeof (v.coreTokenIds as any).btc === 'number' &&
+		coreTokenIds !== undefined &&
+		coreTokenIds !== null &&
+		typeof coreTokenIds === 'object' &&
+		typeof coreTokenIds.usdc === 'number' &&
+		typeof coreTokenIds.hype === 'number' &&
+		typeof coreTokenIds.btc === 'number' &&
 		typeof v.vaultAddress === 'string' &&
 		typeof v.handlerAddress === 'string' &&
 		typeof v.l1ReadAddress === 'string' &&
 		typeof v.usdcAddress === 'string' &&
-		isAddress(v.vaultAddress as `0x${string}`) &&
-		isAddress(v.handlerAddress as `0x${string}`) &&
-		isAddress(v.l1ReadAddress as `0x${string}`) &&
-		isAddress(v.usdcAddress as `0x${string}`)
+		isAddress(v.vaultAddress as Address) &&
+		isAddress(v.handlerAddress as Address) &&
+		isAddress(v.l1ReadAddress as Address) &&
+		isAddress(v.usdcAddress as Address)
 	)
 }
 
