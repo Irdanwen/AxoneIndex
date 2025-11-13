@@ -57,7 +57,10 @@ function parseUpdate(body: unknown): UpdateVaultInput {
 		if (typeof v.coreTokenIds !== 'object' || v.coreTokenIds === null) {
 			throw new Error('coreTokenIds invalid')
 		}
-		const { usdc, hype, btc } = v.coreTokenIds as Partial<UpdateVaultInput['coreTokenIds']>
+		const coreTokenIds = v.coreTokenIds as Record<string, unknown>
+		const usdc = coreTokenIds.usdc
+		const hype = coreTokenIds.hype
+		const btc = coreTokenIds.btc
 		if (typeof usdc !== 'number' || typeof hype !== 'number' || typeof btc !== 'number') {
 			throw new Error('coreTokenIds invalid')
 		}
