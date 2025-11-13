@@ -39,7 +39,7 @@ function AdminLoginForm() {
 		<Card className="w-full max-w-md">
 			<CardHeader>
 				<CardTitle>Connexion Admin</CardTitle>
-				<CardDescription>Entrez le mot de passe pour accéder à l'administration.</CardDescription>
+				<CardDescription>Entrez le mot de passe pour accéder à l&apos;administration.</CardDescription>
 			</CardHeader>
 			<CardContent>
 				<form onSubmit={handleSubmit} className="space-y-6">
