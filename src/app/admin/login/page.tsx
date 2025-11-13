@@ -28,7 +28,7 @@ export default function AdminLoginPage() {
 				throw new Error(body.error || 'Accès refusé')
 			}
 			router.replace(nextAfter)
-	+	} catch (err) {
+		} catch (err) {
 			setError(err instanceof Error ? err.message : 'Une erreur est survenue')
 		} finally {
 			setLoading(false)
