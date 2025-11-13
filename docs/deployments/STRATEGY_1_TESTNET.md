@@ -8,6 +8,14 @@
 - CoreInteractionHandler: `0x5d5Cd778D5C5FD8082e099A8e6d95ad83AE5CfeE`
 - VaultContract: `0x5c4a979F19CaFE67ABf1E1fE883e4c15e8379473`
 
+## Adresses — déploiement courant (dernier run `deploy_strategy1_testnet.js`)
+
+- L1Read: `0xAd7B0Ff09f9d737B7D6a0E78a11c5F01A3fBFE70`
+- CoreWriter (système): `0x3333333333333333333333333333333333333333`
+- USDC (EVM): `0x0B80659a4076E9E93C7DbE0f10675A16a3e5C206`
+- CoreInteractionHandler: `0xDD5f060D9d728FC254f1cD71584311c005acEd62`
+- VaultContract: `0x3050C4B71329d059155EB8f449974EBB3fC0e732`
+
 ## Paramètres appliqués
 
 - setUsdcCoreLink(`0x2000000000000000000000000000000000000000`, `0`)
