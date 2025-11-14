@@ -1,6 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { addVault, readVaults, getVaultBySlug } from '@/server/vaultStore'
+import { addVault, readVaults, getVaultBySlug, isReadOnlyStorageError } from '@/server/vaultStore'
 import type { NewVaultInput } from '@/types/vaults'
+
+const READ_ONLY_SIMULATION = process.env.VAULT_STORAGE_SIMULATE_READONLY === '1'
 
 function isValidRisk(v: unknown): v is 'low' | 'medium' | 'high' {
 	return v === 'low' || v === 'medium' || v === 'high'
@@ -46,16 +48,31 @@ function parseNewVault(body: unknown): NewVaultInput {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
 	try {
-		if (req.method === 'GET') {
-			const { slug } = req.query
-			if (typeof slug === 'string' && slug) {
-				const v = await getVaultBySlug(slug)
-				if (!v) return res.status(404).json({ error: 'Vault not found' })
-				return res.status(200).json(v)
-			}
-			const list = await readVaults()
-			return res.status(200).json(list)
-		}
+                if (req.method === 'GET') {
+                        const { slug } = req.query
+                        if (typeof slug === 'string' && slug) {
+                                const v = await getVaultBySlug(slug)
+                                if (!v) return res.status(404).json({ error: 'Vault not found' })
+                                return res.status(200).json(v)
+                        }
+                        try {
+                                const list = await readVaults()
+                                if (READ_ONLY_SIMULATION) {
+                                        console.info(
+                                                `[api/vaults] GET /api/vaults returned ${list.length} entries while read-only filesystem simulation is active`,
+                                        )
+                                }
+                                return res.status(200).json(list)
+                        } catch (error) {
+                                if (isReadOnlyStorageError(error)) {
+                                        console.warn(
+                                                `[api/vaults] GET /api/vaults served empty payload because storage is read-only (${error.code ?? 'UNKNOWN'})`,
+                                        )
+                                        return res.status(200).json([])
+                                }
+                                throw error
+                        }
+                }
 		if (req.method === 'POST') {
 			const payload = parseNewVault(req.body as unknown)
 			const created = await addVault(payload)
