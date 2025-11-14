@@ -9,7 +9,7 @@ function isValidStatus(v: unknown): v is 'open' | 'closed' | 'paused' {
 	return v === 'open' || v === 'closed' || v === 'paused'
 }
 
-function parseNewVault(body: unknown): NewVaultInput {
+export function parseNewVault(body: unknown): NewVaultInput {
 	if (!body || typeof body !== 'object') throw new Error('Invalid payload')
 	const v = body as Partial<NewVaultInput>
 	if (
