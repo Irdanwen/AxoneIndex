@@ -15,6 +15,7 @@ async function main() {
   const paused = await vault.paused();
   const totalSupply = await vault.totalSupply();
   const nav = await vault.nav1e18().catch(() => 0n);
+  const vaultHandler = await vault.handler().catch(() => "0x0000000000000000000000000000000000000000");
   const oraclePx = await handler.oraclePxHype1e8().catch((err) => {
     console.error("Erreur oraclePxHype1e8:", err?.error?.message || err?.message || err);
     return 0n;
@@ -30,6 +31,7 @@ async function main() {
   const epochLength = await handler.epochLength();
   const sentThisEpoch = await handler.sentThisEpoch();
   const lastEpochStart = await handler.lastEpochStart();
+  const minNotionalUsd1e8 = await handler.minNotionalUsd1e8();
 
   console.log("Vault status:", {
     paused,
@@ -37,6 +39,7 @@ async function main() {
     nav1e18: nav.toString(),
     depositFeeBps: Number(depositFee),
     autoDeployBps: Number(autoDeploy),
+    handler: vaultHandler,
   });
   console.log("Handler status:", {
     feeVault,
@@ -49,6 +52,7 @@ async function main() {
     epochLength: Number(epochLength),
     sentThisEpoch: sentThisEpoch.toString(),
     lastEpochStart: Number(lastEpochStart),
+    minNotionalUsd1e8: minNotionalUsd1e8.toString(),
   });
 }
 

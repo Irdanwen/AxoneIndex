@@ -1,5 +1,4 @@
-import { promises as fs } from 'fs'
-import path from 'path'
+import { Redis } from '@upstash/redis'
 import {
 	type NewVaultInput,
 	type UpdateVaultInput,
@@ -12,40 +11,25 @@ import {
 	extractEraIndex,
 } from '@/types/vaults'
 
-const DATA_FILE = path.join(process.cwd(), 'data', 'vaults.json')
-
-async function ensureDataFile(): Promise<void> {
-	await fs.mkdir(path.dirname(DATA_FILE), { recursive: true })
-	try {
-		await fs.access(DATA_FILE)
-	} catch {
-		await fs.writeFile(DATA_FILE, '[]\n', 'utf-8')
-	}
-}
+const redis = Redis.fromEnv()
 
 export async function readVaults(): Promise<VaultDefinition[]> {
-	await ensureDataFile()
-	const raw = await fs.readFile(DATA_FILE, 'utf-8')
-	try {
-		const parsed = JSON.parse(raw) as unknown
-		if (!Array.isArray(parsed)) return []
-		const cleaned = parsed.filter(isVaultDefinition) as VaultDefinition[]
-		// tri par index d'ère croissant si possible, sinon par id
-		return cleaned.slice().sort((a, b) => {
-			const ai = extractEraIndex(a.id)
-			const bi = extractEraIndex(b.id)
-			if (ai !== null && bi !== null) return ai - bi
-			return a.id.localeCompare(b.id)
-		})
-	} catch {
-		return []
-	}
+	const stored = await redis.get<unknown>('vaults')
+	if (!stored) return []
+	if (!Array.isArray(stored)) return []
+
+	const cleaned = stored.filter(isVaultDefinition) as VaultDefinition[]
+	// tri par index d'ère croissant si possible, sinon par id
+	return cleaned.slice().sort((a, b) => {
+		const ai = extractEraIndex(a.id)
+		const bi = extractEraIndex(b.id)
+		if (ai !== null && bi !== null) return ai - bi
+		return a.id.localeCompare(b.id)
+	})
 }
 
 async function writeVaults(vaults: VaultDefinition[]): Promise<void> {
-	await ensureDataFile()
-	const payload = JSON.stringify(vaults, null, 2)
-	await fs.writeFile(DATA_FILE, `${payload}\n`, 'utf-8')
+	await redis.set('vaults', vaults)
 }
 
 function nextEraIndex(existing: VaultDefinition[]): number {
