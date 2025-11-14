@@ -362,13 +362,25 @@ contract CoreInteractionHandler is Pausable {
         uint64 szH = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenHYPE, int256(halfUsd1e18), pxH);
         if (szB > 0) {
             uint64 pxBLimit = _marketLimitFromBbo(spotBTC, true);
-            _sendSpotLimitOrderDirect(spotBTC, true, pxBLimit, szB, 0);
-            emit SpotOrderPlaced(spotBTC, true, pxBLimit, szB, 0);
+            uint8 baseSzDecB = _baseSzDecimals(spotBTC);
+            if (
+                baseSzDecB != 0 &&
+                StrategyMathLib.checkMinNotional(pxBLimit, szB, baseSzDecB, minNotionalUsd1e8)
+            ) {
+                _sendSpotLimitOrderDirect(spotBTC, true, pxBLimit, szB, 0);
+                emit SpotOrderPlaced(spotBTC, true, pxBLimit, szB, 0);
+            }
         }
         if (szH > 0) {
             uint64 pxHLimit = _marketLimitFromBbo(spotHYPE, true);
-            _sendSpotLimitOrderDirect(spotHYPE, true, pxHLimit, szH, 0);
-            emit SpotOrderPlaced(spotHYPE, true, pxHLimit, szH, 0);
+            uint8 baseSzDecH = _baseSzDecimals(spotHYPE);
+            if (
+                baseSzDecH != 0 &&
+                StrategyMathLib.checkMinNotional(pxHLimit, szH, baseSzDecH, minNotionalUsd1e8)
+            ) {
+                _sendSpotLimitOrderDirect(spotHYPE, true, pxHLimit, szH, 0);
+                emit SpotOrderPlaced(spotHYPE, true, pxHLimit, szH, 0);
+            }
         }
         if (forceRebalance) {
             _rebalance(0, 0);
@@ -408,13 +420,25 @@ contract CoreInteractionHandler is Pausable {
         uint64 szH = CoreHandlerLib.toSzInSzDecimals(l1read, spotTokenHYPE, int256(halfUsd1e18), pxH);
         if (szB > 0) {
             uint64 pxBLimit = _marketLimitFromBbo(spotBTC, true);
-            _sendSpotLimitOrderDirect(spotBTC, true, pxBLimit, szB, 0);
-            emit SpotOrderPlaced(spotBTC, true, pxBLimit, szB, 0);
+            uint8 baseSzDecB = _baseSzDecimals(spotBTC);
+            if (
+                baseSzDecB != 0 &&
+                StrategyMathLib.checkMinNotional(pxBLimit, szB, baseSzDecB, minNotionalUsd1e8)
+            ) {
+                _sendSpotLimitOrderDirect(spotBTC, true, pxBLimit, szB, 0);
+                emit SpotOrderPlaced(spotBTC, true, pxBLimit, szB, 0);
+            }
         }
         if (szH > 0) {
             uint64 pxHLimit = _marketLimitFromBbo(spotHYPE, true);
-            _sendSpotLimitOrderDirect(spotHYPE, true, pxHLimit, szH, 0);
-            emit SpotOrderPlaced(spotHYPE, true, pxHLimit, szH, 0);
+            uint8 baseSzDecH = _baseSzDecimals(spotHYPE);
+            if (
+                baseSzDecH != 0 &&
+                StrategyMathLib.checkMinNotional(pxHLimit, szH, baseSzDecH, minNotionalUsd1e8)
+            ) {
+                _sendSpotLimitOrderDirect(spotHYPE, true, pxHLimit, szH, 0);
+                emit SpotOrderPlaced(spotHYPE, true, pxHLimit, szH, 0);
+            }
         }
         if (forceRebalance) {
             _rebalance(0, 0);
@@ -741,7 +765,7 @@ contract CoreInteractionHandler is Pausable {
 
     function _assertOrder(uint32 asset, bool isBuy, uint64 limitPx1e8, uint64 szInSzDecimals) internal view {
         if (limitPx1e8 == 0) revert PX_TOO_LOW();
-        if (szInSzDecimals == 0) revert SIZE_TOO_LARGE();
+        if (szInSzDecimals == 0) revert SIZE_ZERO();
         
         // Validation de l'asset selon la documentation
         if (!(asset == spotBTC || asset == spotHYPE)) revert INVALID_ASSET();
@@ -923,7 +947,7 @@ contract CoreInteractionHandler is Pausable {
         if (baseSzDec == 0) revert INVALID_SZ_DECIMALS();
         
         szInSzDecimals = snapToLot(szInSzDecimals, baseSzDec);
-        if (szInSzDecimals == 0) revert SIZE_TOO_LARGE();
+        if (szInSzDecimals == 0) revert SIZE_ZERO();
         if (!StrategyMathLib.checkMinNotional(limitPx1e8, szInSzDecimals, baseSzDec, minNotionalUsd1e8)) revert NOTIONAL_LT_MIN();
         
         _assertOrder(asset, isBuy, limitPx1e8, szInSzDecimals);
