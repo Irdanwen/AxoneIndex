@@ -2,8 +2,9 @@ const hre = require("hardhat");
 
 async function main() {
   const { ethers } = hre;
-  const VAULT = process.env.VAULT || "0xb9F1cde679E0C2f63ed0806f494602d36CbD7a79";
-  const HANDLER = process.env.HANDLER || "0xaEAe0B32cE902C40A6053950323e6c0228a08efD";
+  // Adresses par défaut: dernier déploiement STRATEGY_1 (voir docs/deployments/STRATEGY_1_TESTNET.md)
+  const VAULT = process.env.VAULT || "0x3050C4B71329d059155EB8f449974EBB3fC0e732";
+  const HANDLER = process.env.HANDLER || "0xDD5f060D9d728FC254f1cD71584311c005acEd62";
   const amount1e18 = process.env.DEPOSIT_HYPE_1E18 ? BigInt(process.env.DEPOSIT_HYPE_1E18) : (10n ** 17n);
   const gasPrice = ethers.parseUnits(process.env.GAS_PRICE_GWEI || "3", "gwei");
 
