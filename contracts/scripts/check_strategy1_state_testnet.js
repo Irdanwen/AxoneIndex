@@ -31,7 +31,6 @@ async function main() {
   const epochLength = await handler.epochLength();
   const sentThisEpoch = await handler.sentThisEpoch();
   const lastEpochStart = await handler.lastEpochStart();
-  const minNotionalUsd1e8 = await handler.minNotionalUsd1e8();
 
   console.log("Vault status:", {
     paused,
@@ -52,7 +51,6 @@ async function main() {
     epochLength: Number(epochLength),
     sentThisEpoch: sentThisEpoch.toString(),
     lastEpochStart: Number(lastEpochStart),
-    minNotionalUsd1e8: minNotionalUsd1e8.toString(),
   });
 }
 

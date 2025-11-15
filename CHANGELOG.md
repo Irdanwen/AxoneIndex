@@ -8,12 +8,11 @@
 ### Changed
 - Strategy_1: normalisation des prix via `pxDecimals` par `spotIndex` (mapping on-chain) et conversions symétriques `_toPx1e8`/`_toRawPx` (plus d’inférence via `(weiDecimals - szDecimals)`).
 - Strategy_1: quantisation du prix appliquée après epsilon/slippage avec règles Hyperliquid (≤ 5 chiffres significatifs et ≤ (8 − szDecimals) décimales), arrondi agressif BUY ↑ / SELL ↓, y compris pour le fallback oracle.
-- Strategy_1: ordres sécurisés par des asserts centralisées (px>0, size>0, notional≥min, px déjà quantisé).
+- Strategy_1: ordres sécurisés par des asserts centralisées (px>0, size>0, px déjà quantisé).
 - Strategy_1: taille « snap » au lot (alignée `szDecimals`) avant envoi pour robustesse future.
 ### Added
-- Setters: `setSpotPxDecimals(spotIndex, pxDec)` et `setMinNotionalUsd1e8(v)` (valeur par défaut 50e8).
-- Paramètre `minNotionalUsd1e8` pour éviter les IOC « poussière ».
-- Tests: `contracts/test/Strategy1_Pricing.test.js` couvrant normalisation, quantization, notional minimal, direction d’arrondi et round-trip.
+- Setters: `setSpotPxDecimals(spotIndex, pxDec)`.
+- Tests: `contracts/test/Strategy1_Pricing.test.js` couvrant normalisation, quantization, direction d'arrondi et round-trip.
 - Docs: mise à jour `docs/HYPERLIQUID_UNITS.md` (règles de quantization) et nouvelle page `docs/contracts/STRATEGY_1_PRICING.md`.
 
 ## 2025-11-07

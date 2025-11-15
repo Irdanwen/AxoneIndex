@@ -65,13 +65,6 @@ library StrategyMathLib {
         return amountWei * (10 ** uint256(8 - weiDecimals));
     }
 
-    // Vérifie le notional minimum en USD 1e8
-    function checkMinNotional(uint64 px1e8, uint64 sizeSz, uint8 szDecimals, uint64 minNotionalUsd1e8) internal pure returns (bool) {
-        if (px1e8 == 0 || sizeSz == 0) return false;
-        uint256 notional1e8 = (uint256(sizeSz) * uint256(px1e8)) / (10 ** uint256(szDecimals));
-        return notional1e8 >= minNotionalUsd1e8;
-    }
-
     /// @notice Convertit une taille exprimée en szDecimals en format 1e8 attendu par HyperCore.
     /// @dev Effectue un plancher lors de la réduction de décimales pour éviter de dépasser.
     function sizeSzTo1e8(uint64 sizeSz, uint8 szDecimals) internal pure returns (uint64) {

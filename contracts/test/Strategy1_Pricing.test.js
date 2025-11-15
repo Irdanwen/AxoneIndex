@@ -112,15 +112,7 @@ describe('Strategy_1 Pricing & Quantization', function () {
     expect(qBuy).to.be.at.least(qSell);
   });
 
-  it('5) Min notional: rejette quand (size * px)/10^szDecimals < minNotional', async () => {
-    // szDecimals=8, px ~ 1e8 → sizeSz trop petit
-    const ok = await handler.checkMinNotionalPublic(100_000_000, 1, 8);
-    expect(ok).to.equal(false);
-    const ok2 = await handler.checkMinNotionalPublic(10_000_000_000, 1_000_000_000, 8);
-    expect(ok2).to.equal(true);
-  });
-
-  it('6) Direction d’arrondi: BUY ↑, SELL ↓', async () => {
+  it('5) Direction d'arrondi: BUY ↑, SELL ↓', async () => {
     const base = 1_234_567_89n; // 12.3456789 * 1e8
     const buy = await handler.quantizePx1e8Public(base, 7, true);  // maxPxDecimals=1
     const sell = await handler.quantizePx1e8Public(base, 7, false);

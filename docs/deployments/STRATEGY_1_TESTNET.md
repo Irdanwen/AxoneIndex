@@ -10,11 +10,13 @@
 
 ## Adresses — déploiement courant (dernier run `deploy_strategy1_testnet.js`)
 
-- L1Read: `0xAd7B0Ff09f9d737B7D6a0E78a11c5F01A3fBFE70`
+**Dernier déploiement:** 2025-11-15
+
+- L1Read: `0x71752E1caFa851f3Cdb34C1B8Dd5D4745d55403A`
 - CoreWriter (système): `0x3333333333333333333333333333333333333333`
 - USDC (EVM): `0x0B80659a4076E9E93C7DbE0f10675A16a3e5C206`
-- CoreInteractionHandler: `0xDD5f060D9d728FC254f1cD71584311c005acEd62`
-- VaultContract: `0x3050C4B71329d059155EB8f449974EBB3fC0e732`
+- CoreInteractionHandler: `0x5Ac60985E55d2B33cc2a26286a7325202bA487db`
+- VaultContract: `0x82A9ec1B0c949c80dC9fDddD530DF83AB5190D46`
 
 ## Paramètres appliqués
 

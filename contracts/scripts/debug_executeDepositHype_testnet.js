@@ -6,10 +6,10 @@ async function main() {
   // Dernier déploiement STRATEGY_1 (voir docs/deployments/STRATEGY_1_TESTNET.md)
   const VAULT =
     process.env.VAULT ||
-    "0x3050C4B71329d059155EB8f449974EBB3fC0e732";
+    "0x82A9ec1B0c949c80dC9fDddD530DF83AB5190D46";
   const HANDLER =
     process.env.HANDLER ||
-    "0xDD5f060D9d728FC254f1cD71584311c005acEd62";
+    "0x5Ac60985E55d2B33cc2a26286a7325202bA487db";
 
   const amount1e18 =
     process.env.DEPOSIT_HYPE_1E18 != null

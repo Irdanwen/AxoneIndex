@@ -18,8 +18,7 @@
 
 ### Taille et notional
 - Alignement de la taille sur le lot (`szDecimals`) via `snapToLot`.
-- Notional minimum (USD 1e8) : `minNotionalUsd1e8` configurable (par défaut 50e8).
-- Garde `_assertOrder`: `px>0`, `size>0`, `notional>=min`, et `limitPx1e8` déjà quantisé.
+- Garde `_assertOrder`: `px>0`, `size>0`, et `limitPx1e8` déjà quantisé.
 
 ### Asset et métadata
 - `assetId = 10000 + spotIndex` (SPOT offset).
@@ -28,17 +27,15 @@
 
 ### API (extraits)
 - `setSpotPxDecimals(spotIndex, pxDec)` (owner)
-- `setMinNotionalUsd1e8(v)` (owner)
 - `_toPx1e8()`, `_toRawPx()`
 - `quantizePx1e8()`
-- `snapToLot()`, `_checkMinNotional()`, `_assertOrder()`
+- `snapToLot()`, `_assertOrder()`
 
 ### Tests clés
 1. BTC/USDC BUY avec ask 98765.4321 (1e8) → +ε → quantize OK
 2. Meme coin szDecimals=2 → `maxPxDecimals=6`, ≤5 sig figs
-3. Dust: usd=1e18, px élevé → rejet minNotional
-4. Fallback BBO=0 → oracle ±(slippage+epsilon) → même quantize
-5. Direction: BUY ↑, SELL ↓
-6. Round-trip: raw → 1e8 → raw stable (pxDec variés)
+3. Fallback BBO=0 → oracle ±(slippage+epsilon) → même quantize
+4. Direction: BUY ↑, SELL ↓
+5. Round-trip: raw → 1e8 → raw stable (pxDec variés)
 
 

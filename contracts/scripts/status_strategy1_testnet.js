@@ -4,9 +4,9 @@ async function main() {
   const { ethers } = hre;
 
   const ADDRS = {
-    HANDLER: process.env.HANDLER || "0xaEAe0B32cE902C40A6053950323e6c0228a08efD",
-    VAULT: process.env.VAULT || "0xb9F1cde679E0C2f63ed0806f494602d36CbD7a79",
-    L1READ: process.env.L1READ || "0x766842FD272Ef7110bDb60e078dc4Cf5Ad0B4c21",
+    HANDLER: process.env.HANDLER || "0x5Ac60985E55d2B33cc2a26286a7325202bA487db",
+    VAULT: process.env.VAULT || "0x82A9ec1B0c949c80dC9fDddD530DF83AB5190D46",
+    L1READ: process.env.L1READ || "0x71752E1caFa851f3Cdb34C1B8Dd5D4745d55403A",
   };
 
   const handler = await ethers.getContractAt("CoreInteractionHandler", ADDRS.HANDLER);

@@ -6,7 +6,7 @@ async function main() {
   // Vault STRATEGY_1 - dernier déploiement (override possible via VAULT)
   const VAULT =
     process.env.VAULT ||
-    "0x3050C4B71329d059155EB8f449974EBB3fC0e732";
+    "0x82A9ec1B0c949c80dC9fDddD530DF83AB5190D46";
 
   const targetAutoDeploy =
     process.env.AUTO_DEPLOY_BPS != null
